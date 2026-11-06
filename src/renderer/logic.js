@@ -191,6 +191,17 @@
     return { titel: '', wert: v };
   }
 
+  /** Live-Vorschau beim Tippen (W-1): leer | name (Wert fehlt noch) | fertig (Wert erkannt). */
+  function wissenVorschau(raw) {
+    const v = str(raw), t = v.trim();
+    const leerzeichen = /\s$/.test(v);
+    if (!t) return { zustand: 'leer', titel: '', wert: '', typ: null, leerzeichen };
+    const p = parseWissenEingabe(t);
+    const typ = wissenTyp(p.wert);
+    if (typ !== 'befehl' || /^([^:]{1,60}?):\s+(.+)$/.test(t)) return { zustand: 'fertig', titel: p.titel, wert: p.wert, typ, leerzeichen };
+    return { zustand: 'name', titel: t.replace(/:\s*$/, ''), wert: '', typ: null, leerzeichen };
+  }
+
   const WISSEN_ARTEN = [
     { key: 'favoriten', name: 'Favoriten' },
     { key: 'kontakt', name: 'Telefon und E-Mail', typen: ['telefon', 'email'] },
@@ -281,7 +292,7 @@
     kundeMitAnsprechpartner, rueckrufDatum, rueckrufZeit, rueckrufAus,
     rrState, faelligeErinnerungen, anzahlFaellig,
     passtNotiz, passtWissen, lanes,
-    placeholders, fillTemplate, istLink, wissenTyp, parseWissenEingabe, wissenAbschnitte, favoriten, notizAlsText,
+    placeholders, fillTemplate, istLink, wissenTyp, parseWissenEingabe, wissenVorschau, wissenAbschnitte, favoriten, notizAlsText,
     normalize, normalizeNotiz, normalizeWissen,
   };
 });

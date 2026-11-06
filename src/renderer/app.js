@@ -158,10 +158,25 @@ const istUrlVorlage = (w) => NL.wissenTyp(w.wert) === 'link';
 const wissenWert = (w) => NL.fillTemplate(w.wert, D.ui.platzhalter[w.id], { url: istUrlVorlage(w) });
 const genOutHtml = (w) => wissenWert(w).split(' ').map(x => `<b>${esc(x)}</b>`).join(' ');
 
-function erkanntHtml(eingabe) {
-  const p = NL.parseWissenEingabe(eingabe);
-  if (!p.wert) return 'Name und Wert in einer Zeile, z. B. „Support-Hotline 0800 1234567“';
-  return `<span class="w-art">${esc(ART_LABEL[NL.wissenTyp(p.wert)])}</span> ${p.titel ? `Name: ${esc(p.titel)}` : 'ohne Namen'} · Enter speichert`;
+// Vorschläge für den Wert mit neutralen Beispielen (W-1)
+const WERT_VORSCHLAEGE = [
+  ['Link', 'https://…'], ['IP-Adresse', '192.0.2.10'], ['Telefon', '0800 1234567'],
+  ['E-Mail', 'name@example.org'], ['Port', '5938'], ['Befehl oder Text', 'Name: Text'],
+];
+const ABSCHNITT = { telefon: 'Telefon und E-Mail', email: 'Telefon und E-Mail', link: 'Links', ip: 'IP-Adressen', port: 'Ports', befehl: 'Befehle und Texte' };
+
+/** Live-Vorschau unter dem Eingabefeld: zwei Anzeigen Name und Wert, dazu Vorschläge und was Enter tut (W-1). */
+function vorschauHtml(eingabe) {
+  const v = NL.wissenVorschau(eingabe);
+  const chip = (label, inhalt, an, platzhalter) => `<span class="vs-chip${an ? ' an' : ''}"><b>${esc(label)}</b><span>${inhalt ? esc(inhalt) : `<i>${platzhalter}</i>`}</span></span>`;
+  const name = chip('Name', v.titel, !!v.titel, v.zustand === 'fertig' ? 'ohne Namen' : 'z. B. Fachdienst-IP');
+  const wert = chip(v.typ ? ART_LABEL[v.typ] : 'Wert', v.wert, v.zustand === 'fertig', 'z. B. 192.0.2.10 oder https://…');
+  let hinweis;
+  if (v.zustand === 'leer') hinweis = 'Erst den Namen, dann ein Leerzeichen und den Wert.';
+  else if (v.zustand === 'fertig') hinweis = `<span>Enter speichert unter <b>${esc(ABSCHNITT[v.typ])}</b>.</span>`;
+  else if (v.leerzeichen) hinweis = `<span class="vs-tipp">Als Wert passt:</span>${WERT_VORSCHLAEGE.map(([art, bsp]) => `<span class="vs-vorschlag"><b>${art}</b> ${esc(bsp)}</span>`).join('')}`;
+  else hinweis = 'Jetzt ein Leerzeichen und den Wert eintippen. Oder Enter speichert alles als Text.';
+  return `<div class="vs-chips">${name}${wert}</div><div class="vs-hinweis">${hinweis}</div>`;
 }
 
 function wissenZeile(w, favIndex) {
@@ -205,7 +220,7 @@ function renderWissen(anim) {
       <input class="field" id="wNeu" type="text" autocomplete="off" spellcheck="false" placeholder="Neuer Eintrag …" value="${esc(S.wNeu)}" aria-label="Neuer Eintrag">
       <button class="btn-copy press" type="button" data-wneu>Hinzufügen</button>
     </div>
-    <div class="w-erkannt" id="wErkannt">${erkanntHtml(S.wNeu)}</div>`;
+    <div class="w-vorschau" id="wVorschau">${vorschauHtml(S.wNeu)}</div>`;
   let liste;
   if (!D.wissen.length) {
     liste = `<div class="empty${anim}"><strong>Noch kein Wissen abgelegt</strong><span>Telefonnummern, E-Mails, Links, IPs, Ports und Befehle, die du oft brauchst.<br>Ein Klick kopiert sie, ein Stern heftet sie oben an.</span></div>`;
@@ -623,7 +638,7 @@ document.addEventListener('submit', (e) => {
 });
 document.addEventListener('input', (e) => {
   if (e.target.id === 'setTicket') { S.ticketEntwurf = e.target.value; return; }
-  if (e.target.id === 'wNeu') { S.wNeu = e.target.value; $('#wErkannt').innerHTML = erkanntHtml(S.wNeu); return; }
+  if (e.target.id === 'wNeu') { S.wNeu = e.target.value; $('#wVorschau').innerHTML = vorschauHtml(S.wNeu); return; }
   const id = e.target.dataset && e.target.dataset.ph;
   if (!id) return;
   const w = D.wissen.find(x => x.id === id); if (!w) return;
@@ -634,7 +649,7 @@ document.addEventListener('input', (e) => {
 document.addEventListener('change', (e) => { if (e.target.id === 'setTicket') ticketLinkSpeichern(e.target.value); });
 document.addEventListener('keydown', (e) => {
   if (e.target.id === 'wNeu' && e.key === 'Enter') { e.preventDefault(); wissenNeu(); }
-  if (e.target.id === 'wNeu' && e.key === 'Escape' && S.wNeu) { e.preventDefault(); e.stopPropagation(); S.wNeu = ''; e.target.value = ''; $('#wErkannt').innerHTML = erkanntHtml(''); }
+  if (e.target.id === 'wNeu' && e.key === 'Escape' && S.wNeu) { e.preventDefault(); e.stopPropagation(); S.wNeu = ''; e.target.value = ''; $('#wVorschau').innerHTML = vorschauHtml(''); }
 }, true);
 /** Bester Wissens-Treffer zur aktuellen Suche (W-6). */
 const ersterWissensTreffer = () => (NL.wissenAbschnitte(D.wissen, S.q)[0] || { items: [] }).items[0];

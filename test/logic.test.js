@@ -248,3 +248,15 @@ test('H-10: Notiz als Text', () => {
   assert.equal(NL.notizAlsText(n), 'Kunde: Beispiel AG\nAnsprechpartner: Frau Muster\nTelefon: +49 123 4567890\nTicket: #4711\nStatus: Wartet\nRückruf: 06.11.2026 14:30 Uhr\n\nDrucker offline\nTreiber neu');
   assert.equal(NL.notizAlsText(notiz({ text: 'nur Text' })), 'Status: Offen\n\nnur Text');
 });
+
+test('W-1: Live-Vorschau zeigt Name, Wert und Art', () => {
+  const v = (s) => NL.wissenVorschau(s);
+  assert.equal(v('').zustand, 'leer');
+  assert.deepEqual(v('Fachdienst-IP'), { zustand: 'name', titel: 'Fachdienst-IP', wert: '', typ: null, leerzeichen: false });
+  assert.equal(v('Fachdienst-IP ').leerzeichen, true);
+  assert.equal(v('Fachdienst-IP 192.0').zustand, 'name');
+  assert.deepEqual(v('Fachdienst-IP 192.0.2.10'), { zustand: 'fertig', titel: 'Fachdienst-IP', wert: '192.0.2.10', typ: 'ip', leerzeichen: false });
+  assert.equal(v('https://example.org').typ, 'link');
+  assert.deepEqual(v('Route: route print'), { zustand: 'fertig', titel: 'Route', wert: 'route print', typ: 'befehl', leerzeichen: false });
+  assert.equal(v('Route: ').titel, 'Route');
+});
