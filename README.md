@@ -105,3 +105,6 @@ scripts/        Release, Screenshots, Prüfung auf sensible Daten
 ## Lizenz
 
 [MIT](LICENSE) © 2026 Pascal Uffmann
+
+Enthaltene Bestandteile Dritter (Symbole von Lucide, Schrift Space Grotesk, Electron) sind ebenfalls frei
+nutzbar. Details und Lizenztexte stehen in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

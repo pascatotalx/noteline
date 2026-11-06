@@ -81,6 +81,7 @@ const toLocalInput = (iso) => {
 const PRIO = { hoch: { c: 'var(--pink)', l: 'Hoch' }, normal: { c: 'rgba(255,255,255,.55)', l: 'Normal' }, niedrig: { c: 'rgba(255,255,255,.18)', l: 'Niedrig' } };
 const LANE_FARBE = { jetzt: 'var(--pink)', offen: 'var(--cyan)', wartet: 'var(--amber)', erledigt: 'var(--lime)' };
 const svg = (w, sw, inner, stroke = 'currentColor') => `<svg width="${w}" height="${w}" viewBox="0 0 24 24" fill="none" stroke="${stroke}" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${inner}</svg>`;
+// Symbole: Lucide (https://lucide.dev), ISC-Lizenz – siehe THIRD_PARTY_NOTICES.md
 const ICON = {
   check: svg(15, 2.25, '<path d="M20 6 9 17l-5-5"/>'),
   undo: svg(15, 2, '<path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>'),

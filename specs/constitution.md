@@ -41,6 +41,11 @@ Bei jeder Entscheidung gilt: **Tempo beim Erfassen schlägt Funktionsumfang.**
 
 Neue Abhängigkeiten zur Laufzeit nur mit Begründung in `plan.md`.
 
+**Fremdbestandteile** (Bibliotheken, Schriften, Icons, Bilder) nur mit freier Lizenz, die Weitergabe und
+kommerzielle Nutzung erlaubt (z. B. MIT, ISC, BSD, Apache-2.0, SIL OFL). Jeder Fremdbestandteil steht mit
+Lizenz in `THIRD_PARTY_NOTICES.md`, die mit dem Installer ausgeliefert wird. Nichts aus Quellen mit unklarer
+Herkunft oder Lizenz übernehmen.
+
 ## 4. Sicherheit
 
 - `contextIsolation: true`, `nodeIntegration: false`, `sandbox: true`. Der Renderer spricht nur über die
