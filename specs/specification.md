@@ -3,7 +3,7 @@
 Beschreibt **was** Noteline kann und **warum**. Das Wie steht in `plan.md`.
 Die Kennungen (z. B. `H-3`) werden in `tasks.md`, im Code und in den Tests referenziert.
 
-Stand: Version 1.0.0 (06.11.2026). `[x]` = umgesetzt und getestet, `[ ]` = offen oder nur manuell prüfbar (T-16).
+Stand: Version 1.1.0 (06.11.2026). `[x]` = umgesetzt und getestet, `[ ]` = offen oder nur manuell prüfbar (T-16).
 
 ---
 
@@ -20,6 +20,9 @@ Pascal notiert während Hotline-Anrufen bisher in einer Notepad++-Datei. Problem
 - Ein Nutzer, ein Windows-11-Laptop, meist mit zweitem Bildschirm. Die App läuft den ganzen Arbeitstag
   neben dem Ticketsystem.
 - Während eines Anrufs hat Pascal die Hände an der Tastatur und wenig Aufmerksamkeit übrig.
+- **Typische Anordnung:** Ticketsystem links, Web-Telefonie rechts oben, Noteline rechts unten in einem
+  **breiten, niedrigen** Fenster (etwa 850 × 540 px). Rufnummern stehen in der Telefonie, Ticketnummern im
+  Ticketsystem. Noteline läuft den ganzen Tag und soll nie versehentlich geschlossen werden.
 
 ---
 
@@ -33,6 +36,10 @@ damit ich beim Anruf nichts verpasse.
 - [x] Text eingeben und Enter drücken legt eine Notiz an und öffnet sie zum Weiterschreiben.
 - [x] Format `Kunde: Stichpunkt` füllt das Feld *Kunde* mit dem Teil vor dem ersten Doppelpunkt, sofern dieser
       Teil 1–59 Zeichen lang ist und kein `://` direkt dahinter folgt (Links sind kein Kundenname).
+- [x] Eine **Telefonnummer** in der Eingabe (mindestens 9 Ziffern, z. B. `+49 711 1234567` oder
+      `0711/1234567`) landet im Feld *Telefon* statt im Text.
+- [x] Eine **Ticketnummer** mit `#` (z. B. `#0012345`) oder nach dem Wort „Ticket" landet im Feld *Ticket*.
+- [x] Beides lässt sich mit `Kunde: Stichpunkt` kombinieren, die Reihenfolge ist egal.
 - [x] Strg+N legt von überall eine leere Notiz an. Der Cursor steht im Feld *Kunde*.
 - [x] Eine Notiz, die beim Schließen komplett leer ist, wird verworfen.
 
@@ -46,8 +53,9 @@ damit ich beim Anruf nichts verpasse.
 - [x] Eine Zeile in der Liste lässt sich mit einem Klick auf erledigt bzw. wieder auf offen setzen.
 
 **H-4 Übersicht.** Die Liste ist in Spuren gegliedert:
-- [x] *Jetzt*: nicht erledigt **und** (Priorität hoch **oder** Rückruf heute oder überfällig). Nur sichtbar,
-      wenn sie Einträge hat. Sortiert nach Rückrufzeit, dann Priorität.
+- [x] *Jetzt*: nicht erledigt **und** (Priorität hoch **oder** Rückruf heute oder überfällig).
+      Sortiert nach Rückrufzeit, dann Priorität.
+- [x] Leere Spuren werden ausgeblendet. Gibt es gar keine Notizen, erscheint ein Hinweis zur Bedienung.
 - [x] *Offen* und *Wartet*: übrige Notizen dieses Status, sortiert nach Priorität, dann neueste Änderung.
 - [x] *Erledigt*: neueste Änderung zuerst, standardmäßig eingeklappt.
 - [x] Ein- und Ausklappen der Spuren bleibt nach einem Neustart erhalten.
@@ -60,11 +68,21 @@ Groß-/Kleinschreibung. Während der Suche sind alle Spuren aufgeklappt. Esc lee
 - [x] Eine Notiz kann einen Rückrufzeitpunkt haben. Schnellwahl: *+1 Std.*, *Morgen 9:00*, freie Eingabe.
 - [ ] Zum fälligen Zeitpunkt (Prüfung mindestens alle 30 s) erscheint eine Windows-Benachrichtigung mit
       Kunde, Telefon und erster Zeile. Ein Klick darauf öffnet die Notiz.
+- [ ] Die Rückruf-Benachrichtigung bleibt unten rechts stehen, bis sie angeklickt oder geschlossen wird, und
+      kommt mit dem Windows-Benachrichtigungston (außer bei „Nicht stören“). Sie erscheint auch, wenn Noteline
+      im Infobereich versteckt ist.
 - [x] Ist das Fenster nicht aktiv, blinkt zusätzlich das Taskleistensymbol.
 - [x] Pro Rückrufzeitpunkt wird genau einmal erinnert. Ein neuer Zeitpunkt löst erneut aus.
 - [x] Der Reiter *Hotline* zeigt die Zahl der heute fälligen und überfälligen Rückrufe als Badge.
 
 **H-7 Löschen.** Löschen braucht einen zweiten Klick innerhalb von 3 s („Wirklich löschen?").
+
+**H-8 Ticket im Ticketsystem öffnen.**
+- [x] In den Einstellungen lässt sich eine Link-Vorlage mit `<TICKET>` hinterlegen,
+      z. B. `https://support.example.org/tickets?id=<TICKET>`. Sie wird nur lokal gespeichert.
+- [x] Ist eine Vorlage gesetzt, öffnet ein Knopf am Ticketfeld der Notiz und in der Listenzeile das Ticket im
+      Standardbrowser. `#` und Leerzeichen werden entfernt, die Nummer wird URL-sicher eingesetzt.
+- [x] Ungültige Vorlagen (kein `http(s)://` oder kein `<TICKET>`) werden mit Hinweis abgelehnt.
 
 ### Bereich Wissen (Nachschlagewerte)
 
@@ -86,8 +104,17 @@ Groß-/Kleinschreibung. Während der Suche sind alle Spuren aufgeklappt. Esc lee
 
 ### Bedienung allgemein
 
+**L-1 Breites Layout.** Ab 760 px Fensterbreite nutzt Noteline zwei Spalten.
+- [x] Links steht die Hotline-Liste, rechts der Bereich Wissen. Die Reiter unten entfallen.
+- [x] Eine geöffnete Notiz erscheint rechts in voller Höhe statt als Blatt von unten. Die Liste bleibt sichtbar,
+      die geöffnete Notiz ist dort markiert.
+- [x] Das Eingabefeld sucht in beiden Spalten gleichzeitig. Enter legt weiterhin eine Notiz an.
+- [ ] Wird das Fenster schmaler, wechselt Noteline ohne Datenverlust in die einspaltige Ansicht.
+
 **A-1 Fenster.**
 - [x] Erster Start: Breite ein Viertel des Hauptbildschirms (mindestens 440 px), volle Höhe, rechter Rand.
+- [ ] Eigene, flache Titelleiste: Logo, Name und Knöpfe teilen sich eine Zeile mit den Fensterknöpfen von
+      Windows. Die Zeile dient zum Verschieben des Fensters.
 - [x] Position und Größe werden gemerkt. Liegt die gespeicherte Position auf keinem Bildschirm mehr,
       gilt die Standardposition.
 - [x] *Immer im Vordergrund* ist umschaltbar und wird gemerkt.
@@ -98,8 +125,21 @@ Groß-/Kleinschreibung. Während der Suche sind alle Spuren aufgeklappt. Esc lee
 **A-2 Einstellungen und Info.** Ein Zahnrad öffnet ein Panel mit:
 - [x] installierter Version
 - [x] Update-Status und Knopf *Nach Updates suchen* (siehe U-2)
-- [x] Schalter *Mit Windows starten*
-- [x] Knopf *Datenordner öffnen*
+- [x] Erscheinungsbild *Dunkel*, *Hell* oder *Wie Windows*. Gilt sofort, auch für die Titelleiste, und wird gemerkt.
+- [ ] Schalter *Uhr anzeigen* (Standard: aus, die Taskleiste zeigt die Uhrzeit bereits)
+- [x] Feld *Ticket-Link* (siehe H-8)
+- [x] Schalter *Mit Windows starten* und *Immer im Vordergrund*
+- [x] Speicherort als anklickbarer Pfad (`Dokumente\Noteline`), der den Ordner im Explorer öffnet.
+      Kein eigener Backup-Knopf.
+
+**A-3 Läuft im Hintergrund.** Noteline wird nicht versehentlich beendet.
+- [x] Das Schließen-Kreuz und das Minimieren verstecken das Fenster. Noteline läuft im Infobereich der
+      Taskleiste (unten rechts) weiter, Erinnerungen und Updates funktionieren weiter.
+- [ ] Beim ersten Verstecken erklärt eine Windows-Benachrichtigung, wo Noteline weiterläuft.
+- [ ] Ein Klick auf das Symbol im Infobereich zeigt das Fenster. Rechtsklick bietet *Noteline öffnen*,
+      *Nach Updates suchen* und *Beenden*.
+- [ ] Beenden ist nur über das Symbol im Infobereich möglich, außerdem beim Abmelden oder Herunterfahren von Windows.
+- [ ] Strg+Alt+H und ein erneuter Start über die Verknüpfung holen das versteckte Fenster nach vorne.
 
 ### Installation und Updates
 
@@ -111,8 +151,11 @@ Deinstallieren löscht **keine** Daten.
 - [ ] 10 s nach dem Start und danach **jede Stunde** prüft die App auf eine neuere Version auf GitHub.
 - [ ] Gibt es eine, wird sie im Hintergrund heruntergeladen.
 - [ ] Danach erscheint ein Hinweis „Update x.y.z bereit" mit dem Knopf *Jetzt neu starten*.
-- [ ] Wird nicht neu gestartet, installiert sich das Update automatisch beim nächsten Beenden.
-- [ ] Ein Neustart ohne Pascals Klick passiert nie (siehe Constitution 5).
+- [ ] Zusätzlich kommt **einmal pro Version** eine Windows-Benachrichtigung. Ein Klick darauf zeigt Noteline.
+- [ ] Ohne Klick installiert sich das Update beim Beenden oder **still im Ruhezustand**: Fenster ist im
+      Infobereich versteckt, keine Notiz offen und Windows seit mindestens 10 Minuten ohne Eingabe.
+      Danach startet Noteline wieder versteckt im Infobereich (siehe K-2).
+- [ ] Ein Neustart, während Pascal mit Noteline arbeitet, passiert nie (siehe Constitution 5).
 - [ ] *Nach Updates suchen* zeigt den Ergebnisstatus: *Wird gesucht …*, *Aktuell*, *Wird geladen (x %)*,
       *Bereit*, *Fehler: …*.
 - [ ] Ohne Internet oder bei GitHub-Fehlern läuft die App normal weiter. Der Fehler steht nur im Panel.
@@ -120,16 +163,17 @@ Deinstallieren löscht **keine** Daten.
 
 ### Daten und Sicherheit
 
-**D-1 Speicherort.** Daten liegen in `Dokumente\Noteline\daten.json`, Fenstereinstellungen in
-`fenster.json`. Gibt es beim ersten Start noch `Dokumente\Hotline-Notizen\daten.json` (Prototyp),
+**D-1 Speicherort.** Daten liegen in `Dokumente\Noteline\daten.json`, Einstellungen (Fenster,
+Erscheinungsbild, Ticket-Link) in `einstellungen.json`. Eine vorhandene `fenster.json` aus Version 1.0 wird
+übernommen. Gibt es beim ersten Start noch `Dokumente\Hotline-Notizen\daten.json` (Prototyp),
 wird sie einmalig übernommen. Das Original bleibt liegen.
 
-**D-2 Backups.** Mindestens einmal pro Kalendertag, an dem die App läuft, entsteht
+**D-2 Backups.** Ohne eigenen Knopf in der Oberfläche: Mindestens einmal pro Kalendertag, an dem die App läuft, entsteht
 `Backups\daten-JJJJ-MM-TT.json`, auch wenn die App über Mitternacht offen bleibt. Es werden die letzten
 30 Backups behalten.
 
 **D-3 Schutzmodus.** Ist `daten.json` vorhanden, aber nicht lesbar oder kein gültiges Noteline-Format:
-- [x] Die App zeigt einen roten Hinweis mit Weg zum Datenordner und Backup-Ordner.
+- [x] Die App zeigt einen roten Hinweis mit Knopf zum Datenordner (Backups liegen im Unterordner `Backups`).
 - [x] Sie speichert **nichts**, bis die Datei repariert und die App neu gestartet ist.
 - [x] Eine Kopie der defekten Datei wird als `daten-defekt-<Zeitstempel>.json` abgelegt.
 
@@ -159,6 +203,11 @@ Standardwerte, statt abzustürzen.
   Specs und Releases. Die App braucht deshalb keinen Token. Daraus folgen die Anforderungen R-1 bis R-3.
 - **K-2 Update-Zeitpunkt:** Automatisch geladen, installiert per Klick auf *Jetzt neu starten* oder beim
   nächsten Beenden. Kein Zwangsneustart während eines Anrufs.
+  *Ergänzt am 06.11.2026:* Weil Noteline dauerhaft im Infobereich läuft (A-3), käme ein „nächstes Beenden"
+  kaum vor. Deshalb installiert es sich zusätzlich still, wenn Noteline versteckt ist und Windows seit
+  10 Minuten ohne Eingabe ist.
+- **K-3 Backups (06.11.2026):** Pascal braucht keinen Backup-Knopf, nur den Datenordner. Die täglichen
+  Sicherungen laufen unsichtbar weiter, weil sie nichts kosten und vor Datenverlust schützen.
 
 ## 7. Öffentliches Repository
 
@@ -169,7 +218,7 @@ und andere Personen Daten eintragen.
 - [x] Die App lädt keine Nutzerdaten hoch. Der einzige Netzwerkzugriff ist der lesende Update-Abruf.
 - [x] Der Installer enthält keine Daten. Ein neuer Benutzer startet mit leerer App.
 - [x] `.gitignore` schließt Datendateien, Backups, Build-Ausgaben, `.env` und Logs aus.
-- [x] Ein Git-Hook blockiert Commits mit Datendateien (`daten*.json`, `fenster.json`, `Backups/`) oder
+- [x] Ein Git-Hook blockiert Commits mit Datendateien (`daten*.json`, `fenster.json`, `einstellungen.json`, `Backups/`) oder
       Zugangsdaten (Token-Muster, privaten Schlüsseln).
 - [x] Ein GitHub-Workflow prüft jeden Push zusätzlich auf Zugangsdaten und Datendateien.
 - [x] Testdaten sind ausgedacht (keine echten Kunden, Telefonnummern, Tickets, internen IPs).

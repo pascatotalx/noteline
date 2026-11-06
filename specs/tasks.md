@@ -24,6 +24,22 @@ Kleine, einzeln prüfbare Schritte in Abhängigkeitsreihenfolge. Jede Aufgabe ne
 | T-15 | `release.js` und erstes Release 1.0.0 | R-3 | [x] |
 | T-16 | Manueller Test: Installation, Benachrichtigung, Update 1.0.0 → 1.0.1 | U-1, U-2, H-6 | [ ] |
 
+## Meilenstein 1.1.0 – Arbeitsplatz-Anpassung
+
+| # | Aufgabe | Spec | Status |
+|---|---|---|---|
+| T-30 | Spec, Plan und Aufgaben für 1.1 | alle | [x] |
+| T-31 | Telefon- und Ticketnummer in der Schnellerfassung + Tests | H-1 | [x] |
+| T-32 | Ticket-Link-Vorlage, Prüfung + Tests | H-8 | [x] |
+| T-33 | `einstellungen.json` mit Übernahme von `fenster.json` + Tests, Datenschutz-Prüfung erweitern | D-1, R-1 | [x] |
+| T-34 | Infobereich-Symbol, Schließen/Minimieren verstecken, Beenden-Wege | A-3 | [x] |
+| T-35 | Flache Titelleiste mit Windows-Fensterknöpfen | A-1 | umgesetzt, Sichtprüfung offen |
+| T-36 | Hell/Dunkel/Wie Windows, Farben als Variablen | A-2 | [x] |
+| T-37 | Zweispaltiges Layout mit Notiz rechts | L-1 | [x] |
+| T-38 | Leere Spuren ausblenden, Uhr optional, Einstellungen neu ordnen | H-4, A-2 | [x] |
+| T-39 | Update-Benachrichtigung und stilles Update im Ruhezustand | U-2, K-2 | umgesetzt, Test mit Update 1.1.0 → 1.1.1 offen |
+| T-40 | Screenshots (schmal, breit, hell), README, CHANGELOG, Release 1.1.0 | R-2, R-3 | [ ] |
+
 ## Backlog
 
 | # | Aufgabe | Spec |

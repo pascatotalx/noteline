@@ -31,7 +31,7 @@ scripts/screenshot.js        README-Screenshot mit ausgedachten Demodaten
 specs/                       constitution, specification, plan, tasks
 src/main/                    main.js, storage.js, updater.js
 src/preload/preload.js
-src/renderer/                index.html, styles.css, logic.js, app.js, fonts/, icon.png
+src/renderer/                index.html, theme-init.js, styles.css, logic.js, app.js, fonts/, icon.png
 test/                        node:test-Tests
 ```
 
@@ -60,7 +60,8 @@ test/                        node:test-Tests
 `logic.normalize()` macht aus jeder gelesenen Datei (auch Version 1 des Prototyps) ein gültiges Modell
 (D-5). In Version 1 war `platzhalter[id]` ein String. Er wird dem ersten Platzhalter zugeordnet.
 
-`fenster.json`: `{ bounds, immerVorne }`.
+`einstellungen.json` (ab 1.1, vorher `fenster.json`): `{ bounds, immerVorne, theme, uhr, ticketLink, trayHinweis,
+updateGemeldet, startVersteckt }`. Gehört dem Hauptprozess, der Renderer liest und schreibt über IPC.
 
 ## 4. Speicher (`storage.js`) – D-1 bis D-4
 
@@ -82,12 +83,14 @@ test/                        node:test-Tests
 | `speichernSofort(json)` | sendSync | beim Schließen/Update (D-4) |
 | `immerVorne(an)`, `istImmerVorne()` | invoke | A-1 |
 | `autostart(an?)` | invoke | A-2, `app.setLoginItemSettings` |
-| `ordnerOeffnen(art)` | invoke | `daten` oder `backups` |
+| `ordnerOeffnen()` | invoke | Datenordner im Explorer |
+| `einstellungen()`, `einstellungSetzen(k, v)` | invoke | `theme`, `uhr`, `ticketLink` (A-2, H-8) |
 | `linkOeffnen(url)` | invoke | nur `http(s)` |
 | `erinnern({titel,text,id})` | invoke | H-6 |
 | `version()` | invoke | A-2 |
 | `updateSuchen()`, `updateInstallieren()` | invoke | U-2 |
-| `beiNotizOeffnen(fn)`, `beiUpdateStatus(fn)` | Event | Main → Renderer |
+| `beiNotizOeffnen(fn)`, `beiUpdateStatus(fn)`, `beiTheme(fn)` | Event | Main → Renderer |
+| `istSichtbar()`, `notizOffen(bool)` | invoke | Ruhezustand für stilles Update (K-2) |
 
 ## 6. Updates (`updater.js`) – U-2, K-1, K-2
 
@@ -123,7 +126,7 @@ Garbage Collector entfernt wird.
 | Ebene | Maßnahme |
 |---|---|
 | Laufzeit | Daten nur in `Dokumente\Noteline`, kein Upload, keine Telemetrie |
-| Repository | `.gitignore`: `daten*.json`, `fenster.json`, `Backups/`, `dist/`, `.env*`, `*.log` |
+| Repository | `.gitignore`: `daten*.json`, `fenster.json`, `einstellungen.json`, `Backups/`, `dist/`, `.env*`, `*.log` |
 | Commit | `.githooks/pre-commit` → `check-sensitive.js --staged`, aktiviert über `npm install` (`prepare`) |
 | Push | GitHub Action `check-sensitive.js --all` + GitHub Secret Scanning mit Push-Schutz |
 | Release | Upload über die Anmeldung von `gh`, kein Token in Dateien oder Umgebungsvariablen |
@@ -152,3 +155,44 @@ Version erhöhen: `npm version patch|minor --no-git-tag-version`, CHANGELOG erg�
 - `test/storage.test.js`: neu/ok/defekt, Schreibsperre, Migration, Backups über Datumswechsel, Aufräumen.
 - `test/check-sensitive.test.js`: erkennt Datendateien und Token, lässt saubere Dateien durch.
 - Manuell vor jedem Release: Installer installieren, Notiz anlegen, Rückruf in 1 min, Benachrichtigung prüfen.
+
+## 12. Erweiterungen in Version 1.1
+
+### Hintergrundbetrieb (A-3)
+- `Tray` mit `build/icon.png` (auf 16 px skaliert), Tooltip „Noteline", Klick → `zeigen()`,
+  Kontextmenü *Noteline öffnen*, *Nach Updates suchen*, *Beenden*.
+- `close` → `preventDefault()` + `hide()`, außer `beendet === true`. `minimize` → `hide()`.
+- `beendet` wird gesetzt durch: Tray *Beenden*, `app.on('before-quit')` (auch durch `quitAndInstall`) und
+  `win.on('session-end')` (Abmelden/Herunterfahren).
+- Erstes Verstecken: Benachrichtigung „Noteline läuft im Hintergrund weiter", Merker `trayHinweis`.
+
+### Titelleiste (A-1)
+- `titleBarStyle: 'hidden'` + `titleBarOverlay` (Höhe 44 px, Farben passend zum Theme).
+  Windows zeichnet Minimieren/Maximieren/Schließen selbst, Andocken (Snap) bleibt erhalten.
+- Die obere Zeile ist `-webkit-app-region: drag`, Knöpfe sind `no-drag`. Rechter Abstand über
+  `env(titlebar-area-width)`.
+
+### Erscheinungsbild (A-2)
+- Farben nur noch über CSS-Variablen, `:root[data-theme="light"]` überschreibt sie.
+- `theme` = `dunkel | hell | system`. Der Hauptprozess wertet `nativeTheme.shouldUseDarkColors` aus, setzt
+  Fensterhintergrund und Titelleisten-Farben und gibt das Ergebnis per Query-Parameter an die Seite
+  (kein Aufblitzen beim Start). Änderungen von Windows kommen über `nativeTheme.on('updated')`.
+
+### Breites Layout (L-1)
+- `main` enthält `#colList` und `#colSide`. `matchMedia('(min-width: 760px)')` schaltet `S.breit`.
+- Breit: `#colList` = Hotline, `#colSide` = Wissen oder die geöffnete Notiz. Schmal: wie bisher, Notiz als Blatt.
+- Der Notiz-Editor ist eine Funktion (`notizHtml`), die je nach Modus in `#colSide` oder in das Blatt
+  gerendert wird. Beim Moduswechsel wird eine offene Notiz umgehängt.
+- `render()` zeichnet `#colSide` nur neu, wenn dort keine Notiz offen ist.
+
+### Schnellerfassung (H-1) und Ticket-Link (H-8)
+- `logic.parseQuickInput` zieht zuerst Telefonnummer (`(+|0)` + mindestens 9 Ziffern, erlaubt: Leerzeichen,
+  `/`, `-`, Klammern) und Ticket (`#123…` oder „Ticket 123…") heraus, dann folgt die Kunde-Regel.
+- `logic.ticketUrl(vorlage, ticket)` liefert die URL oder `null`. `logic.pruefeTicketVorlage(v)` liefert eine
+  Fehlermeldung oder `null`.
+
+### Update-Hinweis und stilles Update (U-2, K-2)
+- `update-downloaded` → Windows-Benachrichtigung, wenn `updateGemeldet !== version`. Klick → `zeigen()`.
+- Jede Minute: Update bereit **und** Fenster versteckt **und** keine Notiz offen **und**
+  `powerMonitor.getSystemIdleTime() >= 600` → `startVersteckt = true` speichern, `quitAndInstall(true, true)`.
+  Beim nächsten Start mit `startVersteckt` bleibt das Fenster im Infobereich, der Merker wird gelöscht.
