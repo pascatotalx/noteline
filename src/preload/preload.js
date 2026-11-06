@@ -16,6 +16,7 @@ contextBridge.exposeInMainWorld('api', {
   erinnern: (daten) => ipcRenderer.invoke('erinnern', daten),
   notizOffen: (offen) => ipcRenderer.invoke('notizOffen', offen),
   version: () => ipcRenderer.invoke('version'),
+  kopieren: (text) => ipcRenderer.invoke('kopieren', text),
   updateSuchen: () => ipcRenderer.invoke('updateSuchen'),
   updateStatus: () => ipcRenderer.invoke('updateStatus'),
   updateInstallieren: () => ipcRenderer.invoke('updateInstallieren'),

@@ -29,7 +29,7 @@ let D = NL.normalize(null);
 const BREIT = window.matchMedia('(min-width: 760px)'); // L-1
 const S = {
   tab: 'hotline', q: '', openId: null, settingsOpen: false, rrOpen: false, breit: BREIT.matches,
-  copied: null, editW: null, wDraft: null, focusForm: false, armedDelete: false, firstRender: true,
+  copied: null, editW: null, wDraft: null, focusForm: false, wNeu: '', firstRender: true,
   schutz: null, ordner: '', version: '', update: { zustand: 'idle' }, autostart: { an: false, moeglich: false }, immerVorne: false,
   einst: { theme: 'dunkel', uhr: false, ticketLink: '' }, ticketEntwurf: null, ticketFehler: '',
 };
@@ -77,11 +77,6 @@ function rrLabel(iso) {
   if (diff > 1 && diff < 7) return fDay.format(d).replace('.', '') + ' ' + fTime.format(d);
   return fDate.format(d) + ' ' + fTime.format(d);
 }
-const toLocalInput = (iso) => {
-  if (!iso) return '';
-  const d = new Date(iso), p = (x) => String(x).padStart(2, '0');
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
-};
 const ticketUrl = (ticket) => NL.ticketUrl(S.einst.ticketLink, ticket);
 
 const PRIO = { hoch: { c: 'var(--pink)', l: 'Hoch' }, normal: { c: 'rgba(var(--fg),.5)', l: 'Normal' }, niedrig: { c: 'rgba(var(--fg),.16)', l: 'Niedrig' } };
@@ -95,15 +90,28 @@ const ICON = {
   edit: svg(14, 1.75, '<path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>'),
   ext: svg(14, 1.75, '<path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>'),
   saved: svg(13, 2.25, '<path d="M20 6 9 17l-5-5"/>', 'var(--lime-text)'),
+  stern: svg(16, 1.75, '<path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"/>'),
+  mail: svg(14, 1.75, '<rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>'),
 };
 
-let toastTimer;
-function toast(msg) {
-  const t = $('#toast'); t.textContent = msg; t.classList.remove('versteckt');
-  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.add('versteckt'), 1800);
+let toastTimer, rueckgaengigAktion = null;
+function toast(msg, mitRueckgaengig) {
+  const t = $('#toast');
+  t.innerHTML = esc(msg) + (mitRueckgaengig ? ' <button class="toast-btn" type="button" data-undo>Rückgängig</button>' : '');
+  t.classList.remove('versteckt');
+  if (!mitRueckgaengig) rueckgaengigAktion = null;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.classList.add('versteckt'); rueckgaengigAktion = null; }, mitRueckgaengig ? 6000 : 1800);
+}
+/** Löschen ohne Nachfrage, dafür 6 s Rückgängig (A-4). */
+function rueckgaengig(msg, wiederherstellen) { toast(msg, true); rueckgaengigAktion = wiederherstellen; }
+function rueckgaengigAusfuehren() {
+  const a = rueckgaengigAktion; rueckgaengigAktion = null;
+  $('#toast').classList.add('versteckt');
+  if (a) { a(); toast('Wiederhergestellt'); }
 }
 async function copyText(text, key) {
-  try { await navigator.clipboard.writeText(text); } catch {
+  try { if (window.api) await bridge.kopieren(text); else await navigator.clipboard.writeText(text); } catch {
     const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove();
   }
   S.copied = key; render();
@@ -120,7 +128,7 @@ function rowHtml(n) {
   return `<li class="row${done ? ' done' : ''}${aktiv ? ' active' : ''}">
     <span class="bar" style="background:${PRIO[n.prio].c}" title="Priorität ${PRIO[n.prio].l}"></span>
     <button class="row-main" type="button" data-open="${esc(n.id)}"${aktiv ? ' aria-current="true"' : ''}>
-      <span class="row-title"><span class="kunde">${esc(n.kunde || 'Ohne Kunde')}</span>${n.ticket ? `<span class="ticket" translate="no">${esc(n.ticket)}</span>` : ''}</span>
+      <span class="row-title"><span class="kunde">${esc(n.kunde || (n.ansprechpartner ? '' : 'Ohne Kunde'))}${n.ansprechpartner ? `<span class="ap">${n.kunde ? ' · ' : ''}${esc(n.ansprechpartner)}</span>` : ''}</span>${n.ticket ? `<span class="ticket" translate="no">${esc(n.ticket)}</span>` : ''}</span>
       <span class="snippet">${esc(NL.ersteZeile(n.text) || n.telefon || 'Keine Stichpunkte')}</span>
     </button>
     <span class="right num${st ? ' ' + st : ''}">${esc(right)}</span>
@@ -132,7 +140,7 @@ function renderHotline(anim) {
   if (!ls.length) {
     return S.q.trim()
       ? `<div class="empty${anim}"><strong>Keine Notiz gefunden</strong><span>Enter legt „${esc(S.q.trim())}“ als neue Notiz an.</span></div>`
-      : `<div class="empty${anim}"><strong>Noch keine Notizen</strong><span>Oben tippen und Enter drücken, oder Strg+N.<br>„Kunde: Stichpunkt“, Telefonnummern und #Ticketnummern werden automatisch erkannt.</span></div>`;
+      : `<div class="empty${anim}"><strong>Noch keine Notizen</strong><span>Oben tippen und Enter drücken, oder Strg+N.<br>„Kunde / Ansprechpartner: Stichpunkt“, Telefonnummern und #Ticketnummern werden automatisch erkannt.</span></div>`;
   }
   return ls.map((l, i) => {
     const open = !D.ui.closed[l.key] || !!S.q.trim();
@@ -143,73 +151,105 @@ function renderHotline(anim) {
   }).join('');
 }
 
-// ---------- Wissen (W-1 – W-3) ----------
-const genOutHtml = (w) => NL.fillTemplate(w.wert, D.ui.platzhalter[w.id]).split(' ').map(x => `<b>${esc(x)}</b>`).join(' ');
+// ---------- Wissen (W-1 – W-6) ----------
+const ART_LABEL = { telefon: 'Telefonnummer', email: 'E-Mail', link: 'Link', ip: 'IP-Adresse', port: 'Port', befehl: 'Befehl oder Text' };
+const istUrlVorlage = (w) => NL.wissenTyp(w.wert) === 'link';
+/** Fertiger Wert eines Eintrags: Platzhalter eingesetzt, in Links URL-sicher (W-4). */
+const wissenWert = (w) => NL.fillTemplate(w.wert, D.ui.platzhalter[w.id], { url: istUrlVorlage(w) });
+const genOutHtml = (w) => wissenWert(w).split(' ').map(x => `<b>${esc(x)}</b>`).join(' ');
 
-function renderWissen(anim) {
-  const q = S.q.trim().toLowerCase();
-  const items = D.wissen.filter(w => NL.passtWissen(w, q));
-  const gens = items.filter(w => NL.placeholders(w.wert).length);
-  let html = gens.map(w => {
-    const werte = D.ui.platzhalter[w.id] || {};
-    const felder = NL.placeholders(w.wert).map(name => `<label><span translate="no">${esc(name)}</span><input class="field" type="text" autocomplete="off" spellcheck="false" data-ph="${esc(w.id)}" data-phname="${esc(name)}" value="${esc(werte[name] || '')}" placeholder="${esc(name)} eingeben …"></label>`).join('');
-    const ok = S.copied === 'gen' + w.id;
-    return `<section class="gen${anim}">
-      <div class="gen-head"><h2 class="sec-title">${esc(w.titel)}</h2><button class="w-tool press" type="button" data-wedit="${esc(w.id)}" title="Bearbeiten"><span class="sr">Bearbeiten</span>${ICON.edit}</button></div>
-      <div class="gen-fields">${felder}</div>
-      <div class="gen-out"><code translate="no" data-genout="${esc(w.id)}">${genOutHtml(w)}</code><button class="btn-copy press${ok ? ' ok' : ''}" type="button" data-gencopy="${esc(w.id)}">${ok ? 'Kopiert' : 'Kopieren'}</button></div>
-      ${S.editW === w.id ? formHtml(w) : ''}
-    </section>`;
-  }).join('');
-  const rest = items.filter(w => !gens.includes(w));
-  const groups = [...new Set(rest.map(w => w.gruppe))].sort((a, b) => a.localeCompare(b, 'de'));
-  html += groups.map((g, gi) => `<section class="w-group${anim}" style="animation-delay:${(gi + 1) * 50}ms"><h2 class="sec-title">${esc(g)}</h2>${rest.filter(w => w.gruppe === g).map(w => {
-    if (S.editW === w.id) return formHtml(w);
-    const ok = S.copied === 'w' + w.id, url = NL.istLink(w.wert);
-    return `<div class="w-row">
-      <button class="w-main" type="button" data-wcopy="${esc(w.id)}" title="${url ? 'Link kopieren' : 'Kopieren'}"><span class="sr">${esc(w.titel)} kopieren</span></button>
-      <span class="w-titel">${esc(w.titel)}</span>
-      <span class="w-wert" translate="no">${esc(url ? w.wert.replace(/^https?:\/\//i, '') : w.wert)}</span>
-      <span class="w-side">
-        <span class="w-tools">${url ? `<button class="w-tool press" type="button" data-wopen="${esc(w.id)}" title="Im Browser öffnen"><span class="sr">Im Browser öffnen</span>${ICON.ext}</button>` : ''}<button class="w-tool press" type="button" data-wedit="${esc(w.id)}" title="Bearbeiten"><span class="sr">Bearbeiten</span>${ICON.edit}</button></span>
-        <span class="w-hint${ok ? ' ok' : ''}">${ok ? 'Kopiert' : (url ? 'Link' : 'Kopieren')}</span>
-      </span>
-    </div>`;
-  }).join('')}</section>`).join('');
-  if (S.editW === 'neu') html += formHtml({ id: 'neu', gruppe: groups[0] || '', titel: '', wert: '' });
-  else if (!q) {
-    if (!D.wissen.length) html += `<div class="empty${anim}"><strong>Noch keine Einträge</strong><span>Ports, IPs, Links und Befehle zum schnellen Kopieren. Ein Wert mit &lt;PLATZHALTER&gt; wird zum Ausfüll-Generator.</span></div>`;
-    html += `<button class="add-btn press" type="button" id="wAdd">+ Eintrag hinzufügen</button>`;
-  }
-  if (!items.length && q) html = `<div class="empty"><strong>Kein Wissen gefunden</strong><span>Kein Eintrag passt zu „${esc(S.q.trim())}“.</span></div>`;
-  const kopf = S.breit ? '<h2 class="sec-title" style="margin:10px 0 10px">Wissen</h2>' : '';
-  return `<div style="padding:0 6px">${kopf}${html}</div>`;
+function erkanntHtml(eingabe) {
+  const p = NL.parseWissenEingabe(eingabe);
+  if (!p.wert) return 'Name und Wert in einer Zeile, z. B. „Support-Hotline 0800 1234567“';
+  return `<span class="w-art">${esc(ART_LABEL[NL.wissenTyp(p.wert)])}</span> ${p.titel ? `Name: ${esc(p.titel)}` : 'ohne Namen'} · Enter speichert`;
 }
-function formHtml(w) {
-  const v = S.wDraft && S.wDraft.id === w.id ? S.wDraft : w; // angefangene Eingaben gehen nie verloren (W-1)
-  const groups = [...new Set(D.wissen.map(x => x.gruppe).filter(Boolean))];
-  return `<form class="w-form" data-wform="${esc(w.id)}">
-    <div class="grid">
-      <label>Gruppe<input class="field" name="gruppe" list="gruppen" value="${esc(v.gruppe)}" autocomplete="off" placeholder="z. B. Ports …"></label>
-      <label>Bezeichnung<input class="field" name="titel" value="${esc(v.titel)}" autocomplete="off" placeholder="z. B. Fernwartung …"></label>
+
+function wissenZeile(w, favIndex) {
+  if (S.editW === w.id) return wissenBearbeiten(w);
+  const typ = NL.wissenTyp(w.wert);
+  const phs = NL.placeholders(w.wert);
+  const ok = S.copied === 'w' + w.id;
+  const anzeige = phs.length ? w.wert : (typ === 'link' ? w.wert.replace(/^https?:\/\//i, '') : w.wert);
+  const tool = (attr, titel, icon) => `<button class="w-tool press" type="button" ${attr}="${esc(w.id)}" title="${titel}"><span class="sr">${titel}</span>${icon}</button>`;
+  const felder = phs.map(name => `<label><span translate="no">${esc(name)}</span><input class="field" type="text" autocomplete="off" spellcheck="false" data-ph="${esc(w.id)}" data-phname="${esc(name)}" value="${esc((D.ui.platzhalter[w.id] || {})[name] || '')}" placeholder="${esc(name)} …"></label>`).join('');
+  return `<div class="w-eintrag">
+    <div class="w-row">
+      <button class="w-star press${w.favorit ? ' an' : ''}" type="button" data-wfav="${esc(w.id)}" title="${w.favorit ? 'Aus Favoriten entfernen' : 'Als Favorit anheften'}" aria-pressed="${!!w.favorit}"><span class="sr">Favorit</span>${ICON.stern}</button>
+      <button class="w-main${w.titel ? '' : ' ohne-titel'}" type="button" data-wcopy="${esc(w.id)}" title="Kopieren">
+        ${w.titel ? `<span class="w-titel">${esc(w.titel)}</span>` : ''}<span class="w-wert" translate="no">${esc(anzeige)}</span>
+      </button>
+      <span class="w-side">
+        <span class="w-tools">${typ === 'link' ? tool('data-wopen', 'Im Browser öffnen', ICON.ext) : ''}${typ === 'email' ? tool('data-wmail', 'Mail schreiben', ICON.mail) : ''}${tool('data-wedit', 'Bearbeiten', ICON.edit)}</span>
+        <span class="w-hint${ok ? ' ok' : ''}">${ok ? 'Kopiert' : 'Kopieren'}</span>
+        ${favIndex >= 0 && favIndex < 9 ? `<span class="kbd" title="Mit Alt+${favIndex + 1} kopieren">Alt ${favIndex + 1}</span>` : ''}
+      </span>
     </div>
-    <label>Wert<input class="field mono" name="wert" value="${esc(v.wert)}" autocomplete="off" spellcheck="false" placeholder="Port, IP, Link oder Befehl mit &lt;PLATZHALTER&gt; …"></label>
-    <datalist id="gruppen">${groups.map(g => `<option value="${esc(g)}">`).join('')}</datalist>
-    <div class="actions">${w.id !== 'neu' ? `<button class="btn-ghost danger press" type="button" data-wdel="${esc(w.id)}">${S.armedDelete === 'w' + w.id ? 'Wirklich löschen?' : 'Löschen'}</button>` : ''}<span style="flex-grow:1"></span><button class="btn-ghost press" type="button" data-wcancel>Abbrechen</button><button class="btn-copy press" type="submit">Speichern</button></div>
+    ${phs.length ? `<div class="w-ph">${felder}<code translate="no" data-genout="${esc(w.id)}">${genOutHtml(w)}</code></div>` : ''}
+  </div>`;
+}
+
+function wissenBearbeiten(w) {
+  const v = S.wDraft && S.wDraft.id === w.id ? S.wDraft : w; // angefangene Eingaben gehen nie verloren (W-3)
+  return `<form class="w-edit" data-wform="${esc(w.id)}">
+    <input class="field" name="titel" value="${esc(v.titel)}" autocomplete="off" placeholder="Name …" aria-label="Name">
+    <input class="field mono" name="wert" value="${esc(v.wert)}" autocomplete="off" spellcheck="false" placeholder="Wert …" aria-label="Wert">
+    <div class="actions"><button class="btn-ghost danger press" type="button" data-wdel="${esc(w.id)}">Löschen</button><span style="flex-grow:1"></span><button class="btn-ghost press" type="button" data-wcancel>Abbrechen</button><button class="btn-copy press" type="submit">Speichern</button></div>
   </form>`;
 }
-function setEditW(id) { S.editW = id; S.wDraft = null; S.armedDelete = false; S.focusForm = !!id; }
+
+function renderWissen(anim) {
+  const abschnitte = NL.wissenAbschnitte(D.wissen, S.q);
+  const favs = NL.favoriten(D.wissen);
+  const kopf = S.breit ? '<h2 class="sec-title w-kopf">Wissen</h2>' : '';
+  const neu = `<div class="w-add${anim}">
+      <input class="field" id="wNeu" type="text" autocomplete="off" spellcheck="false" placeholder="Neuer Eintrag …" value="${esc(S.wNeu)}" aria-label="Neuer Eintrag">
+      <button class="btn-copy press" type="button" data-wneu>Hinzufügen</button>
+    </div>
+    <div class="w-erkannt" id="wErkannt">${erkanntHtml(S.wNeu)}</div>`;
+  let liste;
+  if (!D.wissen.length) {
+    liste = `<div class="empty${anim}"><strong>Noch kein Wissen abgelegt</strong><span>Telefonnummern, E-Mails, Links, IPs, Ports und Befehle, die du oft brauchst.<br>Ein Klick kopiert sie, ein Stern heftet sie oben an.</span></div>`;
+  } else if (!abschnitte.length) {
+    liste = `<div class="empty"><strong>Kein Wissen gefunden</strong><span>Kein Eintrag passt zu „${esc(S.q.trim())}“.</span></div>`;
+  } else {
+    liste = abschnitte.map((a, i) => `<section class="w-sec${anim}" style="animation-delay:${i * 40}ms">
+      <h2 class="sec-title">${esc(a.name)}<span class="count num">${a.items.length}</span></h2>
+      ${a.items.map(w => wissenZeile(w, favs.indexOf(w))).join('')}
+    </section>`).join('');
+  }
+  return `<div class="wissen">${kopf}${neu}${liste}</div>`;
+}
+
+function wissenNeu() {
+  if (schreibgeschuetzt()) return;
+  const p = NL.parseWissenEingabe(S.wNeu);
+  if (!p.wert) return toast('Erst einen Wert eintippen');
+  const w = NL.normalizeWissen({ ...p, id: NL.uid() });
+  D.wissen.push(w);
+  S.wNeu = ''; save(); render();
+  $('#wNeu')?.focus();
+  toast(`Gespeichert unter „${NL.wissenAbschnitte([w])[0].name}“`);
+}
+
+/** Kopiert einen Wissens-Eintrag (Klick, Alt+1–9, Strg+Enter). */
+function wissenKopieren(w, meldung) {
+  copyText(wissenWert(w), 'w' + w.id);
+  if (meldung) toast(`„${w.titel || w.wert}“ kopiert`);
+}
+
+function setEditW(id) { S.editW = id; S.wDraft = null; S.focusForm = !!id; }
 
 // ---------- Rendering ----------
 /** Sichert Formularentwurf und Fokus, damit Neuzeichnen im Hintergrund nichts zerstört (W-1). */
 function zustandSichern(bereich) {
-  const f = bereich.querySelector('.w-form');
-  if (f && f.dataset.wform === S.editW) { const fd = new FormData(f); S.wDraft = { id: f.dataset.wform, gruppe: fd.get('gruppe'), titel: fd.get('titel'), wert: fd.get('wert') }; }
+  const f = bereich.querySelector('.w-edit');
+  if (f && f.dataset.wform === S.editW) { const fd = new FormData(f); S.wDraft = { id: f.dataset.wform, titel: fd.get('titel'), wert: fd.get('wert') }; }
   const a = document.activeElement;
   if (!a || !bereich.contains(a)) return null;
   let sel = null;
   if (a.dataset.ph) sel = `[data-ph="${CSS.escape(a.dataset.ph)}"][data-phname="${CSS.escape(a.dataset.phname)}"]`;
-  else if (a.name && a.closest('.w-form')) sel = `.w-form [name="${a.name}"]`;
+  else if (a.name && a.closest('.w-edit')) sel = `.w-edit [name="${a.name}"]`;
+  else if (a.id === 'wNeu') sel = '#wNeu';
   return sel ? { sel, start: a.selectionStart, end: a.selectionEnd } : null;
 }
 function render() {
@@ -226,7 +266,7 @@ function render() {
   }
   list.scrollTop = stL;
   if (S.focusForm) {
-    const f = main.querySelector(S.editW === 'neu' ? '.w-form [name="gruppe"]' : '.w-form [name="titel"]');
+    const f = main.querySelector('.w-edit [name="titel"]');
     if (f) f.focus();
     S.focusForm = false;
   } else if (fokus) {
@@ -278,6 +318,7 @@ function notizHtml(n, imBlatt) {
     <div class="s-head">
       <div class="s-titlewrap">
         <input class="s-kunde" id="sKunde" type="text" autocomplete="off" placeholder="Kunde …" value="${esc(n.kunde)}" aria-label="Kunde">
+        <input class="s-ap" id="sAp" type="text" autocomplete="off" placeholder="Ansprechpartner …" value="${esc(n.ansprechpartner)}" aria-label="Ansprechpartner">
         <span class="s-meta num" id="sMeta"></span>
       </div>
       <button class="btn-white press" type="button" data-close>Fertig</button>
@@ -290,7 +331,7 @@ function notizHtml(n, imBlatt) {
         <label>Telefon<input class="field" id="sTel" type="tel" inputmode="tel" autocomplete="off" placeholder="Rückrufnummer …" value="${esc(n.telefon)}" style="font-family:var(--body)"></label>
       </div>
       <textarea class="s-text" id="sText" aria-label="Stichpunkte" placeholder="Stichpunkte zum Anruf …">${esc(n.text)}</textarea>
-      <div class="s-foot"><span class="saved">${ICON.saved}<span>${S.schutz ? 'Schutzmodus: nicht gespeichert' : 'Automatisch gespeichert'}</span></span><button class="link-danger" type="button" id="sDel">Notiz löschen</button></div>
+      <div class="s-foot"><span class="saved">${ICON.saved}<span>${S.schutz ? 'Schutzmodus: nicht gespeichert' : 'Automatisch gespeichert'}</span></span><button class="btn-ghost press" type="button" id="sKopie" title="Kunde, Ansprechpartner, Telefon, Ticket, Rückruf und Stichpunkte als Text kopieren">Als Text kopieren</button><button class="link-danger" type="button" id="sDel">Löschen</button></div>
     </div>`;
 }
 
@@ -299,7 +340,7 @@ function openSheet(id, instant, focusKunde) {
   const n = findN(id); if (!n) return;
   if (S.settingsOpen) closeSheet();
   if (S.openId && S.openId !== id) notizSchliessen();
-  S.openId = id; S.armedDelete = false; S.rrOpen = false;
+  S.openId = id; S.rrOpen = false;
   if (S.breit) {
     $('#sheetHost').innerHTML = '';
     const side = $('#colSide');
@@ -318,7 +359,7 @@ function openSheet(id, instant, focusKunde) {
     x[key] = e.target.value; x.geaendert = nowIso(); save(); renderSheetMeta(); scheduleListRefresh();
     if (key === 'ticket') ticketLinkAnzeigen();
   });
-  bind('#sKunde', 'kunde'); bind('#sTicket', 'ticket'); bind('#sTel', 'telefon'); bind('#sText', 'text');
+  bind('#sKunde', 'kunde'); bind('#sAp', 'ansprechpartner'); bind('#sTicket', 'ticket'); bind('#sTel', 'telefon'); bind('#sText', 'text');
   bridge.notizOffen(true);
   render();
   (focusKunde ? $('#sKunde') : $('#sText')).focus();
@@ -356,7 +397,11 @@ function renderSheetMeta() {
 function renderSheetBits() {
   const n = findN(S.openId); if (!n) return;
   renderSheetMeta();
-  const chip = (label, pressed, act, c) => `<button class="chip press" type="button" aria-pressed="${pressed}" data-act="${act}"${c ? ` style="--c:${c}"` : ''}>${label}</button>`;
+  renderChips(n);
+  renderRR(n);
+}
+function renderChips(n) {
+  const chip =(label, pressed, act, c) => `<button class="chip press" type="button" aria-pressed="${pressed}" data-act="${act}"${c ? ` style="--c:${c}"` : ''}>${label}</button>`;
   const st = NL.rrState(n);
   $('#sChips').innerHTML = [
     chip('Offen', n.status === 'offen', 'st:offen', 'var(--cyan)'),
@@ -368,19 +413,29 @@ function renderSheetBits() {
     '<span class="chip-sep" aria-hidden="true"></span>',
     chip(n.rueckruf ? 'Rückruf ' + esc(rrLabel(n.rueckruf)) : '+ Rückruf', !!n.rueckruf || S.rrOpen, 'rr', st === 'over' ? 'var(--pink)' : 'var(--amber)'),
   ].join('');
+}
+/** Rückruf-Eingabe: Datum steht schon auf heute, nur die Uhrzeit fehlt (H-6). */
+function renderRR(n) {
   $('#sRR').innerHTML = S.rrOpen ? `<div class="rr">
-      <input class="field" type="datetime-local" id="rrInput" value="${toLocalInput(n.rueckruf)}" aria-label="Rückruf Zeitpunkt">
+      <input class="field" type="date" id="rrDatum" value="${NL.rueckrufDatum(n.rueckruf)}" aria-label="Rückruf Datum">
+      <input class="field rr-zeit" type="time" id="rrZeit" value="${NL.rueckrufZeit(n.rueckruf)}" aria-label="Rückruf Uhrzeit">
       <button class="btn-ghost press" type="button" data-act="rr:+1">+1 Std.</button>
       <button class="btn-ghost press" type="button" data-act="rr:morgen">Morgen 9:00</button>
       ${n.rueckruf ? '<button class="btn-ghost danger press" type="button" data-act="rr:weg">Entfernen</button>' : ''}
     </div>` : '';
-  const inp = $('#rrInput');
-  if (inp) inp.addEventListener('change', (e) => { const v = e.target.value; setRR(v ? new Date(v).toISOString() : null); });
+  const uebernehmen = () => {
+    const iso = NL.rueckrufAus($('#rrDatum').value, $('#rrZeit').value);
+    if (iso && iso !== n.rueckruf) setRR(iso, true);
+  };
+  for (const id of ['#rrDatum', '#rrZeit']) { const el = $(id); if (el) el.addEventListener('change', uebernehmen); }
 }
-function setRR(iso) {
+/** Rückruf setzen. `ausEingabe` = aus den Feldern, dann bleibt die Eingabe stehen und behält den Fokus. */
+function setRR(iso, ausEingabe) {
   const n = findN(S.openId); if (!n) return;
   n.rueckruf = iso; n.erinnertFuer = null; n.geaendert = nowIso();
-  save(); renderSheetBits(); render();
+  save();
+  if (ausEingabe) { renderSheetMeta(); renderChips(n); } else renderSheetBits();
+  render();
 }
 
 /** Fensterbreite wechselt zwischen ein- und zweispaltig: offene Notiz umhängen, nichts verlieren (L-1). */
@@ -452,6 +507,8 @@ function renderSettings() {
       <div class="keys">
         <span class="kbd">Strg K</span><span>Suchen / notieren</span>
         <span class="kbd">Strg N</span><span>Neue Notiz</span>
+        <span class="kbd">Strg Enter</span><span>Besten Wissens-Treffer der Suche kopieren</span>
+        <span class="kbd">Alt 1–9</span><span>Favoriten kopieren</span>
         <span class="kbd">Strg 1 / 2</span><span>Hotline / Wissen (schmales Fenster)</span>
         <span class="kbd">Strg Alt H</span><span>Noteline von überall nach vorne holen</span>
         <span class="kbd">Esc</span><span>Schließen / Suche leeren</span>
@@ -492,7 +549,7 @@ async function settingAction(k, btn) {
 function checkReminders() {
   const faellig = NL.faelligeErinnerungen(D.notizen);
   for (const n of faellig) {
-    bridge.erinnern({ titel: 'Rückruf: ' + (n.kunde || 'Ohne Kunde'), text: [n.telefon, NL.ersteZeile(n.text)].filter(Boolean).join(' · ') || 'Rückruf fällig', id: n.id });
+    bridge.erinnern({ titel: 'Rückruf: ' + (NL.kundeMitAnsprechpartner(n) || 'Ohne Kunde'), text: [n.telefon, NL.ersteZeile(n.text)].filter(Boolean).join(' · ') || 'Rückruf fällig', id: n.id });
     n.erinnertFuer = n.rueckruf;
   }
   if (faellig.length) { save(); render(); }
@@ -527,28 +584,31 @@ document.addEventListener('click', (e) => {
     else if (k === 'rr' && v === 'weg') { S.rrOpen = false; return setRR(null); }
     return renderSheetBits();
   }
-  if (t.id === 'sDel') {
-    if (!S.armedDelete) {
-      S.armedDelete = true; t.textContent = 'Wirklich löschen?'; t.classList.add('armed');
-      clearTimeout(t._x); t._x = setTimeout(() => { S.armedDelete = false; if (t.isConnected) { t.textContent = 'Notiz löschen'; t.classList.remove('armed'); } }, 3000);
-      return;
-    }
-    notizSchliessen(true); render(); $('#q').focus(); return toast('Notiz gelöscht');
+  if (t.id === 'sDel') { // A-4: sofort löschen, mit Rückgängig
+    const n = findN(S.openId); if (!n) return;
+    const index = D.notizen.indexOf(n), kopie = { ...n };
+    notizSchliessen(true); render(); $('#q').focus();
+    return rueckgaengig('Notiz gelöscht', () => { D.notizen.splice(Math.min(index, D.notizen.length), 0, kopie); save(); render(); });
   }
+  if (t.id === 'sKopie') { const n = findN(S.openId); if (n) { copyText(NL.notizAlsText(n), null); toast('Notiz als Text kopiert'); } return; }
+  if (d.undo !== undefined) return rueckgaengigAusfuehren();
   if (t.id === 'qCreate') return createNote(S.q, false);
   if (t.id === 'pin') return setImmerVorne(!S.immerVorne);
   if (t.id === 'settings') return S.settingsOpen ? closeSheet() : openSettings();
-  if (t.id === 'wAdd') { if (schreibgeschuetzt()) return; setEditW('neu'); return render(); }
-  if (d.wcopy) { const w = D.wissen.find(x => x.id === d.wcopy); return w && copyText(w.wert, 'w' + w.id); }
-  if (d.wopen) { const w = D.wissen.find(x => x.id === d.wopen); return w && bridge.linkOeffnen(w.wert.trim()); }
-  if (d.gencopy) { const w = D.wissen.find(x => x.id === d.gencopy); return w && copyText(NL.fillTemplate(w.wert, D.ui.platzhalter[w.id]), 'gen' + w.id); }
+  if ('wneu' in d) return wissenNeu();
+  const w = D.wissen.find(x => x.id === (d.wcopy || d.wopen || d.wmail || d.wfav || d.wdel));
+  if (d.wcopy) return w && wissenKopieren(w);
+  if (d.wopen) { const url = w && wissenWert(w).trim(); return url && bridge.linkOeffnen(url); }
+  if (d.wmail) return w && bridge.linkOeffnen('mailto:' + w.wert.trim());
+  if (d.wfav) { if (!w || schreibgeschuetzt()) return; w.favorit = !w.favorit; save(); render(); return toast(w.favorit ? 'Als Favorit angeheftet' : 'Aus Favoriten entfernt'); }
   if (d.wedit) { setEditW(S.editW === d.wedit ? null : d.wedit); return render(); }
   if ('wcancel' in d) { setEditW(null); return render(); }
-  if (d.wdel) {
-    const key = 'w' + d.wdel;
-    if (S.armedDelete !== key) { S.armedDelete = key; render(); setTimeout(() => { if (S.armedDelete === key) { S.armedDelete = false; render(); } }, 3000); return; }
-    D.wissen = D.wissen.filter(w => w.id !== d.wdel); delete D.ui.platzhalter[d.wdel];
-    setEditW(null); save(); render(); return toast('Eintrag gelöscht');
+  if (d.wdel) { // A-4
+    if (!w) return;
+    const index = D.wissen.indexOf(w), werte = D.ui.platzhalter[w.id];
+    D.wissen = D.wissen.filter(x => x !== w); delete D.ui.platzhalter[w.id];
+    setEditW(null); save(); render();
+    return rueckgaengig('Eintrag gelöscht', () => { D.wissen.splice(Math.min(index, D.wissen.length), 0, w); if (werte) D.ui.platzhalter[w.id] = werte; save(); render(); });
   }
 });
 document.addEventListener('submit', (e) => {
@@ -556,14 +616,14 @@ document.addEventListener('submit', (e) => {
   e.preventDefault();
   if (schreibgeschuetzt()) return;
   const fd = new FormData(f);
-  const val = NL.normalizeWissen({ id: f.dataset.wform, gruppe: fd.get('gruppe'), titel: String(fd.get('titel') || '').trim(), wert: String(fd.get('wert') || '').trim() });
-  if (!val.titel || !val.wert) return toast('Bezeichnung und Wert ausfüllen');
-  if (f.dataset.wform === 'neu') D.wissen.push({ ...val, id: NL.uid() });
-  else { const w = D.wissen.find(x => x.id === f.dataset.wform); if (w) Object.assign(w, { gruppe: val.gruppe, titel: val.titel, wert: val.wert }); }
+  const titel = String(fd.get('titel') || '').trim(), wert = String(fd.get('wert') || '').trim();
+  if (!wert) return toast('Der Wert darf nicht leer sein');
+  const w = D.wissen.find(x => x.id === f.dataset.wform); if (w) Object.assign(w, { titel, wert });
   setEditW(null); save(); render(); toast('Gespeichert');
 });
 document.addEventListener('input', (e) => {
   if (e.target.id === 'setTicket') { S.ticketEntwurf = e.target.value; return; }
+  if (e.target.id === 'wNeu') { S.wNeu = e.target.value; $('#wErkannt').innerHTML = erkanntHtml(S.wNeu); return; }
   const id = e.target.dataset && e.target.dataset.ph;
   if (!id) return;
   const w = D.wissen.find(x => x.id === id); if (!w) return;
@@ -572,13 +632,30 @@ document.addEventListener('input', (e) => {
   const out = $(`[data-genout="${CSS.escape(id)}"]`); if (out) out.innerHTML = genOutHtml(w);
 });
 document.addEventListener('change', (e) => { if (e.target.id === 'setTicket') ticketLinkSpeichern(e.target.value); });
+document.addEventListener('keydown', (e) => {
+  if (e.target.id === 'wNeu' && e.key === 'Enter') { e.preventDefault(); wissenNeu(); }
+  if (e.target.id === 'wNeu' && e.key === 'Escape' && S.wNeu) { e.preventDefault(); e.stopPropagation(); S.wNeu = ''; e.target.value = ''; $('#wErkannt').innerHTML = erkanntHtml(''); }
+}, true);
+/** Bester Wissens-Treffer zur aktuellen Suche (W-6). */
+const ersterWissensTreffer = () => (NL.wissenAbschnitte(D.wissen, S.q)[0] || { items: [] }).items[0];
 $('#q').addEventListener('input', (e) => { S.q = e.target.value; render(); });
 $('#q').addEventListener('keydown', (e) => {
+  const wissenTab = !S.breit && S.tab === 'wissen';
+  if (e.key === 'Enter' && (e.ctrlKey || wissenTab) && S.q.trim()) {
+    e.preventDefault();
+    const w = ersterWissensTreffer();
+    return w ? wissenKopieren(w, true) : toast('Kein Wissens-Eintrag gefunden');
+  }
   if (e.key === 'Enter' && (S.breit || S.tab === 'hotline') && S.q.trim()) { e.preventDefault(); createNote(S.q, true); }
   if (e.key === 'Escape' && S.q) { e.preventDefault(); S.q = ''; e.target.value = ''; render(); }
 });
 document.addEventListener('keydown', (e) => {
   const k = e.key.toLowerCase();
+  if (e.altKey && !e.ctrlKey && /^[1-9]$/.test(e.key)) { // W-5: Favoriten kopieren
+    e.preventDefault();
+    const w = NL.favoriten(D.wissen)[+e.key - 1];
+    return w ? wissenKopieren(w, true) : toast(`Kein Favorit auf Alt+${e.key}`);
+  }
   if (e.ctrlKey && !e.altKey && k === 'k') { e.preventDefault(); closeSheet(); $('#q').focus(); $('#q').select(); }
   else if (e.ctrlKey && !e.altKey && k === 'n') { e.preventDefault(); closeSheet(); createNote('', true); }
   else if (e.ctrlKey && !e.altKey && k === '1') { e.preventDefault(); setTab('hotline'); }

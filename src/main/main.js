@@ -1,7 +1,7 @@
 // Noteline – Hauptprozess
 'use strict';
 const {
-  app, BrowserWindow, ipcMain, shell, screen, globalShortcut, Notification, Tray, Menu, nativeImage, nativeTheme, powerMonitor,
+  app, BrowserWindow, ipcMain, shell, screen, globalShortcut, Notification, Tray, Menu, nativeImage, nativeTheme, powerMonitor, clipboard,
 } = require('electron');
 const path = require('path');
 const fs = require('fs');
@@ -10,7 +10,8 @@ const { createUpdater } = require('./updater');
 
 const APP_ID = 'de.pascatotalx.noteline';
 const RENDERER = path.join(__dirname, '..', 'renderer');
-const ICON = path.join(RENDERER, 'icon.png');
+const ICON = path.join(RENDERER, 'icon.png');     // Benachrichtigungen
+const ICON_ICO = path.join(RENDERER, 'icon.ico'); // Fenster, Taskleiste, Infobereich (alle Größen 16–256 px)
 const TITELLEISTE = 44; // Höhe der eigenen Titelleiste in px (A-1)
 const RUHE_SEKUNDEN = 10 * 60; // stilles Update erst nach 10 min ohne Eingabe (K-2)
 
@@ -92,7 +93,7 @@ function fensterErstellen() {
     ...bounds,
     minWidth: 360, minHeight: 420,
     title: 'Noteline',
-    icon: ICON,
+    icon: ICON_ICO,
     show: false,
     alwaysOnTop: !SCREENSHOT && !!e.immerVorne,
     backgroundColor: FARBEN[aktiv].hintergrund,
@@ -181,8 +182,8 @@ function benachrichtigen(titel, text, beiKlick, { bleiben = false } = {}) {
 
 // ---------- Infobereich (A-3) ----------
 function trayErstellen() {
-  const bild = nativeImage.createFromPath(ICON).resize({ width: 32, height: 32 });
-  tray = new Tray(bild);
+  // Die .ico enthält eine eigene 16-px-Fassung, Windows wählt passend zur Bildschirmskalierung.
+  tray = new Tray(nativeImage.createFromPath(ICON_ICO));
   tray.setToolTip('Noteline');
   tray.setContextMenu(Menu.buildFromTemplate([
     { label: 'Noteline öffnen', click: zeigen },
@@ -269,8 +270,10 @@ function ipcEinrichten() {
   });
 
   ipcMain.handle('ordnerOeffnen', () => shell.openPath(storage.pfade.ordner));
-  ipcMain.handle('linkOeffnen', (_e, url) => { if (istHttp(url)) shell.openExternal(url); });
+  ipcMain.handle('linkOeffnen', (_e, url) => { if (istHttp(url) || /^mailto:[^\s<>"]+$/i.test(String(url))) shell.openExternal(url); });
   ipcMain.handle('version', () => app.getVersion());
+  // Kopieren über den Hauptprozess: funktioniert auch ohne Fensterfokus (W-3, W-5, H-10)
+  ipcMain.handle('kopieren', (_e, text) => { clipboard.writeText(String(text ?? '')); return true; });
   ipcMain.handle('notizOffen', (_e, offen) => { notizOffen = !!offen; });
 
   ipcMain.handle('erinnern', (_e, { titel, text, id }) => {
