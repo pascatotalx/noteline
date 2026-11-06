@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1880" height="512" viewBox="0 0 940 256" role="img" aria-label="Noteline One Flow horizontal wordmark"><title>Noteline One Flow horizontal wordmark</title><g transform="translate(18 0)">
+<path d="M69 184 V86 C69 71 78 67 92 67 H101 C113 67 120 75 127 91 L152 156 C159 171 167 178 185 178 H190" fill="none" stroke="#F6F8FC" stroke-width="21" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M190 178 V87" fill="none" stroke="#BEE600" stroke-width="21" stroke-linecap="round"/>
+<circle cx="69" cy="184" r="13" fill="#00E7FF" stroke="#1B1D22" stroke-width="3.5"/>
+<circle cx="190" cy="65" r="13" fill="#BEE600"/>
+<path d="M105 206 H155" fill="none" stroke="#8C929B" stroke-width="8" stroke-linecap="round"/>
+</g>
+<text x="315" y="171" fill="#F6F8FC" font-family="Space Grotesk, Inter, Arial, sans-serif" font-weight="700" font-size="109" letter-spacing="-2">Noteline</text></svg>

@@ -1,7 +1,8 @@
 # Lizenzen von Drittanbietern
 
-Noteline selbst steht unter der [MIT-Lizenz](LICENSE). Das App-Icon (`build/icon.png`) wurde für dieses
-Projekt erstellt und fällt ebenfalls unter die MIT-Lizenz.
+Noteline selbst steht unter der [MIT-Lizenz](LICENSE). Das Logo „One Flow“ ([`brand/`](brand/), daraus
+abgeleitet `build/icon.*` und `src/renderer/icon.*`) wurde für dieses Projekt mit KI-Unterstützung erstellt und
+fällt ebenfalls unter die MIT-Lizenz.
 
 Noteline enthält die folgenden Bestandteile Dritter. Alle sind frei und kostenlos nutzbar, auch kommerziell.
 
