@@ -1,7 +1,7 @@
 {
   "name": "noteline",
   "productName": "Noteline",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Schneller Notizblock und Nachschlagewerk für den Hotline-Alltag – lokal, ohne Cloud.",
   "author": "Pascal Uffmann",
   "license": "MIT",
@@ -50,7 +50,7 @@
           ]
         }
       ],
-      "icon": "build/icon.png"
+      "icon": "build/icon.ico"
     },
     "nsis": {
       "oneClick": true,
