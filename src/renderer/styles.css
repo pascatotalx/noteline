@@ -281,3 +281,12 @@ nav button[aria-current="page"]{color:var(--inv-fg)}
 .vs-tipp{font-weight:600;margin-right:2px}
 .vs-vorschlag{display:inline-flex;align-items:center;gap:5px;height:22px;padding:0 8px;border-radius:6px;background:var(--raised);font-family:var(--mono);font-size:11px;animation:fade 160ms ease both}
 .vs-vorschlag b{font-family:var(--display);font-weight:600}
+.vs-hinweis code{font-family:var(--mono);font-size:11px;padding:1px 5px;border-radius:4px;background:var(--raised)}
+
+/* Vorschau beim Anlegen einer Notiz (H-11) */
+.q-vorschau{display:flex;flex-direction:column;gap:6px;animation:fade 160ms ease both}
+.q-vorschau .vs-chip{height:26px;max-width:260px}
+.empty b{font-weight:600}
+.empty code.beispiel{margin-top:6px;font-family:var(--mono);font-size:12px;padding:6px 10px;border-radius:6px;background:var(--surface);border:1px solid rgba(var(--fg),.1)}
+.empty .erkennt{justify-content:center;margin:4px 0 6px}
+.empty .erkennt .vs-chip{height:26px}

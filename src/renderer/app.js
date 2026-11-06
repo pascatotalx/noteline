@@ -140,7 +140,7 @@ function renderHotline(anim) {
   if (!ls.length) {
     return S.q.trim()
       ? `<div class="empty${anim}"><strong>Keine Notiz gefunden</strong><span>Enter legt „${esc(S.q.trim())}“ als neue Notiz an.</span></div>`
-      : `<div class="empty${anim}"><strong>Noch keine Notizen</strong><span>Oben tippen und Enter drücken, oder Strg+N.<br>„Kunde / Ansprechpartner: Stichpunkt“, Telefonnummern und #Ticketnummern werden automatisch erkannt.</span></div>`;
+      : `<div class="empty${anim}"><strong>Noch keine Notizen</strong><span>Oben lostippen und Enter drücken. Noteline erkennt dabei selbst:</span><div class="vs-chips erkennt"><span class="vs-chip an"><b>Kunde</b><span>Praxis …, … GmbH</span></span><span class="vs-chip an"><b>Ansprechpartner</b><span>Frau / Herr …</span></span><span class="vs-chip an"><b>Telefon</b><span>0123 456789</span></span><span class="vs-chip an"><b>Ticket</b><span>#12345</span></span></div><span>Der Rest wird zum Stichpunkt. Zum Beispiel:</span><code class="beispiel">Praxis Sonnenschein, Frau Müller, Connector startet neu</code></div>`;
   }
   return ls.map((l, i) => {
     const open = !D.ui.closed[l.key] || !!S.q.trim();
@@ -152,7 +152,7 @@ function renderHotline(anim) {
 }
 
 // ---------- Wissen (W-1 – W-6) ----------
-const ART_LABEL = { telefon: 'Telefonnummer', email: 'E-Mail', link: 'Link', ip: 'IP-Adresse', port: 'Port', befehl: 'Befehl oder Text' };
+const ART_LABEL = { telefon: 'Telefonnummer', email: 'E-Mail', link: 'Link', ip: 'IP-Adresse', port: 'Port', befehl: 'Befehl / Text' };
 const istUrlVorlage = (w) => NL.wissenTyp(w.wert) === 'link';
 /** Fertiger Wert eines Eintrags: Platzhalter eingesetzt, in Links URL-sicher (W-4). */
 const wissenWert = (w) => NL.fillTemplate(w.wert, D.ui.platzhalter[w.id], { url: istUrlVorlage(w) });
@@ -161,7 +161,7 @@ const genOutHtml = (w) => wissenWert(w).split(' ').map(x => `<b>${esc(x)}</b>`).
 // Vorschläge für den Wert mit neutralen Beispielen (W-1)
 const WERT_VORSCHLAEGE = [
   ['Link', 'https://…'], ['IP-Adresse', '192.0.2.10'], ['Telefon', '0800 1234567'],
-  ['E-Mail', 'name@example.org'], ['Port', '5938'], ['Befehl oder Text', 'Name: Text'],
+  ['E-Mail', 'name@example.org'], ['Port', '5938'], ['Befehl', 'ipconfig /all'], ['Text', 'Name: beliebiger Text'],
 ];
 const ABSCHNITT = { telefon: 'Telefon und E-Mail', email: 'Telefon und E-Mail', link: 'Links', ip: 'IP-Adressen', port: 'Ports', befehl: 'Befehle und Texte' };
 
@@ -173,7 +173,11 @@ function vorschauHtml(eingabe) {
   const wert = chip(v.typ ? ART_LABEL[v.typ] : 'Wert', v.wert, v.zustand === 'fertig', 'z. B. 192.0.2.10 oder https://…');
   let hinweis;
   if (v.zustand === 'leer') hinweis = 'Erst den Namen, dann ein Leerzeichen und den Wert.';
-  else if (v.zustand === 'fertig') hinweis = `<span>Enter speichert unter <b>${esc(ABSCHNITT[v.typ])}</b>.</span>`;
+  else if (v.zustand === 'fertig') {
+    const phs = NL.placeholders(v.wert);
+    hinweis = `<span>Enter speichert unter <b>${esc(ABSCHNITT[v.typ])}</b>.</span>`
+      + (phs.length ? `<span>${phs.map(n => `<code>&lt;${esc(n)}&gt;</code>`).join(' ')} ${phs.length > 1 ? 'bekommen' : 'bekommt'} ein Eingabefeld.</span>` : '');
+  }
   else if (v.leerzeichen) hinweis = `<span class="vs-tipp">Als Wert passt:</span>${WERT_VORSCHLAEGE.map(([art, bsp]) => `<span class="vs-vorschlag"><b>${art}</b> ${esc(bsp)}</span>`).join('')}`;
   else hinweis = 'Jetzt ein Leerzeichen und den Wert eintippen. Oder Enter speichert alles als Text.';
   return `<div class="vs-chips">${name}${wert}</div><div class="vs-hinweis">${hinweis}</div>`;
@@ -297,7 +301,7 @@ function render() {
   $('#pill').style.transform = S.tab === 'hotline' ? 'translateX(0)' : 'translateX(116px)';
   document.querySelectorAll('nav button').forEach(x => x.setAttribute('aria-current', x.dataset.tab === S.tab ? 'page' : 'false'));
 }
-function setTab(t) { if (S.tab === t) return; S.tab = t; S.q = ''; $('#q').value = ''; setEditW(null); S.firstRender = true; render(); }
+function setTab(t) { if (S.tab === t) return; S.tab = t; S.q = ''; $('#q').value = ''; setEditW(null); S.firstRender = true; render(); notizVorschau(); }
 
 function renderBanner() {
   let html = '';
@@ -321,7 +325,7 @@ function createNote(raw, instant) {
   if (schreibgeschuetzt()) return;
   const n = NL.neueNotiz(raw);
   D.notizen.unshift(n); save();
-  S.q = ''; $('#q').value = '';
+  S.q = ''; $('#q').value = ''; notizVorschau();
   S.tab = 'hotline';
   openSheet(n.id, instant, !n.kunde);
 }
@@ -653,7 +657,19 @@ document.addEventListener('keydown', (e) => {
 }, true);
 /** Bester Wissens-Treffer zur aktuellen Suche (W-6). */
 const ersterWissensTreffer = () => (NL.wissenAbschnitte(D.wissen, S.q)[0] || { items: [] }).items[0];
-$('#q').addEventListener('input', (e) => { S.q = e.target.value; render(); });
+/** Live-Vorschau beim Anlegen einer Notiz (H-11): zeigt, welche Felder erkannt werden. */
+function notizVorschau() {
+  const box = $('#qVorschau');
+  const aktiv = !!S.q.trim() && (S.breit || S.tab === 'hotline');
+  box.hidden = !aktiv;
+  if (!aktiv) return;
+  const p = NL.parseQuickInput(S.q);
+  const chip = (label, wert) => `<span class="vs-chip${wert ? ' an' : ''}"><b>${label}</b><span>${wert ? esc(wert) : '<i>–</i>'}</span></span>`;
+  const tipp = p.kunde ? '' : ' Tipp: Kunde zuerst, z. B. „Praxis Sonnenschein, …“ oder „Name: …“.';
+  box.innerHTML = `<div class="vs-chips">${chip('Kunde', p.kunde)}${chip('Ansprechpartner', p.ansprechpartner)}${chip('Telefon', p.telefon)}${chip('Ticket', p.ticket)}${chip('Stichpunkt', p.text)}</div>
+    <div class="vs-hinweis"><span>Enter legt die Notiz an, alles bleibt danach änderbar.${tipp}</span></div>`;
+}
+$('#q').addEventListener('input', (e) => { S.q = e.target.value; render(); notizVorschau(); });
 $('#q').addEventListener('keydown', (e) => {
   const wissenTab = !S.breit && S.tab === 'wissen';
   if (e.key === 'Enter' && (e.ctrlKey || wissenTab) && S.q.trim()) {
@@ -662,7 +678,7 @@ $('#q').addEventListener('keydown', (e) => {
     return w ? wissenKopieren(w, true) : toast('Kein Wissens-Eintrag gefunden');
   }
   if (e.key === 'Enter' && (S.breit || S.tab === 'hotline') && S.q.trim()) { e.preventDefault(); createNote(S.q, true); }
-  if (e.key === 'Escape' && S.q) { e.preventDefault(); S.q = ''; e.target.value = ''; render(); }
+  if (e.key === 'Escape' && S.q) { e.preventDefault(); S.q = ''; e.target.value = ''; render(); notizVorschau(); }
 });
 document.addEventListener('keydown', (e) => {
   const k = e.key.toLowerCase();
