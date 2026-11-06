@@ -58,6 +58,7 @@ Was sich geändert hat, steht im [Changelog](CHANGELOG.md) und bei jedem [Releas
 ### Wissen
 - **Eine Zeile reicht:** `Support-Hotline 0800 1234567` oder `Download https://…` eintippen, Enter. Noteline erkennt
   Telefonnummer, E-Mail, Link, IP-Adresse, Port oder Befehl und sortiert den Eintrag selbst ein, ohne Gruppen.
+  Eine Live-Vorschau zeigt beim Tippen, was als Name und was als Wert erkannt wird, und schlägt passende Werte vor.
 - **Ein Klick kopiert** den Wert. Links lassen sich öffnen, E-Mail-Adressen direkt anschreiben.
 - **Favoriten** mit dem Stern stehen ganz oben und sind mit **Alt+1 bis Alt+9** ohne Suchen kopierbar.
 - **Strg+Enter** in der Suche kopiert den besten Treffer.

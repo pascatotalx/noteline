@@ -3,6 +3,14 @@
 Alle nennenswerten Änderungen an Noteline. Format nach [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
+## [1.2.1] – 2026-11-06
+
+### Verbessert
+- **Neuer Wissens-Eintrag auf einen Blick verständlich:** Unter dem Eingabefeld zeigen zwei Anzeigen live, was als
+  **Name** und was als **Wert** erkannt wird. Sie leuchten auf, sobald sie belegt sind, und die Wert-Anzeige nennt
+  die Art (z. B. IP-Adresse). Nach dem Namen und einem Leerzeichen erscheinen Vorschläge mit Beispielen, was als
+  Wert passt: Link, IP-Adresse, Telefon, E-Mail, Port oder Befehl. Eine Zeile darunter sagt, was Enter speichert.
+
 ## [1.2.0] – 2026-11-06
 
 ### Neu
@@ -79,6 +87,7 @@ Erste veröffentlichte Version. Neuaufbau des Prototyps „Hotline-Notizen“ na
 - Eine ins Fenster gezogene Datei ersetzt nicht mehr die App-Oberfläche.
 - Strengere Sicherheitseinstellungen (Sandbox, Content-Security-Policy ohne Inline-Skripte).
 
+[1.2.1]: https://github.com/pascatotalx/noteline/releases/tag/v1.2.1
 [1.2.0]: https://github.com/pascatotalx/noteline/releases/tag/v1.2.0
 [1.1.0]: https://github.com/pascatotalx/noteline/releases/tag/v1.1.0
 [1.0.1]: https://github.com/pascatotalx/noteline/releases/tag/v1.0.1
