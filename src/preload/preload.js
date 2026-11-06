@@ -23,4 +23,10 @@ contextBridge.exposeInMainWorld('api', {
   beiNotizOeffnen: (fn) => ipcRenderer.on('notizOeffnen', (_e, id) => fn(id)),
   beiUpdateStatus: (fn) => ipcRenderer.on('updateStatus', (_e, s) => fn(s)),
   beiTheme: (fn) => ipcRenderer.on('theme', (_e, t) => fn(t)),
+  statusDaten: () => ipcRenderer.invoke('statusDaten'),
+  statusPruefen: () => ipcRenderer.invoke('statusPruefen'),
+  statusEinstellungen: (patch) => ipcRenderer.invoke('statusEinstellungen', patch),
+  statusQuelleTesten: (url) => ipcRenderer.invoke('statusQuelleTesten', url),
+  beiStatus: (fn) => ipcRenderer.on('status', (_e, d) => fn(d)),
+  beiStatusOeffnen: (fn) => ipcRenderer.on('statusOeffnen', () => fn()),
 });

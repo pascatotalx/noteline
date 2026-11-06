@@ -7,6 +7,7 @@ const path = require('path');
 const fs = require('fs');
 const { createStorage } = require('./storage');
 const { createUpdater } = require('./updater');
+const statusMonitor = require('./status');
 
 const APP_ID = 'de.pascatotalx.noteline';
 const RENDERER = path.join(__dirname, '..', 'renderer');
@@ -231,6 +232,81 @@ function updateInstallieren() {
   updater.installieren();
 }
 
+// ---------- Statusmonitor (S-1 – S-4) ----------
+let statusErgebnisse = [];
+let statusTimer = null;
+let statusLaeuft = false;
+
+const statusKonfig = () => statusMonitor.statusEinstellungen(einstellungen().status);
+
+function statusDaten() {
+  const k = statusKonfig();
+  const ergebnisse = k.aktiv ? statusErgebnisse : [];
+  return { aktiv: k.aktiv, intervall: k.intervall, quellen: k.quellen, ergebnisse, gesamt: statusMonitor.gesamt(ergebnisse),
+    laeuft: statusLaeuft, vorlagen: statusMonitor.VORLAGEN.map(v => v.id) };
+}
+
+function statusMelden(m) {
+  const art = m.zustand === 'ausfall' ? 'Ausfall' : m.zustand === 'wartung' ? 'Wartung' : 'Störung';
+  const titel = m.typ === 'behoben' ? `Behoben: ${m.name}` : m.typ === 'besser' ? `Teilweise behoben: ${m.name}` : `${art}: ${m.name}`;
+  const text = m.typ === 'stoerung' ? [m.titel, m.text].filter(Boolean).join(' – ').slice(0, 240) || 'Der Dienst meldet eine Störung.'
+    : m.typ === 'behoben' ? 'Der Dienst meldet wieder normalen Betrieb.' : 'Die Lage hat sich verbessert, ist aber noch nicht ganz behoben.';
+  benachrichtigen(titel, text, () => { zeigen(); senden('statusOeffnen'); }, { bleiben: true });
+}
+
+async function statusPruefen() {
+  const k = statusKonfig();
+  if (!k.aktiv || statusLaeuft) return statusDaten();
+  statusLaeuft = true;
+  senden('status', statusDaten());
+  try {
+    const neu = await statusMonitor.pruefeAlle(k.quellen, fetch);
+    const alt = einstellungen().statusLetzter;
+    if (Array.isArray(alt)) for (const m of statusMonitor.aenderungen(alt, neu)) statusMelden(m);
+    // Zum Vergleichen merken; bei „unbekannt“ bleibt der letzte bekannte Stand (keine Doppelmeldungen nach Netzwerkaussetzern)
+    const merken = neu.map(n => (n.zustand === 'unbekannt' && Array.isArray(alt) && alt.find(a => a.id === n.id)) || n)
+      .map(({ id, name, zustand, meldungen }) => ({ id, name, zustand, meldungen: (meldungen || []).map(({ schluessel, zustand: z, titel }) => ({ schluessel, zustand: z, titel })) }));
+    storage.speichereEinstellungen({ statusLetzter: merken });
+    statusErgebnisse = neu;
+  } finally {
+    statusLaeuft = false;
+  }
+  const d = statusDaten();
+  senden('status', d);
+  return d;
+}
+
+function statusZeitplan() {
+  clearInterval(statusTimer);
+  statusTimer = null;
+  const k = statusKonfig();
+  if (!k.aktiv || SCREENSHOT) return;
+  statusTimer = setInterval(statusPruefen, k.intervall * 60 * 1000);
+}
+
+/** Einstellungen aus dem Renderer prüfen und übernehmen. */
+function statusEinstellungSetzen(patch) {
+  const alt = statusKonfig();
+  const neu = { ...alt };
+  if (typeof patch.aktiv === 'boolean') neu.aktiv = patch.aktiv;
+  if ([5, 15, 30].includes(patch.intervall)) neu.intervall = patch.intervall;
+  if (Array.isArray(patch.quellen)) {
+    neu.quellen = patch.quellen.slice(0, 30).map(q => ({
+      id: String(q.id).slice(0, 40), name: String(q.name || '').trim().slice(0, 60) || 'Dienst', art: q.art,
+      url: String(q.url || '').slice(0, 500), link: String(q.link || q.url || '').slice(0, 500), aktiv: !!q.aktiv,
+    })).filter(q => ['ti', 'statuspage', 'erreichbar'].includes(q.art) && istHttp(q.url));
+  }
+  const eingeschaltet = neu.aktiv && !alt.aktiv;
+  const patchSpeichern = { status: statusMonitor.statusEinstellungen(neu) };
+  if (eingeschaltet || !neu.aktiv) { patchSpeichern.statusLetzter = null; statusErgebnisse = []; } // nach dem Einschalten nichts Altes melden (S-4)
+  storage.speichereEinstellungen(patchSpeichern);
+  statusZeitplan();
+  if (neu.aktiv && (eingeschaltet || Array.isArray(patch.quellen))) statusPruefen();
+  const d = statusDaten();
+  senden('status', d);
+  return d;
+}
+
 // ---------- IPC ----------
 const ERLAUBTE_EINSTELLUNGEN = {
   theme: (v) => ['dunkel', 'hell', 'system'].includes(v),
@@ -285,6 +361,11 @@ function ipcEinrichten() {
   ipcMain.handle('updateSuchen', () => updater.suchen());
   ipcMain.handle('updateStatus', () => updater.status);
   ipcMain.handle('updateInstallieren', () => updateInstallieren());
+
+  ipcMain.handle('statusDaten', () => statusDaten());
+  ipcMain.handle('statusPruefen', () => statusPruefen());
+  ipcMain.handle('statusEinstellungen', (_e, patch) => statusEinstellungSetzen(patch && typeof patch === 'object' ? patch : {}));
+  ipcMain.handle('statusQuelleTesten', (_e, url) => statusMonitor.erkenneArt(String(url || '').trim(), fetch));
 }
 
 // ---------- Start ----------
@@ -301,6 +382,7 @@ if (!SCREENSHOT && !app.requestSingleInstanceLock()) {
     storage = createStorage(datenOrdner());
     updater = createUpdater(updateStatusMelden);
     ipcEinrichten();
+    if (SCREENSHOT && process.env.NOTELINE_SCREENSHOT_STATUS) { try { statusErgebnisse = JSON.parse(process.env.NOTELINE_SCREENSHOT_STATUS); } catch {} }
     fensterErstellen();
     nativeTheme.on('updated', () => { if (themaWahl() === 'system') themaAnwenden(); });
     if (!SCREENSHOT) {
@@ -309,6 +391,8 @@ if (!SCREENSHOT && !app.requestSingleInstanceLock()) {
       if (!globalShortcut.register('Control+Alt+H', zeigen)) console.warn('Strg+Alt+H ist bereits belegt.');
       updater.start();
       setInterval(stillesUpdatePruefen, 60 * 1000);
+      statusZeitplan();
+      if (statusKonfig().aktiv) setTimeout(statusPruefen, 5000);
     }
   });
   app.on('before-quit', () => { beendet = true; });
