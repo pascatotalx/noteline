@@ -43,13 +43,13 @@ test/                        node:test-Tests
   "notizen": [{
     "id": "lq2x8k3abcd",           // Zeit-basiert + Zufall
     "erstellt": "ISO", "geaendert": "ISO",
-    "kunde": "", "ticket": "", "telefon": "", "text": "",
+    "kunde": "", "ansprechpartner": "", "ticket": "", "telefon": "", "text": "",   // ansprechpartner ab 1.2
     "status": "offen|wartet|erledigt",
     "prio": "hoch|normal|niedrig",
     "rueckruf": "ISO|null",
     "erinnertFuer": "ISO|null"     // Rückrufzeitpunkt, für den schon erinnert wurde (H-6)
   }],
-  "wissen": [{ "id": "", "gruppe": "", "titel": "", "wert": "" }],
+  "wissen": [{ "id": "", "titel": "", "wert": "", "favorit": false, "gruppe": "" }], // gruppe nur noch aus 1.0/1.1, ungenutzt
   "ui": {
     "closed": { "erledigt": true },                   // eingeklappte Spuren (H-4)
     "platzhalter": { "<wissen-id>": { "IP": "…" } }   // letzte Vorlagenwerte (W-2)
@@ -196,3 +196,18 @@ Version erhöhen: `npm version patch|minor --no-git-tag-version`, CHANGELOG erg�
 - Jede Minute: Update bereit **und** Fenster versteckt **und** keine Notiz offen **und**
   `powerMonitor.getSystemIdleTime() >= 600` → `startVersteckt = true` speichern, `quitAndInstall(true, true)`.
   Beim nächsten Start mit `startVersteckt` bleibt das Fenster im Infobereich, der Merker wird gelöscht.
+
+## 13. Wissen neu (Version 1.2)
+
+- `logic.wissenTyp(wert)` → `telefon | email | link | ip | port | befehl`. Reihenfolge der Prüfung: Link, E-Mail,
+  IPv4 (optional mit `/Maske` oder `:Port`), Port (1–65535), Telefon (+ oder 0, mindestens 6 Ziffern), sonst Befehl/Text.
+- `logic.parseWissenEingabe(text)` → `{ titel, wert }`: erst `Name: Wert`, sonst erkannter Wert im Text
+  (Link → E-Mail → IP → Telefon → Port am Ende), der Rest ist der Name.
+- `logic.wissenAbschnitte(liste, suche)` liefert die Abschnitte in fester Reihenfolge, Favoriten zuerst.
+- `logic.fillTemplate(wert, werte, { url: true })` kodiert eingesetzte Werte mit `encodeURIComponent`.
+- `logic.notizAlsText(n)` für H-10.
+- Kopieren läuft über IPC `kopieren` → `clipboard.writeText` im Hauptprozess. Die Zwischenablage-API des Renderers
+  scheitert, wenn das Fenster keinen Fokus hat (z. B. bei Alt+1 direkt nach einem Fensterwechsel).
+- Rückgängig (A-4): gelöschtes Objekt samt Position wird 6 s im Speicher gehalten. Der Toast bekommt einen Knopf.
+- Alt+1–9 (W-5) wirken nur, solange Noteline den Fokus hat. Bewusst kein globales Kürzel, damit andere Programme
+  ihre Alt-Kombinationen behalten.

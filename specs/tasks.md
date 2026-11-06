@@ -40,11 +40,25 @@ Kleine, einzeln prüfbare Schritte in Abhängigkeitsreihenfolge. Jede Aufgabe ne
 | T-39 | Update-Benachrichtigung und stilles Update im Ruhezustand | U-2, K-2 | umgesetzt, Test mit Update 1.1.0 → 1.1.1 offen |
 | T-40 | Screenshots (schmal, breit, hell), README, CHANGELOG, Release 1.1.0 | R-2, R-3 | [ ] |
 
+## Meilenstein 1.2.0 – Ansprechpartner und Logo
+
+| # | Aufgabe | Spec | Status |
+|---|---|---|---|
+| T-41 | Logo „One Flow": Icons, Infobereich, Titelleiste, README, `brand/` | R-4 | [x] |
+| T-42 | Feld Ansprechpartner: Datenmodell, Schnellerfassung, Suche + Tests | H-9, D-5 | [x] |
+| T-43 | Feld Ansprechpartner: Notiz, Listenzeile, Rückruf-Benachrichtigung | H-9 | [x] |
+| T-45 | Rückruf: Datum vorbelegt mit heute, Uhrzeit separat | H-6 | [x] |
+| T-46 | Wissen: Typ-Erkennung, Eingabe-Parser, URL-Kodierung + Tests | W-1, W-2, W-4 | [x] |
+| T-47 | Wissen: neue Übersicht, Zeilen-Aktionen, Bearbeiten in der Zeile | W-1 – W-3 | [x] |
+| T-48 | Favoriten mit Alt+1–9, Strg+Enter kopiert Treffer | W-5, W-6 | [x] |
+| T-49 | Rückgängig beim Löschen | A-4 | [x] |
+| T-50 | Notiz als Text kopieren + Test | H-10 | [x] |
+| T-44 | Screenshots, README, CHANGELOG, Release 1.2.0 | R-2, R-3 | [ ] |
+
 ## Backlog
 
 | # | Aufgabe | Spec |
 |---|---|---|
 | T-20 | Import aus Notepad++ (Trennregel mit Pascal klären) | B-1 |
+| T-24 | Erledigte Notizen archivieren | B-5 |
 | T-21 | Notiz als Ticket-Text exportieren | B-2 |
-| T-22 | Feld Ansprechpartner in Notiz, Liste und Suche | B-3 |
-| T-23 | Neues Logo einbauen (Icon, Infobereich, Titelleiste, README) | B-4 |

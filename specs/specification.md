@@ -3,7 +3,7 @@
 Beschreibt **was** Noteline kann und **warum**. Das Wie steht in `plan.md`.
 Die Kennungen (z. B. `H-3`) werden in `tasks.md`, im Code und in den Tests referenziert.
 
-Stand: Version 1.1.0 (06.11.2026). `[x]` = umgesetzt und getestet, `[ ]` = offen oder nur manuell prüfbar (T-16).
+Stand: Version 1.2.0 (06.11.2026). `[x]` = umgesetzt und getestet, `[ ]` = offen oder nur manuell prüfbar (T-16).
 
 ---
 
@@ -43,7 +43,7 @@ damit ich beim Anruf nichts verpasse.
 - [x] Strg+N legt von überall eine leere Notiz an. Der Cursor steht im Feld *Kunde*.
 - [x] Eine Notiz, die beim Schließen komplett leer ist, wird verworfen.
 
-**H-2 Notiz bearbeiten.** Eine Notiz hat die Felder Kunde, Ticket, Telefon und Freitext.
+**H-2 Notiz bearbeiten.** Eine Notiz hat die Felder Kunde, Ansprechpartner, Ticket, Telefon und Freitext.
 - [x] Jede Änderung wird automatisch gespeichert (spätestens 0,25 s nach der letzten Eingabe).
 - [x] Die Notiz zeigt, wann sie angelegt und zuletzt geändert wurde.
 - [x] Fertig, Esc oder ein Klick neben die Notiz schließen sie.
@@ -66,6 +66,9 @@ Groß-/Kleinschreibung. Während der Suche sind alle Spuren aufgeklappt. Esc lee
 
 **H-6 Rückruf-Erinnerung.**
 - [x] Eine Notiz kann einen Rückrufzeitpunkt haben. Schnellwahl: *+1 Std.*, *Morgen 9:00*, freie Eingabe.
+- [x] Die freie Eingabe hat getrennte Felder für Datum und Uhrzeit. Das Datum steht beim Öffnen schon auf
+      **heute** (bzw. auf dem vorhandenen Rückruftag), sodass nur die Uhrzeit eingetragen werden muss. Sobald eine
+      Uhrzeit steht, ist der Rückruf gesetzt.
 - [ ] Zum fälligen Zeitpunkt (Prüfung mindestens alle 30 s) erscheint eine Windows-Benachrichtigung mit
       Kunde, Telefon und erster Zeile. Ein Klick darauf öffnet die Notiz.
 - [ ] Die Rückruf-Benachrichtigung bleibt unten rechts stehen, bis sie angeklickt oder geschlossen wird, und
@@ -75,7 +78,19 @@ Groß-/Kleinschreibung. Während der Suche sind alle Spuren aufgeklappt. Esc lee
 - [x] Pro Rückrufzeitpunkt wird genau einmal erinnert. Ein neuer Zeitpunkt löst erneut aus.
 - [x] Der Reiter *Hotline* zeigt die Zahl der heute fälligen und überfälligen Rückrufe als Badge.
 
-**H-7 Löschen.** Löschen braucht einen zweiten Klick innerhalb von 3 s („Wirklich löschen?").
+**H-10 Notiz als Text kopieren.** Damit die Notiz ohne Abtippen ins Ticketsystem kommt.
+- [x] Ein Knopf *Als Text kopieren* in der Notiz kopiert Kunde, Ansprechpartner, Telefon, Ticket, Status,
+      Rückruf und Stichpunkte als lesbaren Text. Leere Felder fehlen.
+
+**H-9 Ansprechpartner.** Damit klar ist, mit wem telefoniert wurde bzw. wer beim Kunden zuständig ist.
+- [x] Das Feld *Ansprechpartner* steht in der Notiz direkt unter dem Kunden.
+- [x] Die Listenzeile zeigt ihn hinter dem Kunden (z. B. „Beispiel AG · Frau Muster").
+- [x] Die Suche findet Notizen auch über den Ansprechpartner.
+- [x] Schnellerfassung: `Kunde / Ansprechpartner: Stichpunkt` füllt beide Felder. Getrennt wird nur an ` / `
+      mit Leerzeichen, damit Namen wie „A/B GmbH" ganz bleiben.
+- [x] Die Rückruf-Benachrichtigung nennt den Ansprechpartner mit.
+
+**H-7 Löschen.** Siehe A-4 (ab 1.2.0 mit Rückgängig statt zweitem Klick).
 
 **H-8 Ticket im Ticketsystem öffnen.**
 - [x] In den Einstellungen lässt sich eine Link-Vorlage mit `<TICKET>` hinterlegen,
@@ -86,21 +101,44 @@ Groß-/Kleinschreibung. Während der Suche sind alle Spuren aufgeklappt. Esc lee
 
 ### Bereich Wissen (Nachschlagewerte)
 
-**W-1 Einträge.** Ein Eintrag hat Gruppe, Bezeichnung und Wert. Einträge erscheinen nach Gruppe sortiert.
-- [x] Ein Klick auf die Zeile kopiert den Wert. Die Zeile zeigt kurz „Kopiert".
-- [x] Ist der Wert ein `http(s)`-Link, gibt es zusätzlich *Im Browser öffnen*.
-- [x] Anlegen, bearbeiten und löschen (mit zweitem Klick zur Bestätigung) direkt in der Liste.
-- [x] **Ein angefangenes Formular verliert nie Eingaben**, auch nicht durch Erinnerungen, Uhrzeit-Aktualisierung
-      oder Kopiervorgänge im Hintergrund.
+Überarbeitet für 1.2.0 nach Rückmeldung von Pascal: Gruppe, Bezeichnung und Wert als Formular waren zu umständlich,
+die Gruppe musste immer wieder gleich eingetippt werden. Vorbild sind Snippet- und Clipboard-Werkzeuge
+(Raycast, Alfred, Ditto): **Name + Wert, Typ automatisch, Favoriten, alles per Tastatur**.
 
-**W-2 Vorlagen mit Platzhaltern.** Enthält ein Wert `<NAME>`, wird der Eintrag zum Generator.
+**W-1 Einträge anlegen in einer Zeile.**
+- [x] Oben im Bereich Wissen steht immer ein Eingabefeld „Neuer Eintrag“. Enter legt den Eintrag an.
+- [x] Erkannt werden: `Name: Wert` (Doppelpunkt mit Leerzeichen danach) oder ein Name mit einem erkennbaren Wert
+      darin: Link, E-Mail, IP-Adresse, Telefonnummer oder Port als letztes Wort. Sonst ist alles der Wert.
+- [x] Unter dem Feld zeigt ein Hinweis live, was erkannt wurde (z. B. „Link · Name: Firmware Kartenterminal“).
+- [x] Der Name ist optional. Ohne Namen zeigt die Zeile nur den Wert.
+
+**W-2 Übersicht ohne Gruppen.**
+- [x] Einträge ordnen sich **automatisch nach Art**: *Favoriten*, *Telefon und E-Mail*, *Links*, *IP-Adressen*,
+      *Ports*, *Befehle und Texte*. Innerhalb einer Art alphabetisch. Leere Arten werden ausgeblendet.
+- [x] Alle Einträge sind jederzeit durchscrollbar. Die Suche filtert nur, wenn etwas eingetippt ist.
+- [x] Vorhandene Einträge mit Gruppe aus 1.0/1.1 bleiben erhalten und werden ebenfalls nach Art sortiert.
+
+**W-3 Aktionen passend zur Art.**
+- [x] Klick auf die Zeile kopiert den Wert. Die Zeile zeigt kurz „Kopiert“.
+- [x] Links haben zusätzlich *Öffnen*, E-Mail-Adressen *Mail schreiben*.
+- [x] Bearbeiten direkt in der Zeile (Name und Wert), Löschen mit *Rückgängig* (A-4).
+- [x] **Ein angefangenes Bearbeiten verliert nie Eingaben**, auch nicht durch Erinnerungen oder Aktualisierung im Hintergrund.
+
+**W-4 Vorlagen mit Platzhaltern.** Enthält ein Wert `<NAME>`, bekommt die Zeile Eingabefelder.
 - [x] Für jeden **unterschiedlichen** Platzhalter gibt es ein Eingabefeld. Gleichnamige Platzhalter werden
       gemeinsam ersetzt.
-- [x] Die Vorschau zeigt den fertigen Wert. Leere Felder zeigen weiter `<NAME>`.
-- [x] Sonderzeichen in der Eingabe (z. B. `$`, `&`) werden wörtlich übernommen.
+- [x] Leere Felder zeigen weiter `<NAME>`. Sonderzeichen (z. B. `$`, `&`) werden wörtlich übernommen.
 - [x] Die zuletzt eingegebenen Werte bleiben gespeichert.
+- [x] In **Links** werden eingesetzte Werte URL-sicher kodiert (Leerzeichen, `&`, `?` usw.).
 
-**W-3 Suchen.** Das Eingabefeld filtert im Bereich Wissen über Gruppe, Bezeichnung und Wert.
+**W-5 Favoriten.**
+- [x] Ein Stern an jeder Zeile macht den Eintrag zum Favoriten. Favoriten stehen ganz oben.
+- [x] Die ersten neun Favoriten lassen sich mit **Alt+1 bis Alt+9** kopieren, auch ohne den Bereich Wissen
+      zu öffnen. Die Zeile zeigt das Kürzel an.
+
+**W-6 Suchen und per Tastatur kopieren.**
+- [x] Das Eingabefeld oben filtert über Name und Wert.
+- [x] **Strg+Enter** kopiert den ersten Wissens-Treffer. In der schmalen Ansicht im Reiter Wissen reicht Enter.
 
 ### Bedienung allgemein
 
@@ -131,6 +169,10 @@ Groß-/Kleinschreibung. Während der Suche sind alle Spuren aufgeklappt. Esc lee
 - [x] Schalter *Mit Windows starten* und *Immer im Vordergrund*
 - [x] Speicherort als anklickbarer Pfad (`Dokumente\Noteline`), der den Ordner im Explorer öffnet.
       Kein eigener Backup-Knopf.
+
+**A-4 Rückgängig statt Nachfragen.** (Best Practice: Bestätigungen werden aus Gewohnheit weggeklickt.)
+- [x] Löschen einer Notiz oder eines Wissens-Eintrags passiert sofort. Ein Hinweis „Gelöscht · Rückgängig“ bleibt
+      6 Sekunden sichtbar, ein Klick holt den Eintrag unverändert zurück.
 
 **A-3 Läuft im Hintergrund.** Noteline wird nicht versehentlich beendet.
 - [x] Das Schließen-Kreuz und das Minimieren verstecken das Fenster. Noteline läuft im Infobereich der
@@ -195,10 +237,8 @@ Standardwerte, statt abzustürzen.
 ## 5. Offene Punkte / Backlog
 
 - **B-1 Import aus Notepad++**: bestehende Textdatei einlesen und in Notizen aufteilen. Trennregel klären.
-- **B-2 Export** einer Notiz als Text für das Ticketsystem (Format wie Skill „Ticket schreiben").
-- **B-3 Feld Ansprechpartner** (06.11.2026): Notizen bekommen ein Feld *Ansprechpartner*, also mit wem telefoniert
-  wurde bzw. wer beim Kunden zuständig ist. Es soll in der Liste sichtbar und durchsuchbar sein. Wunsch von Pascal, noch nicht eingeplant.
-- **B-4 Neues Logo** (06.11.2026): Pascal liefert Logo-Dateien. Einbauen als App-Icon, Symbol im Infobereich, Titelleiste und README.
+- **B-2 Export** im Format wie Skill „Ticket schreiben" (der einfache Text-Export ist H-10).
+- **B-5 Erledigte Notizen archivieren**: ältere erledigte Notizen automatisch aus der Liste nehmen, durchsuchbar halten.
 
 ## 6. Entscheidungen (Clarify)
 
@@ -227,6 +267,12 @@ und andere Personen Daten eintragen.
 - [x] Testdaten sind ausgedacht (keine echten Kunden, Telefonnummern, Tickets, internen IPs).
 - [x] Veröffentlicht wird über die Anmeldung von `gh`. Kein Token in Dateien, Skripten oder Umgebungsvariablen.
 - [x] Commits verwenden die GitHub-noreply-Adresse statt einer privaten E-Mail-Adresse.
+
+**R-4 Logo „One Flow".** (06.11.2026, von Pascal geliefert)
+- [x] Vektorquellen liegen in `brand/`, daraus abgeleitet `build/icon.ico` (16–256 px) und `build/icon.png`.
+- [ ] Installer, Programm, Taskleiste und Infobereich nutzen das neue Icon.
+- [x] Die Titelleiste zeigt das Logo-Symbol. Der helle Strich folgt dem Theme, damit es auch im hellen Modus sichtbar ist.
+- [x] Das README zeigt das App-Icon.
 
 **R-2 Gepflegter Auftritt.**
 - [x] README mit Kurzbeschreibung, Screenshot, Installation, Funktionen, Tastenkürzeln, Datenschutz und
