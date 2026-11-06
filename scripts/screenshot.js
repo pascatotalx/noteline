@@ -19,7 +19,7 @@ const demo = {
   version: 2,
   notizen: [
     n('d1', 'Praxis Sonnenschein', '#10234', 'Kartenterminal meldet Verbindungsfehler\nNeustart Konnektor besprochen', { prio: 'hoch', erstellt: h(8, 40), rueckruf: h(23, 0), erinnertFuer: h(23, 0) }),
-    n('d2', 'Muster Logistik GmbH', '#10251', 'Drucker im Lager druckt leere Seiten', { erstellt: h(9, 15) }),
+    n('d2', 'Muster Logistik GmbH', '#10251', 'Drucker im Lager druckt leere Seiten\nTreiber neu installiert, Testseite ok\nKunde meldet sich, falls es wieder auftritt', { erstellt: h(9, 15), telefon: '+49 123 4567890' }),
     n('d3', 'Beispiel & Söhne', '', 'Fragt nach Zugang für neue Mitarbeiterin', { erstellt: tag(-1, 14) }),
     n('d4', 'Café Morgenrot', '#10198', 'Wartet auf Rückmeldung vom Hersteller', { status: 'wartet', erstellt: tag(-2, 11) }),
     n('d5', 'Stadtbibliothek Nord', '#10177', 'Passwort zurückgesetzt, Anmeldung klappt', { status: 'erledigt', erstellt: tag(-1, 10) }),
@@ -38,16 +38,29 @@ const demo = {
 const ziel = path.join(__dirname, '..', 'docs');
 fs.mkdirSync(ziel, { recursive: true });
 
-for (const tab of ['hotline', 'wissen', 'einstellungen']) {
+// Name → Ansicht, Fenstergröße, Erscheinungsbild
+const AUFNAHMEN = [
+  { name: 'hotline', tab: 'hotline', groesse: '460x900', theme: 'dunkel' },
+  { name: 'wissen', tab: 'wissen', groesse: '460x900', theme: 'dunkel' },
+  { name: 'einstellungen', tab: 'einstellungen', groesse: '460x900', theme: 'dunkel' },
+  { name: 'breit', tab: 'notiz', groesse: '880x560', theme: 'dunkel' },
+  { name: 'breit-hell', tab: 'hotline', groesse: '880x560', theme: 'hell' },
+];
+const nur = process.argv.slice(2);
+
+for (const a of AUFNAHMEN.filter(x => !nur.length || nur.includes(x.name))) {
   const ordner = fs.mkdtempSync(path.join(os.tmpdir(), 'noteline-demo-'));
   try {
     fs.writeFileSync(path.join(ordner, 'daten.json'), JSON.stringify(demo));
-    const datei = path.join(ziel, `screenshot-${tab}.png`);
+    fs.writeFileSync(path.join(ordner, 'einstellungen.json'), JSON.stringify({ ticketLink: 'https://support.example.org/tickets?id=<TICKET>' }));
+    const datei = path.join(ziel, `screenshot-${a.name}.png`);
+    fs.rmSync(datei, { force: true }); // alte Aufnahme darf nicht als Erfolg zählen
     const r = spawnSync(electron, ['.'], {
       cwd: path.join(__dirname, '..'), stdio: 'inherit', timeout: 60000,
-      env: { ...process.env, NOTELINE_DATA_DIR: ordner, NOTELINE_SCREENSHOT: datei, NOTELINE_SCREENSHOT_TAB: tab },
+      env: { ...process.env, NOTELINE_DATA_DIR: ordner, NOTELINE_SCREENSHOT: datei, NOTELINE_SCREENSHOT_TAB: a.tab,
+        NOTELINE_SCREENSHOT_SIZE: a.groesse, NOTELINE_SCREENSHOT_THEME: a.theme },
     });
-    if (r.status !== 0 || !fs.existsSync(datei)) throw new Error(`Screenshot ${tab} fehlgeschlagen (Code ${r.status})`);
+    if (r.status !== 0 || !fs.existsSync(datei)) throw new Error(`Screenshot ${a.name} fehlgeschlagen (Code ${r.status})`);
     console.log('✓', path.relative(process.cwd(), datei));
   } finally {
     fs.rmSync(ordner, { recursive: true, force: true });

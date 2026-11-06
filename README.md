@@ -13,9 +13,7 @@ Alles bleibt lokal auf dem eigenen Rechner.
 ![Windows](https://img.shields.io/badge/Windows-10%20%7C%2011-0078D4)
 [![Lizenz: MIT](https://img.shields.io/badge/Lizenz-MIT-bee600)](LICENSE)
 
-<img src="docs/screenshot-hotline.png" width="300" alt="Hotline-Ansicht mit Notizen in den Spuren Jetzt, Offen, Wartet und Erledigt">
-&nbsp;
-<img src="docs/screenshot-wissen.png" width="300" alt="Wissen-Ansicht mit Vorlage und kopierbaren Werten">
+<img src="docs/screenshot-breit.png" width="760" alt="Breite Ansicht: links die Notizen in den Spuren Jetzt, Offen, Wartet und Erledigt, rechts eine geöffnete Anrufnotiz">
 
 </div>
 
@@ -37,14 +35,20 @@ Gespräch zu verlieren, und das wichtigste Nachschlagewissen immer mit einem Kli
    nicht signiert ist: **Weitere Informationen → Trotzdem ausführen**.
 
 Danach aktualisiert sich Noteline selbst: Die App prüft jede Stunde auf neue Versionen, lädt sie im Hintergrund
-und installiert sie per Klick auf *Jetzt neu starten* oder beim nächsten Beenden.
+und meldet sich per Windows-Benachrichtigung. Installiert wird per Klick auf *Jetzt neu starten*, beim Beenden
+oder still in einer Pause, wenn Noteline im Infobereich liegt und der PC 10 Minuten nicht benutzt wurde.
+Was sich geändert hat, steht im [Changelog](CHANGELOG.md) und bei jedem [Release](https://github.com/pascatotalx/noteline/releases).
 
 ## Funktionen
 
 ### Hotline
-- **Sofort mitschreiben:** Tippen und Enter drücken. `Kunde: Stichpunkt` füllt den Kunden gleich mit aus.
+- **Sofort mitschreiben:** Tippen und Enter drücken. `Kunde: Stichpunkt` füllt den Kunden gleich mit aus,
+  Telefonnummern und `#Ticketnummern` landen automatisch in ihren Feldern.
+- **Ticket mit einem Klick öffnen:** Einmal die Ticket-Adresse eures Systems hinterlegen, dann wird jede
+  Ticketnummer zum Link.
 - **Spuren statt Textwüste:** *Jetzt*, *Offen*, *Wartet*, *Erledigt*, mit Priorität und Ticketnummer.
-- **Rückruf-Erinnerung:** Windows-Benachrichtigung zum fälligen Zeitpunkt. Ein Klick öffnet die Notiz.
+- **Rückruf-Erinnerung:** Windows-Benachrichtigung zum fälligen Zeitpunkt, die stehen bleibt, bis du sie
+  wegklickst. Ein Klick öffnet die Notiz.
 - **Suche** über Kunde, Ticket, Telefon und Text.
 
 ### Wissen
@@ -52,7 +56,20 @@ und installiert sie per Klick auf *Jetzt neu starten* oder beim nächsten Beende
 - **Vorlagen:** Ein Wert wie `ping <IP> -n 4` bekommt ein Eingabefeld und liefert den fertigen Befehl.
 
 ### Bedienung
-- Schmales Fenster am rechten Bildschirmrand, optional immer im Vordergrund, optional mit Windows starten.
+- **Passt sich dem Fenster an:** schmal und hoch mit Reitern, breit und niedrig mit zwei Spalten
+  (Notizen links, Wissen oder die offene Notiz rechts).
+- **Läuft im Hintergrund:** Das Kreuz und Minimieren schicken Noteline in den Infobereich unten rechts,
+  Erinnerungen laufen weiter. Beenden über Rechtsklick auf das Symbol.
+- **Hell, Dunkel oder wie Windows**, optional immer im Vordergrund, optional mit Windows starten.
+
+<p align="center">
+<img src="docs/screenshot-hotline.png" width="250" alt="Schmale Ansicht mit Notizliste">
+&nbsp;
+<img src="docs/screenshot-wissen.png" width="250" alt="Wissen-Ansicht mit Vorlage und kopierbaren Werten">
+&nbsp;
+<img src="docs/screenshot-einstellungen.png" width="250" alt="Einstellungen mit Updates, Erscheinungsbild und Ticket-Link">
+</p>
+<p align="center"><img src="docs/screenshot-breit-hell.png" width="600" alt="Breite Ansicht im hellen Erscheinungsbild"></p>
 
 | Kürzel | Aktion |
 |---|---|
@@ -66,7 +83,8 @@ und installiert sie per Klick auf *Jetzt neu starten* oder beim nächsten Beende
 
 Noteline ist für Notizen mit Kundendaten gemacht und behandelt sie entsprechend:
 
-- Alle Daten liegen **nur lokal** in `Dokumente\Noteline\` (`daten.json` und tägliche Backups der letzten 30 Tage).
+- Alle Daten liegen **nur lokal** in `Dokumente\Noteline\`: `daten.json` (Notizen und Wissen),
+  `einstellungen.json` und im Unterordner `Backups` automatische Tagessicherungen der letzten 30 Tage.
 - **Kein Upload, keine Cloud, keine Telemetrie.** Die einzige Verbindung nach außen ist die Update-Prüfung
   bei GitHub, und dabei werden keine Daten gesendet.
 - Deinstallieren löscht keine Daten.
