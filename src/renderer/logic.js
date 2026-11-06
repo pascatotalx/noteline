@@ -28,7 +28,51 @@
   const TICKET = [/(?<![\w&])#\s?(\d{3,})\b/, /\bTicket(?:nummer|nr\.?)?\s*:?\s*#?\s*(\d{3,})\b/i];
   const ziffern = (s) => s.replace(/\D/g, '').length;
 
-  /** Teilt die Schnellerfassung auf: Telefon, Ticket, dann "Kunde: Stichpunkt". Links sind kein Kundenname. */
+  // Ansprechpartner per Anrede (H-1, 1.2.2): „Frau Müller“, „Herr Dr. Schmidt“, „Fr. Meier“, „Hr. Weber-Lang“
+  const ANREDE_QUELLE = '(?:Frau|Herr|Fr\\.|Hr\\.)\\s+(?:(?:Dr|Prof)\\.\\s*(?:med\\.\\s*)?)*[A-ZÄÖÜ][a-zäöüß]+(?:-[A-ZÄÖÜ][a-zäöüß]+)?';
+  const ANREDE_IRGENDWO = new RegExp(`(?<![\\wäöüÄÖÜß])${ANREDE_QUELLE}`);
+  const ANREDE_VORN = new RegExp(`^${ANREDE_QUELLE}`);
+  const istAnrede = (t) => new RegExp(`^${ANREDE_QUELLE}$`).test(str(t).trim());
+  // Kunde per Merkmal: Branchenwort am Anfang oder Rechtsform im Namen
+  const BRANCHE = /^(?:(?:Zahnarzt|Arzt|Hausarzt|Kinderarzt|Tierarzt|Frauenarzt|Augenarzt|Gemeinschafts|Physiotherapie|Ergotherapie|Logopädie)?[Pp]raxis|Praxisgemeinschaft|Apotheke|MVZ|Klinik|Klinikum|Krankenhaus|Pflegedienst|Pflegeheim|Altenheim|Seniorenheim|Seniorenresidenz|Seniorenzentrum|Tagespflege|Hospiz|Sanitätshaus|Labor|Kanzlei|Steuerkanzlei|Notariat|Stadtwerke|Stadtverwaltung|Gemeinde|Hotel|Autohaus|Schule|Kita|Kindergarten)$/;
+  const RECHTSFORM = /^(?:GmbH|gGmbH|mbH|AG|KG|GbR|OHG|UG|e\.V\.|eV|e\.K\.|eG|PartG|SE|KGaA|Ltd\.?|Inc\.?)$/;
+  const VERBINDER = new Set(['am', 'an', 'im', 'in', 'der', 'die', 'das', 'den', 'dem', 'des', 'und', '&', 'für', 'zum', 'zur', 'bei', 'von', 'vom', 'auf', 'Co.', 'Co']);
+  const ohneSatzzeichen = (t) => t.replace(/[,:;]+$/, '');
+
+  /** Länge eines Kundennamens am Anfang (Branchenwort oder Rechtsform), sonst 0. */
+  function kundeAmAnfang(v) {
+    const tokens = [...v.matchAll(/\S+/g)];
+    if (!tokens.length) return 0;
+    const branche = BRANCHE.test(ohneSatzzeichen(tokens[0][0]));
+    const rfIndex = tokens.slice(0, 7).findIndex(t => RECHTSFORM.test(ohneSatzzeichen(t[0])));
+    if (!branche && rfIndex < 0) return 0;
+    let ende = -1;
+    for (let i = 0; i < tokens.length && i < 8; i++) {
+      const roh = tokens[i][0], t = ohneSatzzeichen(roh);
+      if (i > 0 && /^(?:Frau|Herr|Fr\.|Hr\.)$/.test(t)) break;                      // Anrede beginnt
+      const passt = i === 0 || /^[A-ZÄÖÜ0-9]/.test(t) || VERBINDER.has(t) || RECHTSFORM.test(t) || /^(?:Dr|Prof|med|Dipl)\.$/.test(t);
+      if (!passt) break;                                                              // kleingeschriebenes Wort
+      ende = i;
+      if (roh !== t) break;                                                           // Komma/Doppelpunkt am Wort
+      const weiter = tokens[i + 1] && tokens[i + 1][0];
+      if (RECHTSFORM.test(t) && !(weiter && /^(?:&|Co\.?|KG|mbH)/.test(weiter))) break; // Name endet mit Rechtsform
+    }
+    while (ende > 0 && VERBINDER.has(ohneSatzzeichen(tokens[ende][0]))) ende--;
+    if (ende < 0) return 0;
+    if (branche && rfIndex < 0 && ende < 1) return 0;                                 // „Praxis“ allein reicht nicht
+    if (!branche && rfIndex > ende) return 0;                                         // Rechtsform muss im Namen liegen
+    return tokens[ende].index + ohneSatzzeichen(tokens[ende][0]).length;
+  }
+
+  /** Was nach einem erkannten Namen kommt: Satzzeichen/Großschreibung → Name raus, Verb → Satz bleibt. */
+  function nachName(rest) {
+    const sep = /^\s*(?:[,:;–]|\s-)\s*/.exec(rest);
+    if (sep) return { raus: true, rest: rest.slice(sep[0].length) };
+    if (/^\s+[a-zäöüß]/.test(rest)) return { raus: false };
+    return { raus: true, rest: rest.trim() };
+  }
+
+  /** Teilt die Schnellerfassung auf: Telefon, Ticket, Kunde, Ansprechpartner, Stichpunkt (H-1, H-9). */
   function parseQuickInput(raw) {
     let v = str(raw).trim();
     let telefon = '', ticket = '';
@@ -41,12 +85,44 @@
     }
     if (telefon || ticket) v = v.replace(/\s+/g, ' ').replace(/\s+([:,;])/g, '$1').replace(/^[\s:,;–-]+|[\s,;–-]+$/g, '');
     let kunde = '', ansprechpartner = '', text = v;
+
+    // 1. Ausdrücklich mit Doppelpunkt: „Kunde / Ansprechpartner: Stichpunkt“ (auch „Kunde, Frau Müller: …“)
     const i = v.indexOf(':');
-    if (i > 0 && i < 60 && v.slice(i, i + 3) !== '://') { kunde = v.slice(0, i).trim(); text = v.slice(i + 1).trim(); }
-    // "Kunde / Ansprechpartner" – nur an " / " mit Leerzeichen trennen, damit "A/B GmbH" ganz bleibt (H-9)
-    const t = kunde.indexOf(' / ');
-    if (t > 0) { ansprechpartner = kunde.slice(t + 3).trim(); kunde = kunde.slice(0, t).trim(); }
-    return { kunde, ansprechpartner, text, telefon, ticket };
+    if (i > 0 && i < 60 && v.slice(i, i + 3) !== '://') {
+      text = v.slice(i + 1).trim();
+      for (const teil of v.slice(0, i).split(/\s+\/\s+|,\s*/)) {
+        const t = teil.trim();
+        if (!t) continue;
+        if (!ansprechpartner && istAnrede(t)) ansprechpartner = t;
+        else if (!kunde) kunde = t;
+        else if (!ansprechpartner) ansprechpartner = t;
+      }
+      if (!ansprechpartner) { const m = text.match(ANREDE_IRGENDWO); if (m) ansprechpartner = m[0]; }
+      return { kunde, ansprechpartner, text, telefon, ticket };
+    }
+
+    // 2. Ohne Doppelpunkt: Kunde am Anfang (Branchenwort/Rechtsform), dann Anrede
+    let rest = v;
+    const k = kundeAmAnfang(v);
+    if (k) {
+      kunde = v.slice(0, k).trim();
+      const n = nachName(v.slice(k));
+      if (!n.raus) {
+        const m = v.match(ANREDE_IRGENDWO);
+        return { kunde, ansprechpartner: m ? m[0] : '', text: v, telefon, ticket };
+      }
+      rest = n.rest;
+    }
+    const vorn = rest.match(ANREDE_VORN);
+    if (vorn) {
+      ansprechpartner = vorn[0];
+      const n = nachName(rest.slice(vorn[0].length));
+      if (n.raus) rest = n.rest;
+    } else {
+      const m = rest.match(ANREDE_IRGENDWO);
+      if (m) ansprechpartner = m[0];
+    }
+    return { kunde, ansprechpartner, text: rest.trim(), telefon, ticket };
   }
 
   const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
@@ -173,12 +249,40 @@
     return 'befehl';
   }
 
+  // ---------- Befehle erkennen (W-1, 1.2.2) ----------
+  // PowerShell-Verben (Auswahl der offiziellen „approved verbs“)
+  const PS_VERBEN = new Set(('Add Approve Block Clear Compare Compress Connect Convert ConvertFrom ConvertTo Copy Debug Disable Disconnect '
+    + 'Dismount Enable Enter Exit Expand Export Find Format Get Grant Import Initialize Install Invoke Join Lock Measure Mount Move New '
+    + 'Optimize Out Pop Publish Push Read Receive Register Remove Rename Repair Reset Resize Resolve Restart Resume Revoke Save Select '
+    + 'Send Set Show Split Start Stop Suspend Sync Test Trace Unblock Uninstall Unlock Unregister Update Use Wait Write').split(' '));
+  // Windows-Befehle in Kleinschreibung; die erste Gruppe braucht Argumente, die zweite steht auch allein
+  const CLI_MIT_ARGS = new Set(('route ping tracert pathping nslookup netsh netstat arp telnet curl ssh scp mstsc gpresult sfc dism chkdsk '
+    + 'shutdown net sc reg wmic powershell pwsh cmd msiexec robocopy xcopy certutil icacls schtasks winget setx cmdkey runas taskkill '
+    + 'ipconfig start').split(' '));
+  const CLI_ALLEIN = new Set('ipconfig whoami hostname systeminfo gpupdate tasklist'.split(' '));
+
+  /** Index, an dem ein Befehl beginnt, sonst -1. */
+  function befehlStart(text) {
+    const tokens = [...str(text).matchAll(/\S+/g)];
+    for (let i = 0; i < tokens.length; i++) {
+      const t = tokens[i][0], naechstes = tokens[i + 1] && tokens[i + 1][0];
+      const cmdlet = /^([A-Z][a-z]+)-[A-Z][A-Za-z0-9]+$/.exec(t);
+      if (cmdlet && PS_VERBEN.has(cmdlet[1]) && (!naechstes || naechstes.startsWith('-') || naechstes === '|')) return tokens[i].index;
+      const cli = t.replace(/\.exe$/, '');
+      if (CLI_ALLEIN.has(cli) && (!naechstes || /^[-/]/.test(naechstes))) return tokens[i].index;
+      if (CLI_MIT_ARGS.has(cli) && naechstes) return tokens[i].index;
+    }
+    return -1;
+  }
+
   /** "Name: Wert" oder "Name mit Wert darin" → { titel, wert }. */
   function parseWissenEingabe(raw) {
     const v = str(raw).trim().replace(/\s+/g, ' ');
     if (!v) return { titel: '', wert: '' };
     const doppel = /^([^:]{1,60}?):\s+(.+)$/.exec(v);
     if (doppel && !/^https?$/i.test(doppel[1])) return { titel: doppel[1].trim(), wert: doppel[2].trim() };
+    const b = befehlStart(v); // Befehle zuerst, sonst würde z. B. die Maske 255.255.255.255 als IP abgeschnitten
+    if (b >= 0) return { titel: v.slice(0, b).trim().replace(/[\s:,;–-]+$/, ''), wert: v.slice(b).trim() };
     const rest = (m) => (v.slice(0, m.index) + ' ' + v.slice(m.index + m[0].length)).replace(/\s+/g, ' ').replace(/^[\s:,;–-]+|[\s:,;–-]+$/g, '');
     for (const re of [RE_LINK, RE_EMAIL, RE_IP]) {
       const m = v.match(re);
@@ -198,7 +302,7 @@
     if (!t) return { zustand: 'leer', titel: '', wert: '', typ: null, leerzeichen };
     const p = parseWissenEingabe(t);
     const typ = wissenTyp(p.wert);
-    if (typ !== 'befehl' || /^([^:]{1,60}?):\s+(.+)$/.test(t)) return { zustand: 'fertig', titel: p.titel, wert: p.wert, typ, leerzeichen };
+    if (typ !== 'befehl' || /^([^:]{1,60}?):\s+(.+)$/.test(t) || befehlStart(t) >= 0) return { zustand: 'fertig', titel: p.titel, wert: p.wert, typ, leerzeichen };
     return { zustand: 'name', titel: t.replace(/:\s*$/, ''), wert: '', typ: null, leerzeichen };
   }
 

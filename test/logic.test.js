@@ -260,3 +260,69 @@ test('W-1: Live-Vorschau zeigt Name, Wert und Art', () => {
   assert.deepEqual(v('Route: route print'), { zustand: 'fertig', titel: 'Route', wert: 'route print', typ: 'befehl', leerzeichen: false });
   assert.equal(v('Route: ').titel, 'Route');
 });
+
+test('W-1: Befehle werden erkannt, IPs darin schneiden nicht ab', () => {
+  const p = (s) => NL.parseWissenEingabe(s);
+  assert.deepEqual(p('Fachdienst-Route route -p add <ZIEL> mask 255.255.255.255 <GATEWAY>'),
+    { titel: 'Fachdienst-Route', wert: 'route -p add <ZIEL> mask 255.255.255.255 <GATEWAY>' });
+  assert.deepEqual(p('Feste IP setzen New-NetIPAddress -InterfaceAlias "Ethernet" -IPAddress <IP> -PrefixLength 24 -DefaultGateway <GATEWAY>'),
+    { titel: 'Feste IP setzen', wert: 'New-NetIPAddress -InterfaceAlias "Ethernet" -IPAddress <IP> -PrefixLength 24 -DefaultGateway <GATEWAY>' });
+  assert.deepEqual(p('Netzwerk prüfen ping 192.0.2.10 -n 4'), { titel: 'Netzwerk prüfen', wert: 'ping 192.0.2.10 -n 4' });
+  assert.deepEqual(p('DNS leeren ipconfig /flushdns'), { titel: 'DNS leeren', wert: 'ipconfig /flushdns' });
+  assert.deepEqual(p('ipconfig /all'), { titel: '', wert: 'ipconfig /all' });
+  assert.deepEqual(p('Adapter anzeigen Get-NetAdapter'), { titel: 'Adapter anzeigen', wert: 'Get-NetAdapter' });
+  assert.deepEqual(p('Route: route print'), { titel: 'Route', wert: 'route print' });
+  assert.equal(NL.wissenTyp('New-NetRoute -DestinationPrefix 192.0.2.0/24 -NextHop 192.0.2.1'), 'befehl');
+});
+
+test('W-1: Bindestrich-Namen sind keine Cmdlets', () => {
+  const p = (s) => NL.parseWissenEingabe(s);
+  assert.deepEqual(p('Test-Server 192.0.2.5'), { titel: 'Test-Server', wert: '192.0.2.5' });
+  assert.deepEqual(p('Support-Hotline 0800 1234567'), { titel: 'Support-Hotline', wert: '0800 1234567' });
+  assert.deepEqual(p('Set-Up Anleitung https://example.org/setup'), { titel: 'Set-Up Anleitung', wert: 'https://example.org/setup' });
+  assert.deepEqual(p('Routenplaner https://example.org'), { titel: 'Routenplaner', wert: 'https://example.org' });
+});
+
+test('W-1: Vorschau meldet Befehl als fertig erkannt', () => {
+  const v = NL.wissenVorschau('Feste IP setzen New-NetIPAddress -IPAddress <IP>');
+  assert.equal(v.zustand, 'fertig');
+  assert.equal(v.typ, 'befehl');
+  assert.equal(v.titel, 'Feste IP setzen');
+});
+
+test('H-1: Ansprechpartner per Anrede, Satz bleibt bei Verb erhalten', () => {
+  const p = (s) => NL.parseQuickInput(s);
+  assert.deepEqual(p('Frau Müller meldet, Connector läuft nicht mehr'),
+    { kunde: '', ansprechpartner: 'Frau Müller', text: 'Frau Müller meldet, Connector läuft nicht mehr', telefon: '', ticket: '' });
+  assert.deepEqual(p('Herr Dr. Schmidt, Kartenleser defekt'), { kunde: '', ansprechpartner: 'Herr Dr. Schmidt', text: 'Kartenleser defekt', telefon: '', ticket: '' });
+  assert.equal(p('Rückruf von Hr. Weber-Lang erbeten').ansprechpartner, 'Hr. Weber-Lang');
+  assert.deepEqual(p('Frau Müller: Connector läuft nicht'), { kunde: '', ansprechpartner: 'Frau Müller', text: 'Connector läuft nicht', telefon: '', ticket: '' });
+});
+
+test('H-1: Kunde per Branchenwort oder Rechtsform', () => {
+  const p = (s) => NL.parseQuickInput(s);
+  assert.deepEqual(p('Praxis Sonnenschein, Frau Müller, Connector läuft nicht'),
+    { kunde: 'Praxis Sonnenschein', ansprechpartner: 'Frau Müller', text: 'Connector läuft nicht', telefon: '', ticket: '' });
+  assert.deepEqual(p('Praxis Dr. Sonnenschein meldet Kartenleser defekt'),
+    { kunde: 'Praxis Dr. Sonnenschein', ansprechpartner: '', text: 'Praxis Dr. Sonnenschein meldet Kartenleser defekt', telefon: '', ticket: '' });
+  assert.deepEqual(p('Muster GmbH Herr Schmidt Drucker offline'),
+    { kunde: 'Muster GmbH', ansprechpartner: 'Herr Schmidt', text: 'Drucker offline', telefon: '', ticket: '' });
+  assert.equal(p('Muster GmbH & Co. KG, Router tauschen').kunde, 'Muster GmbH & Co. KG');
+  assert.equal(p('Zahnarztpraxis am Park – Telefon geht nicht').kunde, 'Zahnarztpraxis am Park');
+  assert.equal(p('Zahnarztpraxis am Park – Telefon geht nicht').text, 'Telefon geht nicht');
+  assert.equal(p('Pflegedienst Sonnenhof e.V., Drucker offline').kunde, 'Pflegedienst Sonnenhof e.V.');
+});
+
+test('H-1: keine falschen Kunden ohne Merkmal', () => {
+  const p = (s) => NL.parseQuickInput(s);
+  assert.equal(p('Connector läuft nicht, bitte zurückrufen').kunde, '');
+  assert.equal(p('Praxis ist heute geschlossen').kunde, '');
+  assert.equal(p('Drucker druckt leere Seiten').kunde, '');
+  assert.equal(p('Sonnenschein: Connector läuft nicht').kunde, 'Sonnenschein');
+});
+
+test('H-1: alles zusammen mit Telefon und Ticket', () => {
+  const n = NL.neueNotiz('Praxis Sonnenschein, Frau Müller, +49 123 4567890 #4711 Connector startet neu');
+  assert.deepEqual([n.kunde, n.ansprechpartner, n.telefon, n.ticket, n.text],
+    ['Praxis Sonnenschein', 'Frau Müller', '+49 123 4567890', '#4711', 'Connector startet neu']);
+});
