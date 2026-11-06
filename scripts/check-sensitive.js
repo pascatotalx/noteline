@@ -12,6 +12,7 @@ const { execFileSync } = require('child_process');
 const VERBOTENE_PFADE = [
   { re: /(^|\/)daten(-[^/]*)?\.json$/i, grund: 'Noteline-Datendatei' },
   { re: /(^|\/)fenster\.json$/i, grund: 'Noteline-Fenstereinstellungen' },
+  { re: /(^|\/)einstellungen\.json$/i, grund: 'Noteline-Einstellungen (z. B. interne Ticket-Adresse)' },
   { re: /(^|\/)Backups\//i, grund: 'Noteline-Backup' },
   { re: /(^|\/)demo-data\//i, grund: 'Lokale Demodaten' },
   { re: /(^|\/)\.env(\.|$)/i, grund: 'Umgebungsdatei mit möglichen Zugangsdaten' },

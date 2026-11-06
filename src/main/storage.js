@@ -47,7 +47,8 @@ function leseJson(datei) {
 function createStorage({ ordner, altOrdner, jetzt = () => new Date() }) {
   const datenDatei = path.join(ordner, 'daten.json');
   const backupOrdner = path.join(ordner, 'Backups');
-  const fensterDatei = path.join(ordner, 'fenster.json');
+  const einstellungenDatei = path.join(ordner, 'einstellungen.json');
+  const altFensterDatei = path.join(ordner, 'fenster.json'); // Version 1.0
   let gesperrt = false;
 
   fs.mkdirSync(backupOrdner, { recursive: true });
@@ -95,17 +96,26 @@ function createStorage({ ordner, altOrdner, jetzt = () => new Date() }) {
     schreibeAtomar(datenDatei, json);
   }
 
-  function ladeFenster() { try { return leseJson(fensterDatei); } catch { return {}; } }
-  function speichereFenster(patch) {
-    const neu = { ...ladeFenster(), ...patch };
-    try { schreibeAtomar(fensterDatei, JSON.stringify(neu)); } catch {}
+  /** Einstellungen (D-1). Fehlt einstellungen.json, wird die fenster.json aus Version 1.0 übernommen. */
+  function ladeEinstellungen() {
+    for (const datei of [einstellungenDatei, altFensterDatei]) {
+      try { const e = leseJson(datei); if (e && typeof e === 'object') return e; } catch {}
+    }
+    return {};
+  }
+  function speichereEinstellungen(patch) {
+    const neu = { ...ladeEinstellungen(), ...patch };
+    try {
+      schreibeAtomar(einstellungenDatei, JSON.stringify(neu, null, 1));
+      if (fs.existsSync(altFensterDatei)) fs.unlinkSync(altFensterDatei);
+    } catch {}
     return neu;
   }
 
   return {
-    load, save, dailyBackup, ladeFenster, speichereFenster,
+    load, save, dailyBackup, ladeEinstellungen, speichereEinstellungen,
     get gesperrt() { return gesperrt; },
-    pfade: { ordner, datenDatei, backupOrdner, fensterDatei },
+    pfade: { ordner, datenDatei, backupOrdner, einstellungenDatei },
   };
 }
 

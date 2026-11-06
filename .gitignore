@@ -1,6 +1,7 @@
 # ── Nutzerdaten: dürfen NIE ins Repository (Spezifikation R-1) ──
 daten*.json
 fenster.json
+einstellungen.json
 Backups/
 *.tmp
 demo-data/

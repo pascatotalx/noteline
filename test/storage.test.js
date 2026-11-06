@@ -99,11 +99,22 @@ test(`D-2: höchstens ${BACKUP_TAGE} Backups`, () => {
   assert.ok(fs.existsSync(path.join(s.pfade.backupOrdner, 'eigene-notiz.txt')));
 });
 
-test('Fenstereinstellungen werden zusammengeführt', () => {
+test('D-1: Einstellungen werden zusammengeführt', () => {
   const s = createStorage({ ordner: tmpOrdner() });
-  s.speichereFenster({ immerVorne: true });
-  s.speichereFenster({ bounds: { x: 1, y: 2, width: 3, height: 4 } });
-  assert.deepEqual(s.ladeFenster(), { immerVorne: true, bounds: { x: 1, y: 2, width: 3, height: 4 } });
+  s.speichereEinstellungen({ immerVorne: true });
+  s.speichereEinstellungen({ theme: 'hell' });
+  assert.deepEqual(s.ladeEinstellungen(), { immerVorne: true, theme: 'hell' });
+  assert.ok(fs.existsSync(s.pfade.einstellungenDatei));
+});
+
+test('D-1: fenster.json aus Version 1.0 wird übernommen und danach entfernt', () => {
+  const ordner = tmpOrdner();
+  fs.writeFileSync(path.join(ordner, 'fenster.json'), JSON.stringify({ immerVorne: true, bounds: { x: 1, y: 2, width: 3, height: 4 } }));
+  const s = createStorage({ ordner });
+  assert.equal(s.ladeEinstellungen().immerVorne, true);
+  s.speichereEinstellungen({ theme: 'dunkel' });
+  assert.deepEqual(s.ladeEinstellungen(), { immerVorne: true, bounds: { x: 1, y: 2, width: 3, height: 4 }, theme: 'dunkel' });
+  assert.equal(fs.existsSync(path.join(ordner, 'fenster.json')), false);
 });
 
 test('lokalesDatum nutzt die lokale Zeitzone', () => {
