@@ -3,7 +3,7 @@
 Beschreibt **was** Noteline kann und **warum**. Das Wie steht in `plan.md`.
 Die Kennungen (z. B. `H-3`) werden in `tasks.md`, im Code und in den Tests referenziert.
 
-Stand: Version 1.2.0 (06.11.2026). `[x]` = umgesetzt und getestet, `[ ]` = offen oder nur manuell prüfbar (T-16).
+Stand: Version 1.2.1 (06.11.2026). `[x]` = umgesetzt und getestet, `[ ]` = offen oder nur manuell prüfbar (T-16).
 
 ---
 
@@ -105,11 +105,17 @@ Groß-/Kleinschreibung. Während der Suche sind alle Spuren aufgeklappt. Esc lee
 die Gruppe musste immer wieder gleich eingetippt werden. Vorbild sind Snippet- und Clipboard-Werkzeuge
 (Raycast, Alfred, Ditto): **Name + Wert, Typ automatisch, Favoriten, alles per Tastatur**.
 
-**W-1 Einträge anlegen in einer Zeile.**
-- [x] Oben im Bereich Wissen steht immer ein Eingabefeld „Neuer Eintrag“. Enter legt den Eintrag an.
+**W-1 Einträge anlegen in einer Zeile, mit Live-Vorschau.** (1.2.1: Rückmeldung von Pascal, das Feld soll auf
+den ersten Blick zeigen, was gerade eingetippt wird. Zwei getrennte Felder wurden erwogen und verworfen.)
+- [x] Oben im Bereich Wissen steht ein Eingabefeld „Neuer Eintrag“. Enter legt den Eintrag an.
 - [x] Erkannt werden: `Name: Wert` (Doppelpunkt mit Leerzeichen danach) oder ein Name mit einem erkennbaren Wert
-      darin: Link, E-Mail, IP-Adresse, Telefonnummer oder Port als letztes Wort. Sonst ist alles der Wert.
-- [x] Unter dem Feld zeigt ein Hinweis live, was erkannt wurde (z. B. „Link · Name: Firmware Kartenterminal“).
+      darin: Link, E-Mail, IP-Adresse, Telefonnummer oder Port als letztes Wort. Sonst ist alles der Wert (Text).
+- [x] Unter dem Feld stehen zwei Anzeigen **Name** und **Wert**. Sie zeigen live, was gerade erkannt wird, und
+      leuchten auf, sobald sie belegt sind. Die Wert-Anzeige nennt die erkannte Art (z. B. „IP-Adresse“).
+- [x] Solange nur ein Name dasteht und nach einem Leerzeichen der Wert folgen könnte, erscheinen Vorschläge, was
+      als Wert passt, jeweils mit neutralem Beispiel: Link, IP-Adresse, Telefon, E-Mail, Port, Befehl/Text (mit `:`).
+- [x] Die Zeile darunter sagt, was Enter jetzt tut (z. B. „Enter speichert unter IP-Adressen“ oder
+      „Enter speichert alles als Text“).
 - [x] Der Name ist optional. Ohne Namen zeigt die Zeile nur den Wert.
 
 **W-2 Übersicht ohne Gruppen.**

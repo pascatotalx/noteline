@@ -53,6 +53,7 @@ Kleine, einzeln prüfbare Schritte in Abhängigkeitsreihenfolge. Jede Aufgabe ne
 | T-48 | Favoriten mit Alt+1–9, Strg+Enter kopiert Treffer | W-5, W-6 | [x] |
 | T-49 | Rückgängig beim Löschen | A-4 | [x] |
 | T-50 | Notiz als Text kopieren + Test | H-10 | [x] |
+| T-51 | Wissen: Live-Vorschau Name/Wert mit Vorschlägen (1.2.1) | W-1 | [x] |
 | T-44 | Screenshots, README, CHANGELOG, Release 1.2.0 | R-2, R-3 | [ ] |
 
 ## Backlog
