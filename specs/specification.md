@@ -3,7 +3,7 @@
 Beschreibt **was** Noteline kann und **warum**. Das Wie steht in `plan.md`.
 Die Kennungen (z. B. `H-3`) werden in `tasks.md`, im Code und in den Tests referenziert.
 
-Stand: Version 1.2.3 (06.11.2026). `[x]` = umgesetzt und getestet, `[ ]` = offen oder nur manuell prüfbar (T-16).
+Stand: Version 1.2.4 (06.11.2026). `[x]` = umgesetzt und getestet, `[ ]` = offen oder nur manuell prüfbar (T-16).
 
 ---
 
@@ -59,6 +59,13 @@ damit ich beim Anruf nichts verpasse.
       „Praxis Sonnenschein“).
 - [x] `Dr.` (auch `Dr. med.`, `Prof. Dr.`) am Anfang steht für einen Arzt bzw. seine Praxis und wird *Kunde*
       („Dr. Müller, Connector defekt“). Mit Anrede davor („Herr Dr. Schmidt“) bleibt es der Ansprechpartner.
+- [x] **Kleinschreibung und Namenslänge** (1.2.4, Rückmeldung von Pascal: „px“/„kd“ wurden nicht erkannt):
+      Die Kürzel `PX`, `KD`, `Kd.`, `ASP`, `Tel` gelten in jeder Schreibweise, der Name danach darf kleingeschrieben sein und
+      wird mit großem Anfangsbuchstaben übernommen (Rechtsformen in üblicher Schreibweise, z. B. „gmbh“ → „GmbH“).
+      Der Name reicht bis zu einem Komma, Doppelpunkt oder Gedankenstrich, sonst bis zu einer Rechtsform, sonst über alle
+      großgeschriebenen Wörter vor einem Personen-Verb („meldet“, „bittet“, „fragt“ …). Gibt es nichts davon, ist es ein
+      Wort (bei PX/Praxis/Dr. das Wort danach): „KD Müller Drucker offline“ → Kunde „Müller“.
+- [x] Steht nur ein Kürzel ohne Namen da („PX“, „KD“), sagt die Vorschau „Jetzt den Namen eintippen“.
 - [x] Ein Name ohne Merkmal (z. B. nur „Sonnenschein“) wird wie bisher mit Doppelpunkt zum Kunden:
       „Sonnenschein: Connector läuft nicht“ (siehe K-4).
 - [x] Strg+N legt von überall eine leere Notiz an. Der Cursor steht im Feld *Kunde*.
