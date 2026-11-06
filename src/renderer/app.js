@@ -246,7 +246,7 @@ function wissenNeu() {
   const w = NL.normalizeWissen({ ...p, id: NL.uid() });
   D.wissen.push(w);
   S.wNeu = ''; save(); render();
-  $('#wNeu')?.focus();
+  $('#wNeu')?.focus({ preventScroll: true });
   toast(`Gespeichert unter „${NL.wissenAbschnitte([w])[0].name}“`);
 }
 
@@ -286,11 +286,11 @@ function render() {
   list.scrollTop = stL;
   if (S.focusForm) {
     const f = main.querySelector('.w-edit [name="titel"]');
-    if (f) f.focus();
+    if (f) f.focus({ preventScroll: true });
     S.focusForm = false;
   } else if (fokus) {
     const el = main.querySelector(fokus.sel);
-    if (el) { el.focus(); try { el.setSelectionRange(fokus.start, fokus.end); } catch {} }
+    if (el) { el.focus({ preventScroll: true }); try { el.setSelectionRange(fokus.start, fokus.end); } catch {} }
   }
   const due = NL.anzahlFaellig(D.notizen);
   const b = $('#badge'); b.hidden = !due; b.textContent = due;
@@ -381,7 +381,7 @@ function openSheet(id, instant, focusKunde) {
   bind('#sKunde', 'kunde'); bind('#sAp', 'ansprechpartner'); bind('#sTicket', 'ticket'); bind('#sTel', 'telefon'); bind('#sText', 'text');
   bridge.notizOffen(true);
   render();
-  (focusKunde ? $('#sKunde') : $('#sText')).focus();
+  (focusKunde ? $('#sKunde') : $('#sText')).focus({ preventScroll: true });
   if (!focusKunde) { const t = $('#sText'); t.setSelectionRange(t.value.length, t.value.length); }
 }
 function ticketLinkAnzeigen() {
@@ -402,10 +402,10 @@ function notizSchliessen(loeschen) {
   save(true);
 }
 function closeSheet() {
-  if (S.settingsOpen) { S.settingsOpen = false; $('#sheetHost').innerHTML = ''; $('#q').focus(); return; }
+  if (S.settingsOpen) { S.settingsOpen = false; $('#sheetHost').innerHTML = ''; $('#q').focus({ preventScroll: true }); return; }
   if (!S.openId) return;
   notizSchliessen();
-  render(); $('#q').focus();
+  render(); $('#q').focus({ preventScroll: true });
 }
 function renderSheetMeta() {
   const n = findN(S.openId); if (!n) return;
@@ -495,7 +495,7 @@ function openSettings() {
     </section>
   </div>`;
   renderSettings();
-  $('#setBody button:not(:disabled)')?.focus();
+  $('#setBody button:not(:disabled)')?.focus({ preventScroll: true });
 }
 function renderSettings() {
   if (!S.settingsOpen) return;
@@ -535,7 +535,7 @@ function renderSettings() {
     </div>
   </div>`;
   body.scrollTop = scroll;
-  if (fokusTicket) { const el = $('#setTicket'); el.focus(); try { el.setSelectionRange(...auswahl); } catch {} }
+  if (fokusTicket) { const el = $('#setTicket'); el.focus({ preventScroll: true }); try { el.setSelectionRange(...auswahl); } catch {} }
 }
 async function ticketLinkSpeichern(wert) {
   const v = wert.trim();
@@ -606,7 +606,7 @@ document.addEventListener('click', (e) => {
   if (t.id === 'sDel') { // A-4: sofort löschen, mit Rückgängig
     const n = findN(S.openId); if (!n) return;
     const index = D.notizen.indexOf(n), kopie = { ...n };
-    notizSchliessen(true); render(); $('#q').focus();
+    notizSchliessen(true); render(); $('#q').focus({ preventScroll: true });
     return rueckgaengig('Notiz gelöscht', () => { D.notizen.splice(Math.min(index, D.notizen.length), 0, kopie); save(); render(); });
   }
   if (t.id === 'sKopie') { const n = findN(S.openId); if (n) { copyText(NL.notizAlsText(n), null); toast('Notiz als Text kopiert'); } return; }
@@ -688,7 +688,7 @@ document.addEventListener('keydown', (e) => {
     const w = NL.favoriten(D.wissen)[+e.key - 1];
     return w ? wissenKopieren(w, true) : toast(`Kein Favorit auf Alt+${e.key}`);
   }
-  if (e.ctrlKey && !e.altKey && k === 'k') { e.preventDefault(); closeSheet(); $('#q').focus(); $('#q').select(); }
+  if (e.ctrlKey && !e.altKey && k === 'k') { e.preventDefault(); closeSheet(); $('#q').focus({ preventScroll: true }); $('#q').select(); }
   else if (e.ctrlKey && !e.altKey && k === 'n') { e.preventDefault(); closeSheet(); createNote('', true); }
   else if (e.ctrlKey && !e.altKey && k === '1') { e.preventDefault(); setTab('hotline'); }
   else if (e.ctrlKey && !e.altKey && k === '2') { e.preventDefault(); setTab('wissen'); }
@@ -702,6 +702,12 @@ for (const typ of ['dragover', 'drop']) {
   });
 }
 window.addEventListener('beforeunload', () => save('sync')); // D-4
+// Die Seite selbst darf nie verrutschen, sonst verschwindet die Titelleiste (A-1, 1.2.5)
+const seiteZuruecksetzen = () => {
+  for (const el of [document.documentElement, document.body, $('#app')]) if (el.scrollTop || el.scrollLeft) { el.scrollTop = 0; el.scrollLeft = 0; }
+};
+window.addEventListener('scroll', seiteZuruecksetzen, true);
+window.addEventListener('resize', seiteZuruecksetzen);
 bridge.beiNotizOeffnen((id) => { setTab('hotline'); openSheet(id, true); });
 bridge.beiUpdateStatus((s) => { S.update = s; renderBanner(); renderSettings(); });
 bridge.beiTheme((t) => { document.documentElement.dataset.theme = t; });
@@ -730,5 +736,5 @@ function tick() { const d = new Date(); $('#clock').textContent = fClock.format(
   if (r.migriert) toast('Notizen aus „Hotline-Notizen“ übernommen');
   checkReminders(); setInterval(checkReminders, 20000);
   setInterval(render, 60000);
-  if (!S.openId && !S.settingsOpen) $('#q').focus();
+  if (!S.openId && !S.settingsOpen) $('#q').focus({ preventScroll: true });
 })();

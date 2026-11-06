@@ -26,7 +26,7 @@
   --shadow:rgba(20,22,27,.14); --backdrop:rgba(20,22,27,.28);
 }
 *{box-sizing:border-box}
-html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font-family:var(--body);-webkit-font-smoothing:antialiased;overflow:hidden}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font-family:var(--body);-webkit-font-smoothing:antialiased;overflow:clip}
 @media (pointer:fine){html{overscroll-behavior:none}}
 button{font:inherit;color:inherit}
 ::selection{background:var(--lime);color:var(--on-accent)}
@@ -36,7 +36,7 @@ button{font:inherit;color:inherit}
 [hidden]{display:none!important}
 
 /* ---------- Kopf mit eigener Titelleiste (A-1) ---------- */
-#app{height:100%;display:flex;flex-direction:column;position:relative}
+#app{height:100%;display:flex;flex-direction:column;position:relative;overflow:clip} /* Seite scrollt nie, nur die Bereiche darin (A-1, 1.2.5) */
 header{padding:0 16px 10px;display:flex;flex-direction:column;gap:8px}
 .top{display:flex;align-items:center;gap:8px;height:var(--titel);-webkit-app-region:drag;
   padding-right:calc(100vw - env(titlebar-area-width, 100vw) - env(titlebar-area-x, 0px))}
@@ -126,9 +126,9 @@ nav button[aria-current="page"]{color:var(--inv-fg)}
 .badge{min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:var(--pink);color:#fff;font-size:11px;display:inline-flex;align-items:center;justify-content:center}
 
 /* ---------- Blatt (schmal) und Seitenbereich (breit) ---------- */
-.backdrop{position:absolute;inset:0;background:var(--backdrop);backdrop-filter:blur(4px);z-index:10;animation:fade 200ms ease both}
+.backdrop{position:absolute;inset:var(--titel) 0 0 0;background:var(--backdrop);backdrop-filter:blur(4px);z-index:10;animation:fade 200ms ease both}
 .backdrop>.closer{position:absolute;inset:0;border:0;background:transparent;cursor:default}
-.sheet{position:absolute;left:0;right:0;bottom:0;max-height:88%;display:flex;flex-direction:column;background:var(--surface);border-top:1px solid rgba(var(--fg),.12);border-radius:16px 16px 0 0;animation:sheet 320ms var(--ease-drawer) both;overscroll-behavior:contain;box-shadow:0 -8px 32px var(--shadow)}
+.sheet{position:absolute;left:0;right:0;bottom:0;max-height:calc(100% - 10px);display:flex;flex-direction:column;background:var(--surface);border-top:1px solid rgba(var(--fg),.12);border-radius:16px 16px 0 0;animation:sheet 320ms var(--ease-drawer) both;overscroll-behavior:contain;box-shadow:0 -8px 32px var(--shadow)}
 .instant,.instant .sheet{animation:none!important}
 .grab{align-self:center;width:36px;height:4px;margin-top:8px;border-radius:2px;background:rgba(var(--fg),.25)}
 .s-head{padding:12px 16px 0;display:flex;align-items:flex-start;gap:10px}
