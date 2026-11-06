@@ -3,6 +3,15 @@
 Alle nennenswerten Änderungen an Noteline. Format nach [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
+## [1.2.5] – 2026-11-06
+
+### Behoben
+- **Titelleiste verschwand in niedrigen Fenstern:** Beim Öffnen der Einstellungen (oder einer Notiz im schmalen Fenster)
+  ist die ganze Ansicht nach oben gerutscht, Logo, Pin und Zahnrad waren danach nicht mehr zu sehen. Die Ansicht bleibt
+  jetzt immer an ihrem Platz.
+- Einstellungen und Notiz-Blatt beginnen unter der Titelleiste. „Fertig“ liegt nicht mehr unter den Windows-Fensterknöpfen,
+  das Fenster lässt sich auch bei offenen Einstellungen verschieben, und das Zahnrad schließt sie wieder.
+
 ## [1.2.4] – 2026-11-06
 
 ### Behoben
@@ -125,6 +134,7 @@ Erste veröffentlichte Version. Neuaufbau des Prototyps „Hotline-Notizen“ na
 - Eine ins Fenster gezogene Datei ersetzt nicht mehr die App-Oberfläche.
 - Strengere Sicherheitseinstellungen (Sandbox, Content-Security-Policy ohne Inline-Skripte).
 
+[1.2.5]: https://github.com/pascatotalx/noteline/releases/tag/v1.2.5
 [1.2.4]: https://github.com/pascatotalx/noteline/releases/tag/v1.2.4
 [1.2.3]: https://github.com/pascatotalx/noteline/releases/tag/v1.2.3
 [1.2.2]: https://github.com/pascatotalx/noteline/releases/tag/v1.2.2
