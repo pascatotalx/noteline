@@ -20,8 +20,8 @@ Kleine, einzeln prüfbare Schritte in Abhängigkeitsreihenfolge. Jede Aufgabe ne
 | T-11 | NSIS-Installer konfigurieren und lokal bauen | U-1 | [x] |
 | T-12 | README, CHANGELOG, SECURITY, Screenshot mit Demodaten | R-2 | [x] |
 | T-13 | GitHub Action (Tests + Prüfung sensibler Daten) | R-1 | [x] |
-| T-14 | Öffentliches Repo anlegen, Secret Scanning + Push-Schutz, Beschreibung, Topics | R-1, R-2 | [ ] |
-| T-15 | `release.js` und erstes Release 1.0.0 | R-3 | [ ] |
+| T-14 | Öffentliches Repo anlegen, Secret Scanning + Push-Schutz, Beschreibung, Topics | R-1, R-2 | [x] |
+| T-15 | `release.js` und erstes Release 1.0.0 | R-3 | [x] |
 | T-16 | Manueller Test: Installation, Benachrichtigung, Update 1.0.0 → 1.0.1 | U-1, U-2, H-6 | [ ] |
 
 ## Backlog

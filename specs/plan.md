@@ -126,7 +126,7 @@ Garbage Collector entfernt wird.
 | Repository | `.gitignore`: `daten*.json`, `fenster.json`, `Backups/`, `dist/`, `.env*`, `*.log` |
 | Commit | `.githooks/pre-commit` → `check-sensitive.js --staged`, aktiviert über `npm install` (`prepare`) |
 | Push | GitHub Action `check-sensitive.js --all` + GitHub Secret Scanning mit Push-Schutz |
-| Release | Token nur als Umgebungsvariable aus `gh auth token`, nie auf der Festplatte |
+| Release | Upload über die Anmeldung von `gh`, kein Token in Dateien oder Umgebungsvariablen |
 | Identität | Commits mit `…@users.noreply.github.com` |
 
 `check-sensitive.js` prüft Dateipfade (Datendateien, Schlüsseldateien, `.env`) und Inhalte
@@ -138,10 +138,11 @@ werden nur per Pfad geprüft. Findet es etwas, endet es mit Code 1 und nennt Dat
 `npm run release` (scripts/release.js):
 1. Prüft: Branch `main`, keine offenen Änderungen, mit `origin` synchron, `npm test` grün,
    `CHANGELOG.md` hat einen Abschnitt für die Version aus `package.json`, Tag existiert noch nicht.
-2. `GH_TOKEN` = Ausgabe von `gh auth token`, nur im Prozess.
-3. `electron-builder --win --publish always` erzeugt einen **Entwurf** und lädt Setup, Blockmap und `latest.yml` hoch.
-4. `gh release edit vX.Y.Z --title "Noteline X.Y.Z" --notes <CHANGELOG-Abschnitt> --draft=false --latest`
-   veröffentlicht. Erst ab jetzt sieht der Updater die Version.
+2. `electron-builder --win --publish never` baut Setup, Blockmap und `latest.yml` nach `dist/`.
+3. `gh release create vX.Y.Z <alle drei Dateien> --draft --title "Noteline X.Y.Z" --notes-file <CHANGELOG-Abschnitt>`
+   lädt alles in **einen** Entwurf hoch. (electron-builder lädt selbst parallel hoch und hat dabei beim ersten
+   Release 1.0.0 einen zweiten Entwurf erzeugt. Deshalb übernimmt `gh` den Upload.)
+4. `gh release edit vX.Y.Z --draft=false --latest` veröffentlicht. Erst ab jetzt sieht der Updater die Version.
 
 Version erhöhen: `npm version patch|minor --no-git-tag-version`, CHANGELOG ergänzen, committen, pushen, release.
 
