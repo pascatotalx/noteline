@@ -44,7 +44,8 @@ Was sich geändert hat, steht im [Changelog](CHANGELOG.md) und bei jedem [Releas
 ### Hotline
 - **Sofort mitschreiben:** Tippen und Enter drücken. `Praxis Sonnenschein, Frau Müller, Connector startet neu` füllt Kunde,
   Ansprechpartner und Stichpunkt gleich mit aus. Eine Vorschau unter dem Eingabefeld zeigt vorher, was erkannt wird.
-  Telefonnummern und `#Ticketnummern` landen automatisch in ihren Feldern.
+  Telefonnummern und `#Ticketnummern` landen automatisch in ihren Feldern. Kürzel wie `KD`, `ASP`, `Tel`, `Tkt`, `PX` (Praxis)
+  und `Dr.` am Anfang werden ebenfalls verstanden.
 - **Ticket mit einem Klick öffnen:** Einmal die Ticket-Adresse eures Systems hinterlegen, dann wird jede
   Ticketnummer zum Link.
 - **Spuren statt Textwüste:** *Jetzt*, *Offen*, *Wartet*, *Erledigt*, mit Priorität und Ticketnummer.
@@ -70,8 +71,9 @@ Was sich geändert hat, steht im [Changelog](CHANGELOG.md) und bei jedem [Releas
 ### Bedienung
 - **Passt sich dem Fenster an:** schmal und hoch mit Reitern, breit und niedrig mit zwei Spalten
   (Notizen links, Wissen oder die offene Notiz rechts).
-- **Läuft im Hintergrund:** Das Kreuz und Minimieren schicken Noteline in den Infobereich unten rechts,
-  Erinnerungen laufen weiter. Beenden über Rechtsklick auf das Symbol.
+- **Läuft im Hintergrund, ohne die Taskleiste zu belegen:** Noteline erscheint nur als kleines Symbol im Infobereich
+  unten rechts. Klick darauf oder Strg+Alt+H öffnet es, das Kreuz versteckt es wieder, Erinnerungen laufen weiter.
+  Beenden über Rechtsklick auf das Symbol.
 - **Hell, Dunkel oder wie Windows**, optional immer im Vordergrund, optional mit Windows starten.
 
 <p align="center">

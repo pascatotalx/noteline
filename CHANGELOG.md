@@ -3,6 +3,18 @@
 Alle nennenswerten Änderungen an Noteline. Format nach [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
+## [1.2.3] – 2026-11-06
+
+### Verbessert
+- **Kürzel beim Anlegen einer Notiz:** `KD` oder `Kunde` vor einem Namen → Kunde, `ASP` oder `Ansprechpartner` → Ansprechpartner,
+  `Tel`, `Telefon`, `Mobil` vor einer Nummer → Telefon (dann reicht auch eine kurze Durchwahl), `Tkt` oder `Ticket-Nr.` → Ticket.
+  Beispiel: `KD Muster GmbH ASP Herr Weber Tel 123 Drucker offline`.
+- **`PX` steht für Praxis:** „PX Sonnenschein“ wird als Kunde erkannt und zu „Praxis Sonnenschein“ ausgeschrieben.
+- **`Dr.` am Anfang** gilt als Arzt bzw. Praxis: „Dr. Müller, Connector defekt“ füllt den Kunden.
+- „AP“ wird bewusst nicht als Ansprechpartner gedeutet, weil es im Alltag für „Arbeitsplatz“ steht.
+- **Nur noch im Infobereich:** Noteline belegt keinen Platz mehr in der Taskleiste und erscheint nur als kleines Symbol
+  unten rechts. Klick darauf oder Strg+Alt+H öffnet es.
+
 ## [1.2.2] – 2026-11-06
 
 ### Verbessert
@@ -104,6 +116,7 @@ Erste veröffentlichte Version. Neuaufbau des Prototyps „Hotline-Notizen“ na
 - Eine ins Fenster gezogene Datei ersetzt nicht mehr die App-Oberfläche.
 - Strengere Sicherheitseinstellungen (Sandbox, Content-Security-Policy ohne Inline-Skripte).
 
+[1.2.3]: https://github.com/pascatotalx/noteline/releases/tag/v1.2.3
 [1.2.2]: https://github.com/pascatotalx/noteline/releases/tag/v1.2.2
 [1.2.1]: https://github.com/pascatotalx/noteline/releases/tag/v1.2.1
 [1.2.0]: https://github.com/pascatotalx/noteline/releases/tag/v1.2.0
