@@ -22,23 +22,55 @@
   const tageZwischen = (a, b) => Math.round((startOfDay(b) - startOfDay(a)) / 864e5);
 
   // ---------- H-1 Schnellerfassung ----------
-  /** "Kunde: Stichpunkt" → { kunde, text }. Links (http://…) sind kein Kundenname. */
+  // Telefon: beginnt mit + oder 0, mindestens 9 Ziffern, erlaubt Leerzeichen / - ( ). Nicht mitten in Wörtern,
+  // Links oder Ticketnummern.
+  const TELEFON = /(?<![\w#+/.:=-])(?:\+\d|0)[\d /()-]{6,}\d/g;
+  const TICKET = [/(?<![\w&])#\s?(\d{3,})\b/, /\bTicket(?:nummer|nr\.?)?\s*:?\s*#?\s*(\d{3,})\b/i];
+  const ziffern = (s) => s.replace(/\D/g, '').length;
+
+  /** Teilt die Schnellerfassung auf: Telefon, Ticket, dann "Kunde: Stichpunkt". Links sind kein Kundenname. */
   function parseQuickInput(raw) {
-    const v = str(raw).trim();
-    const i = v.indexOf(':');
-    if (i > 0 && i < 60 && v.slice(i, i + 3) !== '://') {
-      return { kunde: v.slice(0, i).trim(), text: v.slice(i + 1).trim() };
+    let v = str(raw).trim();
+    let telefon = '', ticket = '';
+    for (const m of v.matchAll(TELEFON)) {
+      if (ziffern(m[0]) >= 9) { telefon = m[0].trim(); v = v.slice(0, m.index) + ' ' + v.slice(m.index + m[0].length); break; }
     }
-    return { kunde: '', text: v };
+    for (const re of TICKET) {
+      const m = v.match(re);
+      if (m) { ticket = '#' + m[1]; v = v.slice(0, m.index) + ' ' + v.slice(m.index + m[0].length); break; }
+    }
+    if (telefon || ticket) v = v.replace(/\s+/g, ' ').replace(/\s+([:,;])/g, '$1').replace(/^[\s:,;–-]+|[\s,;–-]+$/g, '');
+    let kunde = '', text = v;
+    const i = v.indexOf(':');
+    if (i > 0 && i < 60 && v.slice(i, i + 3) !== '://') { kunde = v.slice(0, i).trim(); text = v.slice(i + 1).trim(); }
+    return { kunde, text, telefon, ticket };
   }
 
   const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 
   function neueNotiz(raw, now = new Date()) {
-    const { kunde, text } = parseQuickInput(raw);
+    const { kunde, text, telefon, ticket } = parseQuickInput(raw);
     const iso = now.toISOString();
-    return { id: uid(), erstellt: iso, geaendert: iso, kunde, ticket: '', telefon: '', text,
+    return { id: uid(), erstellt: iso, geaendert: iso, kunde, ticket, telefon, text,
       status: 'offen', prio: 'normal', rueckruf: null, erinnertFuer: null };
+  }
+
+  // ---------- H-8 Ticket-Link ----------
+  /** Fehlermeldung für eine ungültige Vorlage, sonst null. Leer = Funktion aus. */
+  function pruefeTicketVorlage(vorlage) {
+    const v = str(vorlage).trim();
+    if (!v) return null;
+    if (!/^https?:\/\/[^\s]+$/i.test(v)) return 'Die Vorlage muss mit http:// oder https:// beginnen und darf keine Leerzeichen enthalten.';
+    if (!v.includes('<TICKET>')) return 'Die Vorlage braucht den Platzhalter <TICKET>.';
+    return null;
+  }
+
+  /** URL zum Ticket oder null, wenn Vorlage oder Nummer fehlen. */
+  function ticketUrl(vorlage, ticket) {
+    const v = str(vorlage).trim();
+    const nr = str(ticket).replace(/[#\s]/g, '');
+    if (!nr || !v || pruefeTicketVorlage(v)) return null;
+    return v.replace(/<TICKET>/g, () => encodeURIComponent(nr));
   }
 
   const istLeer = (n) => !n.kunde.trim() && !n.text.trim() && !n.ticket.trim() && !n.telefon.trim();
@@ -73,12 +105,12 @@
     const jetzt = list.filter(isJetzt).sort((a, b) => (a.rueckruf || '9').localeCompare(b.rueckruf || '9') || byPrio(a, b));
     const rest = (st) => list.filter(n => n.status === st && !isJetzt(n)).sort(byPrio);
     const erl = list.filter(n => n.status === 'erledigt').sort((a, b) => b.geaendert.localeCompare(a.geaendert));
-    return [
-      { key: 'jetzt', name: 'Jetzt', items: jetzt, hideEmpty: true },
+    return [ // leere Spuren werden ausgeblendet (H-4)
+      { key: 'jetzt', name: 'Jetzt', items: jetzt },
       { key: 'offen', name: 'Offen', items: rest('offen') },
       { key: 'wartet', name: 'Wartet', items: rest('wartet') },
       { key: 'erledigt', name: 'Erledigt', items: erl },
-    ].filter(l => l.items.length || !l.hideEmpty);
+    ].filter(l => l.items.length);
   }
 
   // ---------- W-2 Vorlagen ----------
@@ -144,7 +176,7 @@
   return {
     STATUS, PRIOS, PRIO_RANG, DATEN_VERSION,
     startOfDay, endOfDay, tageZwischen,
-    parseQuickInput, neueNotiz, istLeer, ersteZeile, uid,
+    parseQuickInput, neueNotiz, istLeer, ersteZeile, uid, pruefeTicketVorlage, ticketUrl,
     rrState, faelligeErinnerungen, anzahlFaellig,
     passtNotiz, passtWissen, lanes,
     placeholders, fillTemplate, istLink,
