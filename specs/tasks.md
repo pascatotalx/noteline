@@ -57,6 +57,8 @@ Kleine, einzeln prüfbare Schritte in Abhängigkeitsreihenfolge. Jede Aufgabe ne
 | T-52 | Befehlserkennung (PowerShell-Cmdlets, Windows-Befehle) in Eingabe und Vorschau (1.2.2) | W-1 | [x] |
 | T-53 | Notiz: Ansprechpartner per Anrede, Kunde per Branchenwort/Rechtsform + Tests (1.2.2) | H-1 | [x] |
 | T-54 | Notiz: Live-Vorschau unter dem Eingabefeld, verständlichere Texte (1.2.2) | H-11 | [x] |
+| T-55 | Notiz: Bezeichnungen und Kürzel (KD, ASP, Tel, Tkt, PX, Dr.) + Tests (1.2.3) | H-1 | [x] |
+| T-56 | Nur Symbol im Infobereich, kein Taskleisten-Knopf (1.2.3) | A-3 | umgesetzt, Sichtprüfung auf dem Laptop offen |
 | T-44 | Screenshots, README, CHANGELOG, Release 1.2.0 | R-2, R-3 | [ ] |
 
 ## Backlog

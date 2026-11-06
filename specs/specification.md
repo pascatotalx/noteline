@@ -3,7 +3,7 @@
 Beschreibt **was** Noteline kann und **warum**. Das Wie steht in `plan.md`.
 Die Kennungen (z. B. `H-3`) werden in `tasks.md`, im Code und in den Tests referenziert.
 
-Stand: Version 1.2.2 (06.11.2026). `[x]` = umgesetzt und getestet, `[ ]` = offen oder nur manuell prüfbar (T-16).
+Stand: Version 1.2.3 (06.11.2026). `[x]` = umgesetzt und getestet, `[ ]` = offen oder nur manuell prüfbar (T-16).
 
 ---
 
@@ -49,6 +49,16 @@ damit ich beim Anruf nichts verpasse.
       Anrede, nach der Rechtsform oder vor einem kleingeschriebenen Wort.
 - [x] Steht nach Kunde oder Ansprechpartner ein Satzzeichen oder ein großgeschriebenes Wort, werden sie aus dem
       Stichpunkt herausgenommen. Folgt ein Verb („Frau Müller meldet, …“), bleibt der Satz als Stichpunkt vollständig.
+- [x] **Bezeichnungen und Kürzel** (1.2.3, Rückmeldung von Pascal: im Hotline-Alltag wird viel abgekürzt):
+      `KD`, `Kd.`, `Kunde` vor einem großgeschriebenen Namen → *Kunde*; `ASP`, `Asp.`, `Ansprechpartner(in)` → *Ansprechpartner*
+      (bewusst **nicht** `AP`: das steht im Hotline-Alltag für „Arbeitsplatz“);
+      `Tel`, `Tel.`, `Telefon`, `Fon`, `Mobil`, `Handy` vor einer Nummer → *Telefon* (mit Bezeichnung genügen 5 Ziffern,
+      z. B. eine Durchwahl); `Tkt`, `Ticket-Nr.`, `Ticketnr.` vor einer Nummer → *Ticket*. Doppelpunkt danach ist erlaubt.
+      Bezeichnung und Wert werden aus dem Stichpunkt herausgenommen. „Kunde meldet …“ (kleingeschrieben danach) bleibt Text.
+- [x] `PX` am Anfang eines Kundennamens gilt als Branchenwort und wird zu „Praxis“ ausgeschrieben („PX Sonnenschein“ →
+      „Praxis Sonnenschein“).
+- [x] `Dr.` (auch `Dr. med.`, `Prof. Dr.`) am Anfang steht für einen Arzt bzw. seine Praxis und wird *Kunde*
+      („Dr. Müller, Connector defekt“). Mit Anrede davor („Herr Dr. Schmidt“) bleibt es der Ansprechpartner.
 - [x] Ein Name ohne Merkmal (z. B. nur „Sonnenschein“) wird wie bisher mit Doppelpunkt zum Kunden:
       „Sonnenschein: Connector läuft nicht“ (siehe K-4).
 - [x] Strg+N legt von überall eine leere Notiz an. Der Cursor steht im Feld *Kunde*.
@@ -91,7 +101,7 @@ Groß-/Kleinschreibung. Während der Suche sind alle Spuren aufgeklappt. Esc lee
 - [ ] Die Rückruf-Benachrichtigung bleibt unten rechts stehen, bis sie angeklickt oder geschlossen wird, und
       kommt mit dem Windows-Benachrichtigungston (außer bei „Nicht stören“). Sie erscheint auch, wenn Noteline
       im Infobereich versteckt ist.
-- [x] Ist das Fenster nicht aktiv, blinkt zusätzlich das Taskleistensymbol.
+- [x] ~~Ist das Fenster nicht aktiv, blinkt zusätzlich das Taskleistensymbol.~~ Entfällt ab 1.2.3 (kein Taskleisten-Knopf mehr, A-3).
 - [x] Pro Rückrufzeitpunkt wird genau einmal erinnert. Ein neuer Zeitpunkt löst erneut aus.
 - [x] Der Reiter *Hotline* zeigt die Zahl der heute fälligen und überfälligen Rückrufe als Badge.
 
@@ -210,6 +220,8 @@ den ersten Blick zeigen, was gerade eingetippt wird. Zwei getrennte Felder wurde
       *Nach Updates suchen* und *Beenden*.
 - [ ] Beenden ist nur über das Symbol im Infobereich möglich, außerdem beim Abmelden oder Herunterfahren von Windows.
 - [ ] Strg+Alt+H und ein erneuter Start über die Verknüpfung holen das versteckte Fenster nach vorne.
+- [ ] **Kein Taskleisten-Knopf** (1.2.3, Wunsch von Pascal): Noteline erscheint nur als kleines Symbol im Infobereich,
+      auch wenn das Fenster offen ist. Öffnen über das Symbol, Strg+Alt+H oder die Verknüpfung.
 
 ### Installation und Updates
 
