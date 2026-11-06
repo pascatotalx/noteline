@@ -665,7 +665,8 @@ function notizVorschau() {
   if (!aktiv) return;
   const p = NL.parseQuickInput(S.q);
   const chip = (label, wert) => `<span class="vs-chip${wert ? ' an' : ''}"><b>${label}</b><span>${wert ? esc(wert) : '<i>–</i>'}</span></span>`;
-  const tipp = p.kunde ? '' : ' Tipp: Kunde zuerst, z. B. „PX Sonnenschein, …“, „KD Muster GmbH …“, „Dr. Müller, …“ oder „Name: …“.';
+  const tipp = NL.nurKuerzel(S.q) ? ' Jetzt den Namen eintippen, z. B. „PX Sonnenschein“ oder „KD Müller“.'
+    : p.kunde ? '' : ' Tipp: Kunde zuerst, z. B. „PX Sonnenschein, …“, „KD Muster GmbH …“, „Dr. Müller, …“ oder „Name: …“.';
   box.innerHTML = `<div class="vs-chips">${chip('Kunde', p.kunde)}${chip('Ansprechpartner', p.ansprechpartner)}${chip('Telefon', p.telefon)}${chip('Ticket', p.ticket)}${chip('Stichpunkt', p.text)}</div>
     <div class="vs-hinweis"><span>Enter legt die Notiz an, alles bleibt danach änderbar.${tipp}</span></div>`;
 }

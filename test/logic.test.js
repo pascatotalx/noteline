@@ -344,7 +344,7 @@ test('H-1 (1.2.3): PX und Dr. am Anfang sind Kunden', () => {
   const p = (s) => NL.parseQuickInput(s);
   assert.deepEqual(p('PX Sonnenschein, Frau Müller, Connector defekt'),
     { kunde: 'Praxis Sonnenschein', ansprechpartner: 'Frau Müller', text: 'Connector defekt', telefon: '', ticket: '' });
-  assert.equal(p('KD PX Sonnenschein Kartenleser defekt').kunde, 'Praxis Sonnenschein Kartenleser');
+  assert.equal(p('KD PX Sonnenschein Kartenleser defekt').kunde, 'Praxis Sonnenschein');
   assert.deepEqual(p('Dr. Müller, Connector defekt'), { kunde: 'Dr. Müller', ansprechpartner: '', text: 'Connector defekt', telefon: '', ticket: '' });
   assert.deepEqual(p('Dr. med. Anna Beispiel meldet Kartenleser defekt'),
     { kunde: 'Dr. med. Anna Beispiel', ansprechpartner: '', text: 'Dr. med. Anna Beispiel meldet Kartenleser defekt', telefon: '', ticket: '' });
@@ -361,4 +361,31 @@ test('H-1 (1.2.3): keine falschen Treffer', () => {
   assert.equal(p('AP Frau Müller defekt').ansprechpartner, 'Frau Müller');   // nur über die Anrede, nicht über „AP“
   assert.equal(p('Telefonie fällt aus').telefon, '');
   assert.equal(p('Telefon geht nicht').telefon, '');
+});
+
+test('H-1 (1.2.4): Kürzel in Kleinschreibung, Namen werden großgeschrieben', () => {
+  const p = (s) => NL.parseQuickInput(s);
+  assert.deepEqual(p('px sonnenschein drucker defekt'), { kunde: 'Praxis Sonnenschein', ansprechpartner: '', text: 'drucker defekt', telefon: '', ticket: '' });
+  assert.deepEqual(p('kd müller, drucker offline'), { kunde: 'Müller', ansprechpartner: '', text: 'drucker offline', telefon: '', ticket: '' });
+  assert.equal(p('Px Sonnenschein').kunde, 'Praxis Sonnenschein');
+  assert.equal(p('kd. müller').kunde, 'Müller');
+  assert.equal(p('kd muster gmbh, router tauschen').kunde, 'Muster GmbH');
+  assert.deepEqual(p('asp frau müller rückruf'), { kunde: '', ansprechpartner: 'Frau Müller', text: 'rückruf', telefon: '', ticket: '' });
+  assert.equal(p('tel 123 kartenleser').telefon, '123');
+});
+
+test('H-1 (1.2.4): Namenslänge – Komma, Rechtsform, Personen-Verb, sonst ein Wort', () => {
+  const p = (s) => NL.parseQuickInput(s);
+  assert.deepEqual(p('KD Müller Drucker offline'), { kunde: 'Müller', ansprechpartner: '', text: 'Drucker offline', telefon: '', ticket: '' });
+  assert.equal(p('KD Muster Logistik GmbH Drucker offline').kunde, 'Muster Logistik GmbH');
+  assert.equal(p('KD Muster Logistik, Drucker offline').kunde, 'Muster Logistik');
+  assert.equal(p('PX Dr. Anna Beispiel meldet Kartenleser defekt').kunde, 'Praxis Dr. Anna Beispiel');
+  assert.equal(p('PX Dr. Sonnenschein Kartenleser defekt').kunde, 'Praxis Dr. Sonnenschein');
+  assert.equal(p('PX Sonnenschein Kartenleser defekt').text, 'Kartenleser defekt');
+  assert.equal(p('px meldet ausfall').kunde, '');
+});
+
+test('H-11 (1.2.4): nur Kürzel ohne Namen', () => {
+  for (const s of ['PX', 'px', 'KD', 'kd.', 'Kunde', 'asp', 'KD: ']) assert.equal(NL.nurKuerzel(s), true, s);
+  for (const s of ['PX Sonnenschein', 'Drucker', '']) assert.equal(NL.nurKuerzel(s), false, s);
 });
