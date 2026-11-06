@@ -3,6 +3,29 @@
 Alle nennenswerten Änderungen an Noteline. Format nach [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
+## [1.2.0] – 2026-11-06
+
+### Neu
+- **Neues Logo „One Flow"** für Installer, Programm, Taskleiste, Infobereich und Titelleiste. Das Logo in der
+  Titelleiste passt sich dem hellen und dunklen Erscheinungsbild an.
+- **Feld Ansprechpartner** in jeder Notiz, direkt unter dem Kunden. Es erscheint in der Liste
+  („Kunde · Ansprechpartner"), in der Rückruf-Benachrichtigung und wird durchsucht.
+  Schnellerfassung: `Kunde / Ansprechpartner: Stichpunkt`.
+- **Wissen komplett überarbeitet:** Ein Eintrag braucht nur noch eine Zeile, z. B. `Support-Hotline 0800 1234567`.
+  Noteline erkennt Telefonnummer, E-Mail, Link, IP-Adresse, Port oder Befehl und sortiert selbst ein. Gruppen
+  muss niemand mehr eintippen. Bestehende Einträge werden automatisch übernommen.
+- **Favoriten** mit Stern stehen ganz oben und lassen sich mit **Alt+1 bis Alt+9** sofort kopieren.
+- **Strg+Enter** in der Suche kopiert den besten Wissens-Treffer.
+- Links lassen sich öffnen, E-Mail-Adressen direkt anschreiben. Platzhalter in Links werden URL-sicher eingesetzt.
+- **Notiz als Text kopieren**, fertig zum Einfügen ins Ticketsystem.
+
+### Verbessert
+- **Löschen mit Rückgängig** statt Nachfragen: Notizen und Wissens-Einträge verschwinden sofort und lassen sich
+  6 Sekunden lang zurückholen.
+- Kopieren funktioniert jetzt auch, wenn das Noteline-Fenster gerade keinen Fokus hat.
+- **Rückruf schneller setzen:** getrennte Felder für Datum und Uhrzeit. Das Datum steht schon auf heute, es
+  reicht, die Uhrzeit einzutragen.
+
 ## [1.1.0] – 2026-11-06
 
 Angepasst an die Arbeit neben Ticketsystem und Telefonie: breites, niedriges Fenster, schnelleres Erfassen,
@@ -56,6 +79,7 @@ Erste veröffentlichte Version. Neuaufbau des Prototyps „Hotline-Notizen“ na
 - Eine ins Fenster gezogene Datei ersetzt nicht mehr die App-Oberfläche.
 - Strengere Sicherheitseinstellungen (Sandbox, Content-Security-Policy ohne Inline-Skripte).
 
+[1.2.0]: https://github.com/pascatotalx/noteline/releases/tag/v1.2.0
 [1.1.0]: https://github.com/pascatotalx/noteline/releases/tag/v1.1.0
 [1.0.1]: https://github.com/pascatotalx/noteline/releases/tag/v1.0.1
 [1.0.0]: https://github.com/pascatotalx/noteline/releases/tag/v1.0.0

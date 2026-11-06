@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="build/icon.png" width="88" alt="">
+<img src="brand/noteline-app-icon.svg" width="96" alt="">
 
 # Noteline
 
@@ -42,18 +42,27 @@ Was sich geändert hat, steht im [Changelog](CHANGELOG.md) und bei jedem [Releas
 ## Funktionen
 
 ### Hotline
-- **Sofort mitschreiben:** Tippen und Enter drücken. `Kunde: Stichpunkt` füllt den Kunden gleich mit aus,
+- **Sofort mitschreiben:** Tippen und Enter drücken. `Kunde / Ansprechpartner: Stichpunkt` füllt beide Felder gleich mit aus,
   Telefonnummern und `#Ticketnummern` landen automatisch in ihren Feldern.
 - **Ticket mit einem Klick öffnen:** Einmal die Ticket-Adresse eures Systems hinterlegen, dann wird jede
   Ticketnummer zum Link.
 - **Spuren statt Textwüste:** *Jetzt*, *Offen*, *Wartet*, *Erledigt*, mit Priorität und Ticketnummer.
-- **Rückruf-Erinnerung:** Windows-Benachrichtigung zum fälligen Zeitpunkt, die stehen bleibt, bis du sie
+- **Ansprechpartner** je Notiz: mit wem telefoniert wurde bzw. wer beim Kunden zuständig ist.
+- **Als Text kopieren:** Die ganze Notiz mit einem Klick fertig zum Einfügen ins Ticketsystem.
+- **Löschen mit Rückgängig:** kein Nachfragen, dafür 6 Sekunden zum Zurückholen.
+- **Rückruf-Erinnerung:** Datum steht schon auf heute, nur die Uhrzeit eintragen. Zum Zeitpunkt kommt eine
+  Windows-Benachrichtigung, die stehen bleibt, bis du sie
   wegklickst. Ein Klick öffnet die Notiz.
 - **Suche** über Kunde, Ticket, Telefon und Text.
 
 ### Wissen
-- Ports, IPs, Links und Befehle nach Gruppen. **Ein Klick kopiert** den Wert.
-- **Vorlagen:** Ein Wert wie `ping <IP> -n 4` bekommt ein Eingabefeld und liefert den fertigen Befehl.
+- **Eine Zeile reicht:** `Support-Hotline 0800 1234567` oder `Download https://…` eintippen, Enter. Noteline erkennt
+  Telefonnummer, E-Mail, Link, IP-Adresse, Port oder Befehl und sortiert den Eintrag selbst ein, ohne Gruppen.
+- **Ein Klick kopiert** den Wert. Links lassen sich öffnen, E-Mail-Adressen direkt anschreiben.
+- **Favoriten** mit dem Stern stehen ganz oben und sind mit **Alt+1 bis Alt+9** ohne Suchen kopierbar.
+- **Strg+Enter** in der Suche kopiert den besten Treffer.
+- **Vorlagen:** Ein Wert wie `route add <IP> mask 255.255.255.255 <GATEWAY>` bekommt Eingabefelder und liefert
+  den fertigen Befehl.
 
 ### Bedienung
 - **Passt sich dem Fenster an:** schmal und hoch mit Reitern, breit und niedrig mit zwei Spalten
@@ -75,6 +84,8 @@ Was sich geändert hat, steht im [Changelog](CHANGELOG.md) und bei jedem [Releas
 |---|---|
 | <kbd>Strg</kbd>+<kbd>K</kbd> | Suchen / notieren |
 | <kbd>Strg</kbd>+<kbd>N</kbd> | Neue Notiz |
+| <kbd>Strg</kbd>+<kbd>Enter</kbd> | Besten Wissens-Treffer der Suche kopieren |
+| <kbd>Alt</kbd>+<kbd>1</kbd> … <kbd>9</kbd> | Favoriten kopieren |
 | <kbd>Strg</kbd>+<kbd>1</kbd> / <kbd>2</kbd> | Hotline / Wissen |
 | <kbd>Strg</kbd>+<kbd>Alt</kbd>+<kbd>H</kbd> | Noteline aus jeder Anwendung nach vorne holen |
 | <kbd>Esc</kbd> | Schließen / Suche leeren |

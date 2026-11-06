@@ -11,28 +11,31 @@ const electron = require('electron');
 const h = (stunden, minuten = 0) => { const d = new Date(); d.setHours(stunden, minuten, 0, 0); return d.toISOString(); };
 const tag = (delta, stunden) => { const d = new Date(); d.setDate(d.getDate() + delta); d.setHours(stunden, 0, 0, 0); return d.toISOString(); };
 const n = (id, kunde, ticket, text, extra = {}) => ({
-  id, kunde, ticket, telefon: '', text, status: 'offen', prio: 'normal', rueckruf: null, erinnertFuer: null,
+  id, kunde, ansprechpartner: '', ticket, telefon: '', text, status: 'offen', prio: 'normal', rueckruf: null, erinnertFuer: null,
   erstellt: extra.erstellt || h(9), geaendert: extra.geaendert || extra.erstellt || h(9), ...extra,
 });
 
 const demo = {
   version: 2,
   notizen: [
-    n('d1', 'Praxis Sonnenschein', '#10234', 'Kartenterminal meldet Verbindungsfehler\nNeustart Konnektor besprochen', { prio: 'hoch', erstellt: h(8, 40), rueckruf: h(23, 0), erinnertFuer: h(23, 0) }),
-    n('d2', 'Muster Logistik GmbH', '#10251', 'Drucker im Lager druckt leere Seiten\nTreiber neu installiert, Testseite ok\nKunde meldet sich, falls es wieder auftritt', { erstellt: h(9, 15), telefon: '+49 123 4567890' }),
+    n('d1', 'Praxis Sonnenschein', '#10234', 'Kartenterminal meldet Verbindungsfehler\nNeustart Konnektor besprochen', { ansprechpartner: 'Frau Beispiel', prio: 'hoch', erstellt: h(8, 40), rueckruf: h(23, 0), erinnertFuer: h(23, 0) }),
+    n('d2', 'Muster Logistik GmbH', '#10251', 'Drucker im Lager druckt leere Seiten\nTreiber neu installiert, Testseite ok\nKunde meldet sich, falls es wieder auftritt', { erstellt: h(9, 15), telefon: '+49 123 4567890', ansprechpartner: 'Herr Muster' }),
     n('d3', 'Beispiel & Söhne', '', 'Fragt nach Zugang für neue Mitarbeiterin', { erstellt: tag(-1, 14) }),
     n('d4', 'Café Morgenrot', '#10198', 'Wartet auf Rückmeldung vom Hersteller', { status: 'wartet', erstellt: tag(-2, 11) }),
     n('d5', 'Stadtbibliothek Nord', '#10177', 'Passwort zurückgesetzt, Anmeldung klappt', { status: 'erledigt', erstellt: tag(-1, 10) }),
   ],
   wissen: [
-    { id: 'w1', gruppe: 'Befehle', titel: 'Erreichbarkeit prüfen', wert: 'ping <IP> -n 4' },
-    { id: 'w2', gruppe: 'Ports', titel: 'Fernwartung', wert: '5938' },
-    { id: 'w3', gruppe: 'Ports', titel: 'Webserver intern', wert: '8443' },
-    { id: 'w4', gruppe: 'Netz', titel: 'Testserver', wert: '192.0.2.10' },
-    { id: 'w5', gruppe: 'Netz', titel: 'DNS', wert: '198.51.100.53' },
-    { id: 'w6', gruppe: 'Links', titel: 'Herstellerportal', wert: 'https://example.org/support' },
+    { id: 'w1', titel: 'Support-Hotline', wert: '0800 1234567', favorit: true },
+    { id: 'w2', titel: 'Support-E-Mail', wert: 'support@example.org', favorit: true },
+    { id: 'w3', titel: 'Software-Download', wert: 'https://example.org/download' },
+    { id: 'w4', titel: 'Firmware Kartenterminal', wert: 'https://example.org/firmware' },
+    { id: 'w5', titel: 'Fachdienst A', wert: '192.0.2.10' },
+    { id: 'w6', titel: 'Fachdienst B', wert: '198.51.100.20' },
+    { id: 'w7', titel: 'Fernwartung', wert: '5938' },
+    { id: 'w8', titel: 'Webserver intern', wert: '8443' },
+    { id: 'w9', titel: 'Route Fachdienst', wert: 'route add <IP> mask 255.255.255.255 <GATEWAY>' },
   ],
-  ui: { closed: { erledigt: false }, platzhalter: { w1: { IP: '192.0.2.10' } } },
+  ui: { closed: { erledigt: false }, platzhalter: { w9: { IP: '192.0.2.10', GATEWAY: '192.0.2.1' } } },
 };
 
 const ziel = path.join(__dirname, '..', 'docs');
