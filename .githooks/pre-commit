@@ -1,0 +1,8 @@
+#!/bin/sh
+# Blockiert Commits mit Nutzerdaten oder Zugangsdaten (Spezifikation R-1).
+# Aktiviert über "npm install" (Skript "prepare" setzt core.hooksPath).
+if ! command -v node >/dev/null 2>&1; then
+  echo "✗ Node.js nicht gefunden – Prüfung auf sensible Daten nicht möglich, Commit abgebrochen." >&2
+  exit 1
+fi
+exec node scripts/check-sensitive.js --staged
