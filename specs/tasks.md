@@ -60,6 +60,7 @@ Kleine, einzeln prüfbare Schritte in Abhängigkeitsreihenfolge. Jede Aufgabe ne
 | T-55 | Notiz: Bezeichnungen und Kürzel (KD, ASP, Tel, Tkt, PX, Dr.) + Tests (1.2.3) | H-1 | [x] |
 | T-56 | Nur Symbol im Infobereich, kein Taskleisten-Knopf (1.2.3) | A-3 | umgesetzt, Sichtprüfung auf dem Laptop offen |
 | T-57 | Kürzel in Kleinschreibung, Namenslänge, Hinweis „Namen eintippen“ (1.2.4) | H-1, H-11 | [x] |
+| T-58 | Titelleiste bleibt sichtbar: Seite verrutscht nicht, Blätter beginnen darunter (1.2.5) | A-1 | [x] |
 | T-44 | Screenshots, README, CHANGELOG, Release 1.2.0 | R-2, R-3 | [ ] |
 
 ## Backlog

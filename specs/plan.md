@@ -184,6 +184,9 @@ Version erhöhen: `npm version patch|minor --no-git-tag-version`, CHANGELOG erg�
 - Der Notiz-Editor ist eine Funktion (`notizHtml`), die je nach Modus in `#colSide` oder in das Blatt
   gerendert wird. Beim Moduswechsel wird eine offene Notiz umgehängt.
 - `render()` zeichnet `#colSide` nur neu, wenn dort keine Notiz offen ist.
+- Die Seite selbst scrollt nie (`overflow: clip` auf `html`, `body`, `#app`), Fokus wird mit `preventScroll` gesetzt.
+  Grund (1.2.5): Fokus in ein Blatt, das noch von unten hereinfährt, hat die Seite um die Titelleistenhöhe verschoben.
+  Blätter (`.backdrop`) beginnen unter der Titelleiste, damit sie nicht unter den Windows-Fensterknöpfen liegen.
 
 ### Schnellerfassung (H-1) und Ticket-Link (H-8)
 - `logic.parseQuickInput` zieht zuerst Telefonnummer (`(+|0)` + mindestens 9 Ziffern, erlaubt: Leerzeichen,

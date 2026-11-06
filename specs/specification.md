@@ -3,7 +3,7 @@
 Beschreibt **was** Noteline kann und **warum**. Das Wie steht in `plan.md`.
 Die Kennungen (z. B. `H-3`) werden in `tasks.md`, im Code und in den Tests referenziert.
 
-Stand: Version 1.2.4 (06.11.2026). `[x]` = umgesetzt und getestet, `[ ]` = offen oder nur manuell prüfbar (T-16).
+Stand: Version 1.2.5 (06.11.2026). `[x]` = umgesetzt und getestet, `[ ]` = offen oder nur manuell prüfbar (T-16).
 
 ---
 
@@ -198,6 +198,9 @@ den ersten Blick zeigen, was gerade eingetippt wird. Zwei getrennte Felder wurde
 - [x] Erster Start: Breite ein Viertel des Hauptbildschirms (mindestens 440 px), volle Höhe, rechter Rand.
 - [ ] Eigene, flache Titelleiste: Logo, Name und Knöpfe teilen sich eine Zeile mit den Fensterknöpfen von
       Windows. Die Zeile dient zum Verschieben des Fensters.
+- [x] Die Titelleiste bleibt **immer sichtbar und bedienbar**, auch in einem niedrigen Fenster und wenn Einstellungen
+      oder eine Notiz als Blatt offen sind. Blätter beginnen unter der Titelleiste und scrollen innen
+      (1.2.5, Fehlerbericht von Pascal).
 - [x] Position und Größe werden gemerkt. Liegt die gespeicherte Position auf keinem Bildschirm mehr,
       gilt die Standardposition.
 - [x] *Immer im Vordergrund* ist umschaltbar und wird gemerkt.
