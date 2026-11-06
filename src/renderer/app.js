@@ -140,7 +140,7 @@ function renderHotline(anim) {
   if (!ls.length) {
     return S.q.trim()
       ? `<div class="empty${anim}"><strong>Keine Notiz gefunden</strong><span>Enter legt „${esc(S.q.trim())}“ als neue Notiz an.</span></div>`
-      : `<div class="empty${anim}"><strong>Noch keine Notizen</strong><span>Oben lostippen und Enter drücken. Noteline erkennt dabei selbst:</span><div class="vs-chips erkennt"><span class="vs-chip an"><b>Kunde</b><span>Praxis …, … GmbH</span></span><span class="vs-chip an"><b>Ansprechpartner</b><span>Frau / Herr …</span></span><span class="vs-chip an"><b>Telefon</b><span>0123 456789</span></span><span class="vs-chip an"><b>Ticket</b><span>#12345</span></span></div><span>Der Rest wird zum Stichpunkt. Zum Beispiel:</span><code class="beispiel">Praxis Sonnenschein, Frau Müller, Connector startet neu</code></div>`;
+      : `<div class="empty${anim}"><strong>Noch keine Notizen</strong><span>Oben lostippen und Enter drücken. Noteline erkennt dabei selbst:</span><div class="vs-chips erkennt"><span class="vs-chip an"><b>Kunde</b><span>PX …, Dr. …, KD …, … GmbH</span></span><span class="vs-chip an"><b>Ansprechpartner</b><span>Frau / Herr …, ASP …</span></span><span class="vs-chip an"><b>Telefon</b><span>Tel 0123 456789</span></span><span class="vs-chip an"><b>Ticket</b><span>#12345, Tkt 12345</span></span></div><span>Der Rest wird zum Stichpunkt. Zum Beispiel:</span><code class="beispiel">PX Sonnenschein, Frau Müller, Tel 123, Connector startet neu</code></div>`;
   }
   return ls.map((l, i) => {
     const open = !D.ui.closed[l.key] || !!S.q.trim();
@@ -521,7 +521,7 @@ function renderSettings() {
     <div class="set-row"><div class="set-label"><strong>Mit Windows starten</strong><span>${S.autostart.moeglich ? 'Noteline öffnet sich beim Anmelden.' : 'Nur in der installierten Version.'}</span></div>${sw('autostart', S.autostart.an, !S.autostart.moeglich)}</div>
     <div class="set-row"><div class="set-label"><strong>Immer im Vordergrund</strong><span>Fenster bleibt über anderen Programmen.</span></div>${sw('pin', S.immerVorne)}</div>
     <div class="set-row"><div class="set-label"><strong>Speicherort</strong><button class="pfad press" type="button" data-set="ordner" title="Ordner im Explorer öffnen">${esc(S.ordner)}</button><span>Notizen und Wissen als Datei, nur auf diesem Rechner.</span></div></div>
-    <div class="set-row"><div class="set-label"><strong>Im Hintergrund</strong><span>Das Kreuz und Minimieren lassen Noteline unten rechts im Infobereich weiterlaufen. Beenden über Rechtsklick auf das Symbol.</span></div></div>
+    <div class="set-row"><div class="set-label"><strong>Im Hintergrund</strong><span>Noteline zeigt sich nur als Symbol unten rechts im Infobereich, nicht in der Taskleiste. Klick darauf oder Strg+Alt+H öffnet es, das Kreuz versteckt es wieder. Beenden über Rechtsklick auf das Symbol.</span></div></div>
     <div class="set-row stack"><div class="set-label"><strong>Tastenkürzel</strong></div>
       <div class="keys">
         <span class="kbd">Strg K</span><span>Suchen / notieren</span>
@@ -665,7 +665,7 @@ function notizVorschau() {
   if (!aktiv) return;
   const p = NL.parseQuickInput(S.q);
   const chip = (label, wert) => `<span class="vs-chip${wert ? ' an' : ''}"><b>${label}</b><span>${wert ? esc(wert) : '<i>–</i>'}</span></span>`;
-  const tipp = p.kunde ? '' : ' Tipp: Kunde zuerst, z. B. „Praxis Sonnenschein, …“ oder „Name: …“.';
+  const tipp = p.kunde ? '' : ' Tipp: Kunde zuerst, z. B. „PX Sonnenschein, …“, „KD Muster GmbH …“, „Dr. Müller, …“ oder „Name: …“.';
   box.innerHTML = `<div class="vs-chips">${chip('Kunde', p.kunde)}${chip('Ansprechpartner', p.ansprechpartner)}${chip('Telefon', p.telefon)}${chip('Ticket', p.ticket)}${chip('Stichpunkt', p.text)}</div>
     <div class="vs-hinweis"><span>Enter legt die Notiz an, alles bleibt danach änderbar.${tipp}</span></div>`;
 }

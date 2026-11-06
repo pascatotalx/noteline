@@ -19,7 +19,7 @@ test('H-1: Telefonnummer landet im Feld Telefon', () => {
   assert.equal(p('+493012345678').telefon, '+493012345678');
   assert.equal(p('Rückruf an 030/1234567-0 bitte').telefon, '030/1234567-0');
   assert.equal(p('Rückruf an 030/1234567-0 bitte').text, 'Rückruf an bitte');
-  assert.deepEqual(p('Kunde: Nummer 030 1234 5678'), { kunde: 'Kunde', ansprechpartner: '', text: 'Nummer', telefon: '030 1234 5678', ticket: '' });
+  assert.deepEqual(p('Beispiel AG: Nummer 030 1234 5678'), { kunde: 'Beispiel AG', ansprechpartner: '', text: 'Nummer', telefon: '030 1234 5678', ticket: '' });
 });
 
 test('H-1: keine Telefonnummer bei Ports, IPs, Datum, Ticket und Links', () => {
@@ -325,4 +325,40 @@ test('H-1: alles zusammen mit Telefon und Ticket', () => {
   const n = NL.neueNotiz('Praxis Sonnenschein, Frau Müller, +49 123 4567890 #4711 Connector startet neu');
   assert.deepEqual([n.kunde, n.ansprechpartner, n.telefon, n.ticket, n.text],
     ['Praxis Sonnenschein', 'Frau Müller', '+49 123 4567890', '#4711', 'Connector startet neu']);
+});
+
+test('H-1 (1.2.3): Bezeichnungen KD, Kunde, ASP, Tel, Tkt', () => {
+  const p = (s) => NL.parseQuickInput(s);
+  assert.deepEqual(p('KD Muster GmbH ASP Frau Müller Tel 0123 45678 Drucker offline'),
+    { kunde: 'Muster GmbH', ansprechpartner: 'Frau Müller', text: 'Drucker offline', telefon: '0123 45678', ticket: '' });
+  assert.deepEqual(p('Kunde: Sonnenschein, Connector defekt'), { kunde: 'Sonnenschein', ansprechpartner: '', text: 'Connector defekt', telefon: '', ticket: '' });
+  assert.deepEqual(p('Kd. Sonnenschein Tel. 123 Rückruf wegen Kartenleser'),
+    { kunde: 'Sonnenschein', ansprechpartner: '', text: 'Rückruf wegen Kartenleser', telefon: '123', ticket: '' });
+  assert.equal(p('Tkt 12345 nachfassen').ticket, '#12345');
+  assert.equal(p('Ticket-Nr.: 4711 offen').ticket, '#4711');
+  assert.deepEqual(p('ASP Herr Weber, Rückruf erbeten'), { kunde: '', ansprechpartner: 'Herr Weber', text: 'Rückruf erbeten', telefon: '', ticket: '' });
+  assert.equal(p('Mobil: 0151 1234567 bitte zurückrufen').telefon, '0151 1234567');
+});
+
+test('H-1 (1.2.3): PX und Dr. am Anfang sind Kunden', () => {
+  const p = (s) => NL.parseQuickInput(s);
+  assert.deepEqual(p('PX Sonnenschein, Frau Müller, Connector defekt'),
+    { kunde: 'Praxis Sonnenschein', ansprechpartner: 'Frau Müller', text: 'Connector defekt', telefon: '', ticket: '' });
+  assert.equal(p('KD PX Sonnenschein Kartenleser defekt').kunde, 'Praxis Sonnenschein Kartenleser');
+  assert.deepEqual(p('Dr. Müller, Connector defekt'), { kunde: 'Dr. Müller', ansprechpartner: '', text: 'Connector defekt', telefon: '', ticket: '' });
+  assert.deepEqual(p('Dr. med. Anna Beispiel meldet Kartenleser defekt'),
+    { kunde: 'Dr. med. Anna Beispiel', ansprechpartner: '', text: 'Dr. med. Anna Beispiel meldet Kartenleser defekt', telefon: '', ticket: '' });
+  assert.equal(p('Herr Dr. Schmidt, Kartenleser defekt').ansprechpartner, 'Herr Dr. Schmidt');
+  assert.equal(p('Herr Dr. Schmidt, Kartenleser defekt').kunde, '');
+  assert.equal(p('Dr. ist im Urlaub').kunde, '');
+});
+
+test('H-1 (1.2.3): keine falschen Treffer', () => {
+  const p = (s) => NL.parseQuickInput(s);
+  assert.equal(p('Kunde meldet Drucker offline').kunde, '');
+  assert.equal(p('AP neu gestartet').ansprechpartner, '');
+  assert.equal(p('AP Konfiguration geändert').ansprechpartner, '');
+  assert.equal(p('AP Frau Müller defekt').ansprechpartner, 'Frau Müller');   // nur über die Anrede, nicht über „AP“
+  assert.equal(p('Telefonie fällt aus').telefon, '');
+  assert.equal(p('Telefon geht nicht').telefon, '');
 });

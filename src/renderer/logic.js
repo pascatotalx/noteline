@@ -25,7 +25,9 @@
   // Telefon: beginnt mit + oder 0, mindestens 9 Ziffern, erlaubt Leerzeichen / - ( ). Nicht mitten in Wörtern,
   // Links oder Ticketnummern.
   const TELEFON = /(?<![\w#+/.:=-])(?:\+\d|0)[\d /()-]{6,}\d/g;
-  const TICKET = [/(?<![\w&])#\s?(\d{3,})\b/, /\bTicket(?:nummer|nr\.?)?\s*:?\s*#?\s*(\d{3,})\b/i];
+  // Mit Bezeichnung davor reichen 3 Ziffern, z. B. eine Durchwahl (1.2.3): „Tel. 123“, „Mobil: 0151 …“
+  const TELEFON_BEZ = /(?<![\wäöüÄÖÜß])(?:Tel(?:efon)?\.?|Fon|Mobil|Handy)\s*:?\s*((?:\+\d|\d)[\d /()-]*\d|\d)/i;
+  const TICKET = [/(?<![\w&])#\s?(\d{3,})\b/, /(?<![\wäöüÄÖÜß])(?:Ticket(?:-?(?:nummer|nr\.?))?|Tkt\.?)\s*:?\s*#?\s*(\d{3,})\b/i];
   const ziffern = (s) => s.replace(/\D/g, '').length;
 
   // Ansprechpartner per Anrede (H-1, 1.2.2): „Frau Müller“, „Herr Dr. Schmidt“, „Fr. Meier“, „Hr. Weber-Lang“
@@ -33,33 +35,60 @@
   const ANREDE_IRGENDWO = new RegExp(`(?<![\\wäöüÄÖÜß])${ANREDE_QUELLE}`);
   const ANREDE_VORN = new RegExp(`^${ANREDE_QUELLE}`);
   const istAnrede = (t) => new RegExp(`^${ANREDE_QUELLE}$`).test(str(t).trim());
-  // Kunde per Merkmal: Branchenwort am Anfang oder Rechtsform im Namen
-  const BRANCHE = /^(?:(?:Zahnarzt|Arzt|Hausarzt|Kinderarzt|Tierarzt|Frauenarzt|Augenarzt|Gemeinschafts|Physiotherapie|Ergotherapie|Logopädie)?[Pp]raxis|Praxisgemeinschaft|Apotheke|MVZ|Klinik|Klinikum|Krankenhaus|Pflegedienst|Pflegeheim|Altenheim|Seniorenheim|Seniorenresidenz|Seniorenzentrum|Tagespflege|Hospiz|Sanitätshaus|Labor|Kanzlei|Steuerkanzlei|Notariat|Stadtwerke|Stadtverwaltung|Gemeinde|Hotel|Autohaus|Schule|Kita|Kindergarten)$/;
+  // Kunde per Merkmal: Branchenwort am Anfang (auch Kürzel PX) oder Rechtsform im Namen
+  const BRANCHE = /^(?:(?:Zahnarzt|Arzt|Hausarzt|Kinderarzt|Tierarzt|Frauenarzt|Augenarzt|Gemeinschafts|Physiotherapie|Ergotherapie|Logopädie)?[Pp]raxis|Praxisgemeinschaft|PX\.?|Px\.?|Apotheke|MVZ|Klinik|Klinikum|Krankenhaus|Pflegedienst|Pflegeheim|Altenheim|Seniorenheim|Seniorenresidenz|Seniorenzentrum|Tagespflege|Hospiz|Sanitätshaus|Labor|Kanzlei|Steuerkanzlei|Notariat|Stadtwerke|Stadtverwaltung|Gemeinde|Hotel|Autohaus|Schule|Kita|Kindergarten)$/;
+  const TITEL_VORN = /^(?:Dr|Dres|Prof)\.$/;                    // „Dr. Müller“ am Anfang = Arzt bzw. Praxis (1.2.3)
   const RECHTSFORM = /^(?:GmbH|gGmbH|mbH|AG|KG|GbR|OHG|UG|e\.V\.|eV|e\.K\.|eG|PartG|SE|KGaA|Ltd\.?|Inc\.?)$/;
   const VERBINDER = new Set(['am', 'an', 'im', 'in', 'der', 'die', 'das', 'den', 'dem', 'des', 'und', '&', 'für', 'zum', 'zur', 'bei', 'von', 'vom', 'auf', 'Co.', 'Co']);
+  const TITEL_TEIL = /^(?:Dr|Dres|Prof|med|dent|Dipl|rer|nat)\.$/;
+  // Bezeichnungen vor Kunde und Ansprechpartner (1.2.3). „AP“ bewusst nicht: steht für „Arbeitsplatz“.
+  const BEZ_KUNDE = /(?<![\wäöüÄÖÜß])(?:Kunde|KUNDE|Kd\.|KD|kd\.)\s*:?\s+(?=[A-ZÄÖÜ])/;
+  const BEZ_ANSPRECHPARTNER = /(?<![\wäöüÄÖÜß])(?:Ansprechpartner(?:in)?|ASP|Asp\.)\s*:?\s+(?=[A-ZÄÖÜ])/;
+  const BEZ_WORT = /^(?:Kunde|KUNDE|Kd\.|KD|kd\.|Ansprechpartner(?:in)?|ASP|Asp\.|Tel(?:efon)?\.?|Fon|Mobil|Handy|Ticket|Tkt\.?)$/;
   const ohneSatzzeichen = (t) => t.replace(/[,:;]+$/, '');
+  const ausschreiben = (name) => name.replace(/^(?:PX|Px)\.?(?=\s|$)/, 'Praxis');
 
-  /** Länge eines Kundennamens am Anfang (Branchenwort oder Rechtsform), sonst 0. */
+  /** Länge eines Namens am Anfang von v (Großschreibung, Verbinder, Titel, Rechtsform). */
+  function nameLaenge(v, { anredeErlaubt = false, max = 6 } = {}) {
+    const tokens = [...v.matchAll(/\S+/g)];
+    let ende = -1;
+    for (let i = 0; i < tokens.length && i < max; i++) {
+      const roh = tokens[i][0], t = ohneSatzzeichen(roh);
+      const anrede = /^(?:Frau|Herr|Fr\.|Hr\.)$/.test(t);
+      if (i > 0 && (BEZ_WORT.test(t) || (anrede && !anredeErlaubt))) break;   // nächste Bezeichnung oder Anrede
+      const passt = /^[A-ZÄÖÜ]/.test(t) || VERBINDER.has(t) || RECHTSFORM.test(t) || TITEL_TEIL.test(t);
+      if (!passt) break;
+      ende = i;
+      if (roh !== t) break;                                                     // Komma/Doppelpunkt am Wort
+      const weiter = tokens[i + 1] && tokens[i + 1][0];
+      if (RECHTSFORM.test(t) && !(weiter && /^(?:&|Co\.?|KG|mbH)/.test(weiter))) break;
+    }
+    while (ende > 0 && VERBINDER.has(ohneSatzzeichen(tokens[ende][0]))) ende--;
+    return ende < 0 ? 0 : tokens[ende].index + ohneSatzzeichen(tokens[ende][0]).length;
+  }
+
+  /** Länge eines Kundennamens am Anfang (Branchenwort, PX, Dr. oder Rechtsform), sonst 0. */
   function kundeAmAnfang(v) {
     const tokens = [...v.matchAll(/\S+/g)];
     if (!tokens.length) return 0;
-    const branche = BRANCHE.test(ohneSatzzeichen(tokens[0][0]));
+    const erstes = ohneSatzzeichen(tokens[0][0]);
+    const branche = BRANCHE.test(erstes) || TITEL_VORN.test(erstes);
     const rfIndex = tokens.slice(0, 7).findIndex(t => RECHTSFORM.test(ohneSatzzeichen(t[0])));
     if (!branche && rfIndex < 0) return 0;
     let ende = -1;
     for (let i = 0; i < tokens.length && i < 8; i++) {
       const roh = tokens[i][0], t = ohneSatzzeichen(roh);
-      if (i > 0 && /^(?:Frau|Herr|Fr\.|Hr\.)$/.test(t)) break;                      // Anrede beginnt
-      const passt = i === 0 || /^[A-ZÄÖÜ0-9]/.test(t) || VERBINDER.has(t) || RECHTSFORM.test(t) || /^(?:Dr|Prof|med|Dipl)\.$/.test(t);
+      if (i > 0 && (/^(?:Frau|Herr|Fr\.|Hr\.)$/.test(t) || BEZ_WORT.test(t))) break;  // Anrede oder Bezeichnung beginnt
+      const passt = i === 0 || /^[A-ZÄÖÜ0-9]/.test(t) || VERBINDER.has(t) || RECHTSFORM.test(t) || TITEL_TEIL.test(t);
       if (!passt) break;                                                              // kleingeschriebenes Wort
       ende = i;
       if (roh !== t) break;                                                           // Komma/Doppelpunkt am Wort
       const weiter = tokens[i + 1] && tokens[i + 1][0];
       if (RECHTSFORM.test(t) && !(weiter && /^(?:&|Co\.?|KG|mbH)/.test(weiter))) break; // Name endet mit Rechtsform
     }
-    while (ende > 0 && VERBINDER.has(ohneSatzzeichen(tokens[ende][0]))) ende--;
+    while (ende > 0 && (VERBINDER.has(ohneSatzzeichen(tokens[ende][0])) || TITEL_TEIL.test(ohneSatzzeichen(tokens[ende][0])))) ende--;
     if (ende < 0) return 0;
-    if (branche && rfIndex < 0 && ende < 1) return 0;                                 // „Praxis“ allein reicht nicht
+    if (branche && rfIndex < 0 && ende < 1) return 0;                                 // „Praxis“/„Dr.“ allein reicht nicht
     if (!branche && rfIndex > ende) return 0;                                         // Rechtsform muss im Namen liegen
     return tokens[ende].index + ohneSatzzeichen(tokens[ende][0]).length;
   }
@@ -72,19 +101,41 @@
     return { raus: true, rest: rest.trim() };
   }
 
+  const aufraeumen = (v) => v.replace(/\s+/g, ' ').replace(/\s+([:,;])/g, '$1').replace(/([,;:])(?:\s*[,;])+/g, '$1')
+    .replace(/^[\s:,;–-]+|[\s,;–-]+$/g, '');
+  const ausschneiden = (v, start, ende) => v.slice(0, start) + ', ' + v.slice(ende);
+
   /** Teilt die Schnellerfassung auf: Telefon, Ticket, Kunde, Ansprechpartner, Stichpunkt (H-1, H-9). */
   function parseQuickInput(raw) {
     let v = str(raw).trim();
-    let telefon = '', ticket = '';
-    for (const m of v.matchAll(TELEFON)) {
-      if (ziffern(m[0]) >= 9) { telefon = m[0].trim(); v = v.slice(0, m.index) + ' ' + v.slice(m.index + m[0].length); break; }
+    let telefon = '', ticket = '', kunde = '', ansprechpartner = '';
+    let geaendert = false;
+
+    // Telefon: erst mit Bezeichnung (auch kurze Durchwahl), sonst lange Nummer irgendwo
+    const tb = v.match(TELEFON_BEZ);
+    if (tb && ziffern(tb[1]) >= 3) { telefon = tb[1].trim(); v = ausschneiden(v, tb.index, tb.index + tb[0].length); geaendert = true; }
+    else {
+      for (const m of v.matchAll(TELEFON)) {
+        if (ziffern(m[0]) >= 9) { telefon = m[0].trim(); v = v.slice(0, m.index) + ' ' + v.slice(m.index + m[0].length); geaendert = true; break; }
+      }
     }
     for (const re of TICKET) {
       const m = v.match(re);
-      if (m) { ticket = '#' + m[1]; v = v.slice(0, m.index) + ' ' + v.slice(m.index + m[0].length); break; }
+      if (m) { ticket = '#' + m[1]; v = v.slice(0, m.index) + ' ' + v.slice(m.index + m[0].length); geaendert = true; break; }
     }
-    if (telefon || ticket) v = v.replace(/\s+/g, ' ').replace(/\s+([:,;])/g, '$1').replace(/^[\s:,;–-]+|[\s,;–-]+$/g, '');
-    let kunde = '', ansprechpartner = '', text = v;
+    // Bezeichnungen: „KD Muster GmbH“, „Kunde: Sonnenschein“, „ASP Frau Müller“
+    const bk = v.match(BEZ_KUNDE);
+    if (bk) {
+      const start = bk.index + bk[0].length, laenge = nameLaenge(v.slice(start));
+      if (laenge) { kunde = ausschreiben(v.slice(start, start + laenge).trim()); v = ausschneiden(v, bk.index, start + laenge); geaendert = true; }
+    }
+    const ba = v.match(BEZ_ANSPRECHPARTNER);
+    if (ba) {
+      const start = ba.index + ba[0].length, laenge = nameLaenge(v.slice(start), { anredeErlaubt: true, max: 5 });
+      if (laenge) { ansprechpartner = v.slice(start, start + laenge).trim(); v = ausschneiden(v, ba.index, start + laenge); geaendert = true; }
+    }
+    if (geaendert) v = aufraeumen(v);
+    let text = v;
 
     // 1. Ausdrücklich mit Doppelpunkt: „Kunde / Ansprechpartner: Stichpunkt“ (auch „Kunde, Frau Müller: …“)
     const i = v.indexOf(':');
@@ -94,33 +145,35 @@
         const t = teil.trim();
         if (!t) continue;
         if (!ansprechpartner && istAnrede(t)) ansprechpartner = t;
-        else if (!kunde) kunde = t;
+        else if (!kunde) kunde = ausschreiben(t);
         else if (!ansprechpartner) ansprechpartner = t;
       }
       if (!ansprechpartner) { const m = text.match(ANREDE_IRGENDWO); if (m) ansprechpartner = m[0]; }
       return { kunde, ansprechpartner, text, telefon, ticket };
     }
 
-    // 2. Ohne Doppelpunkt: Kunde am Anfang (Branchenwort/Rechtsform), dann Anrede
+    // 2. Ohne Doppelpunkt: Kunde am Anfang (Branchenwort/PX/Dr./Rechtsform), dann Anrede
     let rest = v;
-    const k = kundeAmAnfang(v);
+    const k = kunde ? 0 : kundeAmAnfang(v);
     if (k) {
-      kunde = v.slice(0, k).trim();
+      kunde = ausschreiben(v.slice(0, k).trim());
       const n = nachName(v.slice(k));
       if (!n.raus) {
-        const m = v.match(ANREDE_IRGENDWO);
-        return { kunde, ansprechpartner: m ? m[0] : '', text: v, telefon, ticket };
+        const m = ansprechpartner ? null : v.match(ANREDE_IRGENDWO);
+        return { kunde, ansprechpartner: ansprechpartner || (m ? m[0] : ''), text: v, telefon, ticket };
       }
       rest = n.rest;
     }
-    const vorn = rest.match(ANREDE_VORN);
-    if (vorn) {
-      ansprechpartner = vorn[0];
-      const n = nachName(rest.slice(vorn[0].length));
-      if (n.raus) rest = n.rest;
-    } else {
-      const m = rest.match(ANREDE_IRGENDWO);
-      if (m) ansprechpartner = m[0];
+    if (!ansprechpartner) {
+      const vorn = rest.match(ANREDE_VORN);
+      if (vorn) {
+        ansprechpartner = vorn[0];
+        const n = nachName(rest.slice(vorn[0].length));
+        if (n.raus) rest = n.rest;
+      } else {
+        const m = rest.match(ANREDE_IRGENDWO);
+        if (m) ansprechpartner = m[0];
+      }
     }
     return { kunde, ansprechpartner, text: rest.trim(), telefon, ticket };
   }
