@@ -19,6 +19,16 @@ Alles bleibt lokal auf dem eigenen Rechner.
 
 </div>
 
+## Warum Noteline?
+
+Ich arbeite in einer Telefon-Hotline. Während eines Anrufs kommen Informationen schnell und ungeordnet:
+Name, Ticketnummer, Rückrufnummer, was schon probiert wurde. Bisher landete das alles in einer langen
+Textdatei im Editor. Dort verschwimmen die Anrufe ineinander, offene Rückrufe gehen unter, und die Werte, die
+ich ständig brauche (Ports, IPs, Links, Befehle), muss ich jedes Mal erst suchen.
+
+Noteline ist mein Werkzeug dagegen: **Gedanken und Infos schnell und präzise festhalten, ohne den Faden im
+Gespräch zu verlieren, und das wichtigste Nachschlagewissen immer mit einem Klick parat haben.**
+
 ## Installation
 
 1. Unter [**Releases**](https://github.com/pascatotalx/noteline/releases/latest) die Datei `Noteline-Setup-x.y.z.exe` herunterladen.
