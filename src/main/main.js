@@ -96,6 +96,7 @@ function fensterErstellen() {
     icon: ICON_ICO,
     show: false,
     alwaysOnTop: !SCREENSHOT && !!e.immerVorne,
+    skipTaskbar: !SCREENSHOT,   // nur Symbol im Infobereich, kein Taskleisten-Knopf (A-3)
     backgroundColor: FARBEN[aktiv].hintergrund,
     titleBarStyle: 'hidden',
     titleBarOverlay: { color: FARBEN[aktiv].hintergrund, symbolColor: FARBEN[aktiv].symbole, height: TITELLEISTE },
