@@ -3,7 +3,7 @@
 Beschreibt **was** Noteline kann und **warum**. Das Wie steht in `plan.md`.
 Die Kennungen (z. B. `H-3`) werden in `tasks.md`, im Code und in den Tests referenziert.
 
-Stand: Version 1.2.5 (06.11.2026). `[x]` = umgesetzt und getestet, `[ ]` = offen oder nur manuell prüfbar (T-16).
+Stand: Version 1.3.0 (06.11.2026). `[x]` = umgesetzt und getestet, `[ ]` = offen oder nur manuell prüfbar (T-16).
 
 ---
 
@@ -233,6 +233,40 @@ den ersten Blick zeigen, was gerade eingetippt wird. Zwei getrennte Felder wurde
 - [ ] **Kein Taskleisten-Knopf** (1.2.3, Wunsch von Pascal): Noteline erscheint nur als kleines Symbol im Infobereich,
       auch wenn das Fenster offen ist. Öffnen über das Symbol, Strg+Alt+H oder die Verknüpfung.
 
+### Statusmonitor (optional, ab 1.3.0)
+
+Wunsch von Pascal: Ausfälle von Online-Diensten (TI, Doctolib) bekommt man im Hotline-Alltag oft zu spät mit.
+Noteline prüft öffentliche Statusseiten und meldet Änderungen sofort. Für andere Nutzer ist die Funktion
+standardmäßig aus (Constitution 2).
+
+**S-1 Ein- und ausschalten.**
+- [x] In den Einstellungen gibt es einen Schalter *Statusmonitor*. Standard: aus. Aus heißt: kein Abruf, keine Anzeige.
+- [x] Mitgelieferte Vorlagen zum Anhaken: *TI-Lagebild (gematik)* und *Doctolib*. Weitere Dienste (z. B. Hoster ohne
+      Statusseite) lassen sich als eigene Quelle ergänzen.
+- [x] Prüfabstand wählbar: 5, 15 (Standard) oder 30 Minuten. Zusätzlich wird beim Start und per Knopf geprüft.
+
+**S-2 Arten von Quellen.**
+- [x] **TI-Lagebild:** offizielle TI-Status-API der gematik (`/lageapi/v1/tistatus/incident`). Offene Einschränkungen
+      (ohne `closedAt`) zählen: Status 1 = Ausfall, 4 = Teilausfall, 2 = erholt sich gerade.
+- [x] **Statusseite:** Seiten im verbreiteten Statuspage-Format (`/api/v2/summary.json`), z. B. Doctolib. Gesamtstatus
+      und offene Vorfälle werden übernommen, Wartungen gesondert gekennzeichnet.
+- [x] **Erreichbarkeit:** für Dienste ohne Statusseite. Antwortet die Adresse nicht innerhalb von 15 s oder mit Fehler,
+      gilt der Dienst als nicht erreichbar.
+- [x] Eigene Quellen: Name und Adresse eintragen, Noteline erkennt selbst, ob es eine Statusseite ist, sonst Erreichbarkeit.
+
+**S-3 Anzeige.**
+- [x] Links neben der Uhr in der Titelleiste steht ein kleines Statusfeld: grün „Status ok“, gelb „Störung“, rot „Ausfall“,
+      grau „unbekannt“ (Abruf fehlgeschlagen), jeweils mit Anzahl betroffener Dienste.
+- [x] Ein Klick öffnet die Übersicht: je Dienst Zustand, letzte Prüfung, offene Meldungen mit Text und Beginn,
+      Link zur Originalseite und *Jetzt prüfen*.
+- [x] Texte aus den Quellen werden als reiner Text angezeigt (kein HTML aus fremden Quellen).
+
+**S-4 Benachrichtigungen.**
+- [x] Bei jeder Änderung kommt eine Windows-Benachrichtigung, die stehen bleibt, bis sie weggeklickt wird:
+      neue Störung, Verschlechterung, Behebung. Ein Klick öffnet die Übersicht.
+- [x] Beim allerersten Abruf nach dem Einschalten wird nichts gemeldet (keine Flut für längst bekannte Störungen).
+- [x] Ein fehlgeschlagener Abruf (z. B. kein Internet) löst keine Störungsmeldung aus, er zeigt nur „unbekannt“.
+
 ### Installation und Updates
 
 **U-1 Installation.** Ein Installer `Noteline-Setup-<version>.exe` installiert pro Benutzer ohne
@@ -311,7 +345,8 @@ Standardwerte, statt abzustürzen.
 und andere Personen Daten eintragen.
 - [x] Die App speichert Nutzerdaten ausschließlich im Dokumente-Ordner des Benutzers, nie im
       Programm- oder Projektordner.
-- [x] Die App lädt keine Nutzerdaten hoch. Der einzige Netzwerkzugriff ist der lesende Update-Abruf.
+- [x] Die App lädt keine Nutzerdaten hoch. Netzwerkzugriffe sind nur der lesende Update-Abruf und, wenn eingeschaltet,
+      die lesenden Abrufe des Statusmonitors (S-1).
 - [x] Der Installer enthält keine Daten. Ein neuer Benutzer startet mit leerer App.
 - [x] `.gitignore` schließt Datendateien, Backups, Build-Ausgaben, `.env` und Logs aus.
 - [x] Ein Git-Hook blockiert Commits mit Datendateien (`daten*.json`, `fenster.json`, `einstellungen.json`, `Backups/`) oder

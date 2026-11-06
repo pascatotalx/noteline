@@ -17,8 +17,10 @@ Bei jeder Entscheidung gilt: **Tempo beim Erfassen schlägt Funktionsumfang.**
 
 - Notizen enthalten Kundendaten (Namen, Telefonnummern, Tickets). Sie liegen **ausschließlich lokal**
   unter `Dokumente\Noteline\`.
-- Kein Netzwerkverkehr außer der Update-Prüfung bei GitHub. Keine Telemetrie, keine Cloud-Synchronisation,
-  keine externen Schriften oder CDNs zur Laufzeit.
+- Kein Netzwerkverkehr außer der Update-Prüfung bei GitHub und – nur wenn eingeschaltet – den **lesenden Abrufen der
+  im Statusmonitor eingestellten öffentlichen Statusseiten** (ab 1.3.0). Dabei werden nie Notizen, Wissen oder andere
+  eigene Daten gesendet. Keine Telemetrie, keine Cloud-Synchronisation, keine externen Schriften oder CDNs zur Laufzeit.
+- Optionale Funktionen für bestimmte Arbeitsumfelder (z. B. TI im Gesundheitswesen) sind standardmäßig aus.
 - Das Repository ist **öffentlich**. Datendateien, Backups, Zugangsdaten und Testdaten mit echten
   Inhalten (Kunden, Telefonnummern, Tickets, interne IPs) kommen **nie** hinein. Das gilt auch für Daten
   anderer Personen, falls die App weitergegeben wird. Abgesichert durch `.gitignore`, einen Commit-Hook

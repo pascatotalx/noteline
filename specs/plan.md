@@ -214,3 +214,19 @@ Version erhöhen: `npm version patch|minor --no-git-tag-version`, CHANGELOG erg�
 - Rückgängig (A-4): gelöschtes Objekt samt Position wird 6 s im Speicher gehalten. Der Toast bekommt einen Knopf.
 - Alt+1–9 (W-5) wirken nur, solange Noteline den Fokus hat. Bewusst kein globales Kürzel, damit andere Programme
   ihre Alt-Kombinationen behalten.
+
+## 14. Statusmonitor (Version 1.3)
+
+- `src/main/status.js` – reines Node-Modul (testbar ohne Electron):
+  - `ausTiLage(json)`, `ausStatuspage(json)`, `ausErreichbarkeit(httpStatus | fehler)` → einheitliches Ergebnis
+    `{ zustand: ok | wartung | stoerung | ausfall | unbekannt, meldungen: [{ schluessel, titel, text, seit, zustand }] }`.
+  - `aenderungen(alt, neu)` → Liste der Benachrichtigungen (neu, schlimmer, behoben). `unbekannt` löst nichts aus.
+  - `pruefeQuelle(quelle, fetch)` mit Zeitlimit 15 s, `erkenneArt(url, fetch)` für eigene Quellen.
+  - `klartext(html)` entfernt HTML aus Quelltexten (`<br>` → Zeilenumbruch).
+- Hauptprozess: Abruf mit `fetch` im Hauptprozess (kein CORS, keine Lockerung der CSP). Zeitplan per `setInterval`,
+  neu gesetzt bei Änderung der Einstellungen. Letztes Ergebnis in `einstellungen.json` (`statusLetzter`), damit nach
+  einem Neustart nur echte Änderungen gemeldet werden.
+- Einstellungen: `status: { aktiv, intervall, quellen: [{ id, name, art: ti | statuspage | erreichbar, url, aktiv }] }`,
+  Vorlagen TI-Lagebild und Doctolib vorbelegt, aber nicht angehakt.
+- IPC: `statusDaten()`, `statusPruefen()`, `statusEinstellungen(patch)`, `statusQuelleTesten(url)`, Event `status`
+  und `statusOeffnen`.

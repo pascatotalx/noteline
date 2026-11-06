@@ -63,6 +63,16 @@ Kleine, einzeln prüfbare Schritte in Abhängigkeitsreihenfolge. Jede Aufgabe ne
 | T-58 | Titelleiste bleibt sichtbar: Seite verrutscht nicht, Blätter beginnen darunter (1.2.5) | A-1 | [x] |
 | T-44 | Screenshots, README, CHANGELOG, Release 1.2.0 | R-2, R-3 | [ ] |
 
+## Meilenstein 1.3.0 – Statusmonitor
+
+| # | Aufgabe | Spec | Status |
+|---|---|---|---|
+| T-60 | Constitution und Spec für den Statusmonitor | S-1 – S-4 | [x] |
+| T-61 | `status.js`: Quellen auslesen, Art erkennen, Änderungen ermitteln + Tests | S-2, S-4 | [x] |
+| T-62 | Hauptprozess: Zeitplan, Abruf, Benachrichtigungen, IPC | S-1, S-4 | [x] |
+| T-63 | Oberfläche: Statusfeld, Übersicht, Einstellungen mit Vorlagen und eigenen Quellen | S-1, S-3 | [x] |
+| T-64 | Prüfung in der echten App mit simulierter Störung, README, Changelog | S-1 – S-4 | [x] |
+
 ## Backlog
 
 | # | Aufgabe | Spec |
