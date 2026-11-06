@@ -290,3 +290,31 @@ nav button[aria-current="page"]{color:var(--inv-fg)}
 .empty code.beispiel{margin-top:6px;font-family:var(--mono);font-size:12px;padding:6px 10px;border-radius:6px;background:var(--surface);border:1px solid rgba(var(--fg),.1)}
 .empty .erkennt{justify-content:center;margin:4px 0 6px}
 .empty .erkennt .vs-chip{height:26px}
+
+/* ---------- Statusmonitor (S-3) ---------- */
+.status-pill{display:inline-flex;align-items:center;gap:7px;height:28px;padding:0 11px 0 9px;border-radius:999px;border:1px solid rgba(var(--fg),.16);background:transparent;cursor:pointer;font-family:var(--display);font-weight:600;font-size:12px;white-space:nowrap}
+.st-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;background:rgba(var(--fg),.35)}
+[data-zustand="ok"] .st-dot{background:var(--lime)}
+[data-zustand="wartung"] .st-dot{background:var(--cyan)}
+[data-zustand="stoerung"] .st-dot{background:var(--amber)}
+[data-zustand="ausfall"] .st-dot{background:var(--pink)}
+.status-pill[data-zustand="stoerung"]{border-color:var(--amber);color:var(--amber-text)}
+.status-pill[data-zustand="ausfall"]{border-color:var(--pink);color:var(--pink-text);animation:puls 1.6s ease-in-out infinite}
+@keyframes puls{50%{box-shadow:0 0 0 4px rgba(255,0,172,.18)}}
+.st-dienst{padding:12px 0;border-bottom:1px solid rgba(var(--fg),.09)}
+.st-dienst:last-child{border-bottom:0}
+.st-kopf{display:flex;align-items:center;gap:10px}
+.st-kopf strong{font-family:var(--display);font-weight:600;font-size:14px;flex-grow:1}
+.st-zustand{font-size:12px;font-family:var(--display);font-weight:600;opacity:.8}
+[data-zustand="stoerung"] .st-zustand{color:var(--amber-text);opacity:1}
+[data-zustand="ausfall"] .st-zustand{color:var(--pink-text);opacity:1}
+.st-meldung{margin:8px 0 0 18px;padding:8px 10px;border-radius:8px;background:var(--bg);font-size:13px;line-height:1.5}
+.st-meldung p{margin:4px 0 0;white-space:pre-line;opacity:.85}
+.st-seit{font-size:12px;opacity:.65}
+.st-fehler{margin:6px 0 0 18px;font-size:12px;opacity:.7}
+.set-row-kopf{display:flex;align-items:center;gap:12px}
+.st-quellen{display:flex;flex-direction:column;gap:2px}
+.st-quelle{display:flex;align-items:center;gap:12px;padding:6px 0}
+.st-neu{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.4fr) auto;gap:6px}
+.st-neu .field{font-family:var(--body)}
+@media (prefers-reduced-motion:reduce){.status-pill[data-zustand="ausfall"]{animation:none}}

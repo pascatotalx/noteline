@@ -21,6 +21,9 @@ const bridge = window.api || (() => {
     notizOffen: async () => {}, version: async () => 'Browser',
     updateSuchen: async () => keineUpdates, updateStatus: async () => keineUpdates, updateInstallieren: async () => {},
     beiNotizOeffnen: () => {}, beiUpdateStatus: () => {}, beiTheme: () => {},
+    statusDaten: async () => ({ aktiv: false, intervall: 15, quellen: [], ergebnisse: [], gesamt: { zustand: 'aus' }, vorlagen: [] }),
+    statusPruefen: async () => null, statusEinstellungen: async () => null, statusQuelleTesten: async () => ({ ok: false, fehler: 'Im Browser nicht verfügbar' }),
+    beiStatus: () => {}, beiStatusOeffnen: () => {},
   };
 })();
 
@@ -32,6 +35,8 @@ const S = {
   copied: null, editW: null, wDraft: null, focusForm: false, wNeu: '', firstRender: true,
   schutz: null, ordner: '', version: '', update: { zustand: 'idle' }, autostart: { an: false, moeglich: false }, immerVorne: false,
   einst: { theme: 'dunkel', uhr: false, ticketLink: '' }, ticketEntwurf: null, ticketFehler: '',
+  status: { aktiv: false, intervall: 15, quellen: [], ergebnisse: [], gesamt: { zustand: 'aus' }, vorlagen: [] },
+  statusOpen: false, statusNeu: { name: '', url: '' }, statusFehler: '', statusTestet: false,
 };
 let saveTimer = null;
 
@@ -402,6 +407,7 @@ function notizSchliessen(loeschen) {
   save(true);
 }
 function closeSheet() {
+  if (S.statusOpen) { S.statusOpen = false; $('#sheetHost').innerHTML = ''; $('#q').focus({ preventScroll: true }); return; }
   if (S.settingsOpen) { S.settingsOpen = false; $('#sheetHost').innerHTML = ''; $('#q').focus({ preventScroll: true }); return; }
   if (!S.openId) return;
   notizSchliessen();
@@ -482,6 +488,7 @@ function updateText(s) {
 }
 function openSettings() {
   if (S.openId) { notizSchliessen(); render(); }
+  S.statusOpen = false;
   S.settingsOpen = true; S.ticketEntwurf = null; S.ticketFehler = '';
   $('#sheetHost').innerHTML = `<div class="backdrop">
     <button class="closer" type="button" tabindex="-1" data-close><span class="sr">Schließen</span></button>
@@ -500,8 +507,9 @@ function openSettings() {
 function renderSettings() {
   if (!S.settingsOpen) return;
   const body = $('#setBody');
-  const fokusTicket = document.activeElement && document.activeElement.id === 'setTicket';
-  const auswahl = fokusTicket ? [document.activeElement.selectionStart, document.activeElement.selectionEnd] : null;
+  const aktivEl = document.activeElement;
+  const fokusId = aktivEl && body.contains(aktivEl) && aktivEl.id && aktivEl.tagName === 'INPUT' ? aktivEl.id : null;
+  const auswahl = fokusId ? [aktivEl.selectionStart, aktivEl.selectionEnd] : null;
   const scroll = body.scrollTop;
   const u = updateText(S.update);
   const busy = ['suche', 'laedt', 'dev'].includes(S.update.zustand);
@@ -518,6 +526,7 @@ function renderSettings() {
     <div class="set-row stack"><div class="set-label"><strong>Ticket-Link</strong><span>Adresse eures Ticketsystems mit &lt;TICKET&gt; als Platzhalter. Dann öffnet ein Klick das Ticket einer Notiz. Bleibt nur auf diesem Rechner.</span></div>
       <input class="field" id="setTicket" type="url" autocomplete="off" spellcheck="false" placeholder="https://support.example.org/tickets?id=<TICKET>" value="${esc(ticketWert)}">
       ${S.ticketFehler ? `<div class="set-label"><span class="err">${esc(S.ticketFehler)}</span></div>` : ''}</div>
+    ${statusEinstellungenHtml(sw)}
     <div class="set-row"><div class="set-label"><strong>Mit Windows starten</strong><span>${S.autostart.moeglich ? 'Noteline öffnet sich beim Anmelden.' : 'Nur in der installierten Version.'}</span></div>${sw('autostart', S.autostart.an, !S.autostart.moeglich)}</div>
     <div class="set-row"><div class="set-label"><strong>Immer im Vordergrund</strong><span>Fenster bleibt über anderen Programmen.</span></div>${sw('pin', S.immerVorne)}</div>
     <div class="set-row"><div class="set-label"><strong>Speicherort</strong><button class="pfad press" type="button" data-set="ordner" title="Ordner im Explorer öffnen">${esc(S.ordner)}</button><span>Notizen und Wissen als Datei, nur auf diesem Rechner.</span></div></div>
@@ -535,7 +544,7 @@ function renderSettings() {
     </div>
   </div>`;
   body.scrollTop = scroll;
-  if (fokusTicket) { const el = $('#setTicket'); el.focus({ preventScroll: true }); try { el.setSelectionRange(...auswahl); } catch {} }
+  if (fokusId) { const el = document.getElementById(fokusId); if (el) { el.focus({ preventScroll: true }); try { el.setSelectionRange(...auswahl); } catch {} } }
 }
 async function ticketLinkSpeichern(wert) {
   const v = wert.trim();
@@ -562,6 +571,107 @@ async function settingAction(k, btn) {
   if (k === 'pin') return setImmerVorne(!S.immerVorne);
   if (k === 'uhr') { S.einst.uhr = !S.einst.uhr; await bridge.einstellungSetzen('uhr', S.einst.uhr); uhrAnzeigen(); return renderSettings(); }
   if (k === 'ordner') return bridge.ordnerOeffnen();
+  if (k === 'status') { S.statusFehler = ''; return statusSetzen({ aktiv: !S.status.aktiv }); }
+  if (k === 'quelleNeu') return statusQuelleHinzufuegen();
+}
+
+// ---------- Statusmonitor (S-1 – S-4) ----------
+const ZUSTAND_TEXT = { ok: 'In Ordnung', wartung: 'Wartung', stoerung: 'Störung', ausfall: 'Ausfall', unbekannt: 'Unbekannt' };
+const ART_TEXT = { ti: 'TI-Status-API', statuspage: 'Statusseite', erreichbar: 'Erreichbarkeit' };
+const hostVon = (url) => { try { return new URL(url).host; } catch { return url; } };
+
+async function statusSetzen(patch) {
+  const d = await bridge.statusEinstellungen(patch);
+  if (d) S.status = d;
+  renderStatusPill(); renderSettings(); renderStatus();
+}
+
+/** Kleines Feld links neben der Uhr (S-3). */
+function renderStatusPill() {
+  const pill = $('#statusPill');
+  pill.hidden = !S.status.aktiv;
+  if (!S.status.aktiv) return;
+  const g = S.status.gesamt || { zustand: 'unbekannt' };
+  const erste = !S.status.ergebnisse.length;
+  const text = erste ? (S.status.laeuft ? 'Prüfe …' : 'Status') : g.zustand === 'ok' ? 'Status ok'
+    : g.zustand === 'unbekannt' ? 'Status ?' : `${ZUSTAND_TEXT[g.zustand]}${g.betroffen > 1 ? ' · ' + g.betroffen : ''}`;
+  pill.dataset.zustand = erste ? 'unbekannt' : g.zustand;
+  $('#statusText').textContent = text;
+  pill.title = 'Dienst-Status' + (erste ? '' : ': ' + S.status.ergebnisse.map(e => `${e.name} ${ZUSTAND_TEXT[e.zustand].toLowerCase()}`).join(', '));
+}
+
+function openStatus() {
+  if (S.openId) { notizSchliessen(); render(); }
+  S.settingsOpen = false; S.statusOpen = true;
+  $('#sheetHost').innerHTML = `<div class="backdrop">
+    <button class="closer" type="button" tabindex="-1" data-close><span class="sr">Schließen</span></button>
+    <section class="sheet" role="dialog" aria-modal="true" aria-label="Dienst-Status">
+      <span class="grab" aria-hidden="true"></span>
+      <div class="s-head">
+        <div class="s-titlewrap"><h2 class="s-title">Dienst-Status</h2><span class="s-meta num" id="statusMeta"></span></div>
+        <button class="btn-ghost press" type="button" data-statuspruefen>Jetzt prüfen</button>
+        <button class="btn-white press" type="button" data-close>Fertig</button>
+      </div>
+      <div class="s-body" id="statusBody"></div>
+    </section>
+  </div>`;
+  renderStatus();
+}
+
+function renderStatus() {
+  if (!S.statusOpen) return;
+  const d = S.status;
+  const zeiten = d.ergebnisse.map(e => e.geprueft).filter(Boolean).sort();
+  $('#statusMeta').textContent = !d.aktiv ? 'Statusmonitor ist aus'
+    : `Prüft alle ${d.intervall} Min.${zeiten.length ? ' · zuletzt ' + fTime.format(new Date(zeiten[zeiten.length - 1])) : ''}${d.laeuft ? ' · prüft gerade …' : ''}`;
+  const knopf = $('[data-statuspruefen]'); if (knopf) knopf.disabled = !d.aktiv || !!d.laeuft;
+  const body = $('#statusBody');
+  if (!d.aktiv || !d.quellen.some(q => q.aktiv)) {
+    body.innerHTML = `<div class="empty"><strong>Noch keine Dienste ausgewählt</strong><span>In den Einstellungen den Statusmonitor einschalten und Dienste anhaken, z. B. das TI-Lagebild.</span><button class="btn-copy press" type="button" data-statuseinst>Einstellungen öffnen</button></div>`;
+    return;
+  }
+  if (!d.ergebnisse.length) { body.innerHTML = '<div class="empty"><strong>Wird geprüft …</strong></div>'; return; }
+  body.innerHTML = d.ergebnisse.map(e => `<div class="st-dienst" data-zustand="${e.zustand}">
+      <div class="st-kopf"><span class="st-dot" aria-hidden="true"></span><strong>${esc(e.name)}</strong><span class="st-zustand">${ZUSTAND_TEXT[e.zustand]}</span>
+        <button class="w-tool press" type="button" data-statuslink="${esc(e.id)}" title="Originalseite öffnen"><span class="sr">Originalseite öffnen</span>${ICON.ext}</button></div>
+      ${e.meldungen.map(m => `<div class="st-meldung"><div><b>${esc(m.titel)}</b>${m.seit ? ` <span class="st-seit">seit ${esc(relDate(m.seit))}${NL.tageZwischen(new Date(m.seit), new Date()) === 0 ? '' : ' ' + esc(fTime.format(new Date(m.seit)))}</span>` : ''}</div>${m.text ? `<p>${esc(m.text)}</p>` : ''}</div>`).join('')}
+      ${e.fehler ? `<p class="st-fehler">Abruf fehlgeschlagen: ${esc(e.fehler)}</p>` : ''}
+    </div>`).join('');
+}
+
+function statusEinstellungenHtml(sw) {
+  const d = S.status;
+  const kopf = `<div class="set-row-kopf"><div class="set-label"><strong>Statusmonitor</strong><span>Prüft öffentliche Statusseiten, z. B. das TI-Lagebild der gematik, und meldet Störungen sofort per Windows-Benachrichtigung. Es werden keine eigenen Daten gesendet.</span></div>${sw('status', d.aktiv)}</div>`;
+  if (!d.aktiv) return `<div class="set-row stack">${kopf}</div>`;
+  const quellen = d.quellen.map(q => `<div class="st-quelle">
+      <button class="switch" type="button" role="switch" aria-pressed="${!!q.aktiv}" aria-checked="${!!q.aktiv}" data-quelle="${esc(q.id)}"><span class="sr">${esc(q.name)} prüfen</span></button>
+      <div class="set-label"><strong>${esc(q.name)}</strong><span>${ART_TEXT[q.art]} · ${esc(hostVon(q.url))}</span></div>
+      ${(d.vorlagen || []).includes(q.id) ? '' : `<button class="btn-ghost danger press" type="button" data-quelleweg="${esc(q.id)}">Entfernen</button>`}
+    </div>`).join('');
+  const intervall = [5, 15, 30].map(m => `<button type="button" class="press" data-intervall="${m}" aria-pressed="${d.intervall === m}">${m} Min.</button>`).join('');
+  return `<div class="set-row stack">${kopf}
+    <div class="set-row-kopf"><div class="set-label"><span>Prüfen alle</span></div><div class="seg" role="group" aria-label="Prüfabstand">${intervall}</div></div>
+    <div class="st-quellen">${quellen}</div>
+    <div class="st-neu">
+      <input class="field" id="stName" type="text" autocomplete="off" placeholder="Name, z. B. Hosting" value="${esc(S.statusNeu.name)}" aria-label="Name des Dienstes">
+      <input class="field" id="stUrl" type="url" autocomplete="off" spellcheck="false" placeholder="Statusseite oder Webseite, z. B. status.example.org" value="${esc(S.statusNeu.url)}" aria-label="Adresse">
+      <button class="btn-ghost press" type="button" data-set="quelleNeu"${S.statusTestet ? ' disabled' : ''}>${S.statusTestet ? 'Prüfe …' : 'Hinzufügen'}</button>
+    </div>
+    ${S.statusFehler ? `<div class="set-label"><span class="err">${esc(S.statusFehler)}</span></div>` : ''}
+  </div>`;
+}
+
+async function statusQuelleHinzufuegen() {
+  const name = S.statusNeu.name.trim(), url = S.statusNeu.url.trim();
+  if (!name || !url) { S.statusFehler = 'Bitte Name und Adresse eintragen.'; return renderSettings(); }
+  S.statusTestet = true; S.statusFehler = ''; renderSettings();
+  const t = await bridge.statusQuelleTesten(url);
+  S.statusTestet = false;
+  if (!t || !t.ok) { S.statusFehler = (t && t.fehler) || 'Adresse konnte nicht geprüft werden.'; return renderSettings(); }
+  const quellen = [...S.status.quellen, { id: 'eigen-' + NL.uid(), name, art: t.art, url: t.url, link: /^https?:\/\//i.test(url) ? url : 'https://' + url, aktiv: true }];
+  S.statusNeu = { name: '', url: '' };
+  await statusSetzen({ quellen });
+  toast(`„${name}“ hinzugefügt (${ART_TEXT[t.art]})${t.hinweis ? ' – ' + t.hinweis : ''}`);
 }
 
 // ---------- Erinnerungen (H-6) ----------
@@ -614,6 +724,13 @@ document.addEventListener('click', (e) => {
   if (t.id === 'qCreate') return createNote(S.q, false);
   if (t.id === 'pin') return setImmerVorne(!S.immerVorne);
   if (t.id === 'settings') return S.settingsOpen ? closeSheet() : openSettings();
+  if (t.id === 'statusPill') return S.statusOpen ? closeSheet() : openStatus();
+  if ('statuspruefen' in d) { bridge.statusPruefen(); return; }
+  if ('statuseinst' in d) return openSettings();
+  if (d.statuslink) { const e = S.status.ergebnisse.find(x => x.id === d.statuslink); return e && bridge.linkOeffnen(e.link); }
+  if (d.intervall) return statusSetzen({ intervall: Number(d.intervall) });
+  if (d.quelle) return statusSetzen({ quellen: S.status.quellen.map(q => q.id === d.quelle ? { ...q, aktiv: !q.aktiv } : q) });
+  if (d.quelleweg) return statusSetzen({ quellen: S.status.quellen.filter(q => q.id !== d.quelleweg) });
   if ('wneu' in d) return wissenNeu();
   const w = D.wissen.find(x => x.id === (d.wcopy || d.wopen || d.wmail || d.wfav || d.wdel));
   if (d.wcopy) return w && wissenKopieren(w);
@@ -642,6 +759,7 @@ document.addEventListener('submit', (e) => {
 });
 document.addEventListener('input', (e) => {
   if (e.target.id === 'setTicket') { S.ticketEntwurf = e.target.value; return; }
+  if (e.target.id === 'stName' || e.target.id === 'stUrl') { S.statusNeu[e.target.id === 'stName' ? 'name' : 'url'] = e.target.value; S.statusFehler = ''; return; }
   if (e.target.id === 'wNeu') { S.wNeu = e.target.value; $('#wVorschau').innerHTML = vorschauHtml(S.wNeu); return; }
   const id = e.target.dataset && e.target.dataset.ph;
   if (!id) return;
@@ -653,6 +771,7 @@ document.addEventListener('input', (e) => {
 document.addEventListener('change', (e) => { if (e.target.id === 'setTicket') ticketLinkSpeichern(e.target.value); });
 document.addEventListener('keydown', (e) => {
   if (e.target.id === 'wNeu' && e.key === 'Enter') { e.preventDefault(); wissenNeu(); }
+  if ((e.target.id === 'stUrl' || e.target.id === 'stName') && e.key === 'Enter') { e.preventDefault(); statusQuelleHinzufuegen(); }
   if (e.target.id === 'wNeu' && e.key === 'Escape' && S.wNeu) { e.preventDefault(); e.stopPropagation(); S.wNeu = ''; e.target.value = ''; $('#wVorschau').innerHTML = vorschauHtml(''); }
 }, true);
 /** Bester Wissens-Treffer zur aktuellen Suche (W-6). */
@@ -692,7 +811,7 @@ document.addEventListener('keydown', (e) => {
   else if (e.ctrlKey && !e.altKey && k === 'n') { e.preventDefault(); closeSheet(); createNote('', true); }
   else if (e.ctrlKey && !e.altKey && k === '1') { e.preventDefault(); setTab('hotline'); }
   else if (e.ctrlKey && !e.altKey && k === '2') { e.preventDefault(); setTab('wissen'); }
-  else if (e.key === 'Escape' && (S.openId || S.settingsOpen)) { e.preventDefault(); closeSheet(); }
+  else if (e.key === 'Escape' && (S.openId || S.settingsOpen || S.statusOpen)) { e.preventDefault(); closeSheet(); }
   else if (e.key === 'Escape' && S.editW) { setEditW(null); render(); }
 });
 // Dateien ins Fenster ziehen: nichts tun (A-1)
@@ -711,6 +830,8 @@ window.addEventListener('resize', seiteZuruecksetzen);
 bridge.beiNotizOeffnen((id) => { setTab('hotline'); openSheet(id, true); });
 bridge.beiUpdateStatus((s) => { S.update = s; renderBanner(); renderSettings(); });
 bridge.beiTheme((t) => { document.documentElement.dataset.theme = t; });
+bridge.beiStatus((d) => { S.status = d; renderStatusPill(); renderStatus(); renderSettings(); });
+bridge.beiStatusOeffnen(() => openStatus());
 
 function tick() { const d = new Date(); $('#clock').textContent = fClock.format(d).replace(',', '') + ' · ' + fTime.format(d); }
 
@@ -725,13 +846,16 @@ function tick() { const d = new Date(); $('#clock').textContent = fClock.format(
   try { S.version = await bridge.version(); } catch {}
   try { S.autostart = await bridge.autostart(); } catch {}
   try { S.update = await bridge.updateStatus(); } catch {}
+  try { S.status = await bridge.statusDaten(); } catch {}
   const start = new URLSearchParams(location.search).get('tab'); // nur für Screenshots
   if (start === 'wissen') S.tab = 'wissen';
   if (!window.api && 'Notification' in window && Notification.permission === 'default') { try { Notification.requestPermission(); } catch {} }
   uhrAnzeigen(); setInterval(tick, 15000);
   renderBanner();
   render();
+  renderStatusPill();
   if (start === 'einstellungen') openSettings();
+  if (start === 'status') openStatus();
   if (start === 'notiz' && D.notizen[0]) openSheet(D.notizen[0].id, true, false);
   if (r.migriert) toast('Notizen aus „Hotline-Notizen“ übernommen');
   checkReminders(); setInterval(checkReminders, 20000);
