@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#1b1d22">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:">
+<title>Noteline</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="top">
+      <span class="mark" aria-hidden="true"></span>
+      <span class="brand">Noteline</span>
+      <span class="clock num" id="clock"></span>
+      <button class="icon-btn press" id="pin" type="button" aria-pressed="false" title="Immer im Vordergrund">
+        <span class="sr">Immer im Vordergrund</span>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></svg>
+      </button>
+      <button class="icon-btn press" id="settings" type="button" title="Einstellungen und Updates">
+        <span class="sr">Einstellungen und Updates</span>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+        <span class="badge" id="setBadge" hidden>1</span>
+      </button>
+    </div>
+    <label class="cmd">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+      <span class="sr">Notieren oder suchen</span>
+      <input id="q" type="text" autocomplete="off" spellcheck="false" name="suche">
+      <button class="btn-white press" id="qCreate" type="button" hidden>Als Notiz anlegen</button>
+      <span class="kbd" id="qKbd">Strg&#160;K</span>
+    </label>
+  </header>
+  <div id="banner"></div>
+  <main id="main"></main>
+  <nav aria-label="Bereich">
+    <span class="pill" id="pill" aria-hidden="true"></span>
+    <button type="button" data-tab="hotline" aria-current="page">Hotline <span class="badge num" id="badge" hidden></span></button>
+    <button type="button" data-tab="wissen">Wissen</button>
+  </nav>
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+  <div id="sheetHost"></div>
+</div>
+<script src="logic.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
