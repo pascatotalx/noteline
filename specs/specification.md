@@ -3,7 +3,7 @@
 Beschreibt **was** Noteline kann und **warum**. Das Wie steht in `plan.md`.
 Die Kennungen (z. B. `H-3`) werden in `tasks.md`, im Code und in den Tests referenziert.
 
-Stand: Version 1.2.1 (06.11.2026). `[x]` = umgesetzt und getestet, `[ ]` = offen oder nur manuell prüfbar (T-16).
+Stand: Version 1.2.2 (06.11.2026). `[x]` = umgesetzt und getestet, `[ ]` = offen oder nur manuell prüfbar (T-16).
 
 ---
 
@@ -40,8 +40,25 @@ damit ich beim Anruf nichts verpasse.
       `0711/1234567`) landet im Feld *Telefon* statt im Text.
 - [x] Eine **Ticketnummer** mit `#` (z. B. `#0012345`) oder nach dem Wort „Ticket" landet im Feld *Ticket*.
 - [x] Beides lässt sich mit `Kunde: Stichpunkt` kombinieren, die Reihenfolge ist egal.
+- [x] **Ansprechpartner per Anrede** (1.2.2, Rückmeldung von Pascal): „Frau Müller“, „Herr Dr. Schmidt“, „Fr. Meier“,
+      „Hr. Weber“ werden überall in der Eingabe als *Ansprechpartner* erkannt. Steht vor dem Doppelpunkt nur eine
+      Anrede („Frau Müller: …“), ist das der Ansprechpartner, nicht der Kunde.
+- [x] **Kunde per Merkmal**: Beginnt die Eingabe mit einem typischen Wort (Praxis, Zahnarztpraxis, Apotheke, MVZ,
+      Klinik, Pflegedienst, Pflegeheim, Kanzlei, …) oder enthält der Anfang eine Rechtsform (GmbH, AG, KG, GbR, e.V.,
+      UG, …), wird dieser Name als *Kunde* erkannt. Er endet an einem Komma, Gedankenstrich oder Doppelpunkt, an einer
+      Anrede, nach der Rechtsform oder vor einem kleingeschriebenen Wort.
+- [x] Steht nach Kunde oder Ansprechpartner ein Satzzeichen oder ein großgeschriebenes Wort, werden sie aus dem
+      Stichpunkt herausgenommen. Folgt ein Verb („Frau Müller meldet, …“), bleibt der Satz als Stichpunkt vollständig.
+- [x] Ein Name ohne Merkmal (z. B. nur „Sonnenschein“) wird wie bisher mit Doppelpunkt zum Kunden:
+      „Sonnenschein: Connector läuft nicht“ (siehe K-4).
 - [x] Strg+N legt von überall eine leere Notiz an. Der Cursor steht im Feld *Kunde*.
 - [x] Eine Notiz, die beim Schließen komplett leer ist, wird verworfen.
+
+**H-11 Vorschau beim Anlegen.** Wie im Bereich Wissen zeigt Noteline unter dem Eingabefeld live, was erkannt wird.
+- [x] Sobald getippt wird, erscheinen Anzeigen für *Kunde*, *Ansprechpartner*, *Telefon*, *Ticket* und *Stichpunkt*.
+      Erkannte Felder leuchten auf, nicht erkannte bleiben blass.
+- [x] Ein kurzer Hinweis erklärt die Schreibweise, z. B. „Tipp: Komma nach dem Kunden, dann der Stichpunkt.“
+- [x] Die leere Liste erklärt das Anlegen in einfachen Worten mit Beispiel.
 
 **H-2 Notiz bearbeiten.** Eine Notiz hat die Felder Kunde, Ansprechpartner, Ticket, Telefon und Freitext.
 - [x] Jede Änderung wird automatisch gespeichert (spätestens 0,25 s nach der letzten Eingabe).
@@ -110,6 +127,11 @@ den ersten Blick zeigen, was gerade eingetippt wird. Zwei getrennte Felder wurde
 - [x] Oben im Bereich Wissen steht ein Eingabefeld „Neuer Eintrag“. Enter legt den Eintrag an.
 - [x] Erkannt werden: `Name: Wert` (Doppelpunkt mit Leerzeichen danach) oder ein Name mit einem erkennbaren Wert
       darin: Link, E-Mail, IP-Adresse, Telefonnummer oder Port als letztes Wort. Sonst ist alles der Wert (Text).
+- [x] **Befehle** (1.2.2, Rückmeldung von Pascal): Ein PowerShell-Cmdlet (Verb-Nomen, z. B. `New-NetRoute`) oder ein
+      bekannter Windows-Befehl in Kleinschreibung mit Argumenten (z. B. `route`, `ping`, `ipconfig`, `netsh`) markiert
+      den Anfang des Werts. Alles davor ist der Name, alles ab dem Befehl der Wert, auch wenn IPs darin vorkommen.
+      Befehle haben Vorrang vor Link-, IP- und Telefon-Erkennung.
+- [x] Die Vorschau zeigt bei Befehlen „Befehl“ an und nennt vorhandene Platzhalter, die später ein Eingabefeld bekommen.
 - [x] Unter dem Feld stehen zwei Anzeigen **Name** und **Wert**. Sie zeigen live, was gerade erkannt wird, und
       leuchten auf, sobald sie belegt sind. Die Wert-Anzeige nennt die erkannte Art (z. B. „IP-Adresse“).
 - [x] Solange nur ein Name dasteht und nach einem Leerzeichen der Wert folgen könnte, erscheinen Vorschläge, was
@@ -257,6 +279,9 @@ Standardwerte, statt abzustürzen.
   10 Minuten ohne Eingabe ist.
 - **K-3 Backups (06.11.2026):** Pascal braucht keinen Backup-Knopf, nur den Datenordner. Die täglichen
   Sicherungen laufen unsichtbar weiter, weil sie nichts kosten und vor Datenverlust schützen.
+- **K-4 Kundenerkennung (06.11.2026):** Automatisch nur mit sicheren Merkmalen (Anrede, Branchenwort am Anfang,
+  Rechtsform). Ein reines Komma reicht nicht, weil „Connector läuft nicht, bitte zurückrufen“ sonst einen falschen
+  Kunden ergäbe. Für Namen ohne Merkmal gilt der Doppelpunkt. Die Live-Vorschau (H-11) zeigt vor dem Enter, was erkannt wurde.
 
 ## 7. Öffentliches Repository
 

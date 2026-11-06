@@ -54,6 +54,9 @@ Kleine, einzeln prüfbare Schritte in Abhängigkeitsreihenfolge. Jede Aufgabe ne
 | T-49 | Rückgängig beim Löschen | A-4 | [x] |
 | T-50 | Notiz als Text kopieren + Test | H-10 | [x] |
 | T-51 | Wissen: Live-Vorschau Name/Wert mit Vorschlägen (1.2.1) | W-1 | [x] |
+| T-52 | Befehlserkennung (PowerShell-Cmdlets, Windows-Befehle) in Eingabe und Vorschau (1.2.2) | W-1 | [x] |
+| T-53 | Notiz: Ansprechpartner per Anrede, Kunde per Branchenwort/Rechtsform + Tests (1.2.2) | H-1 | [x] |
+| T-54 | Notiz: Live-Vorschau unter dem Eingabefeld, verständlichere Texte (1.2.2) | H-11 | [x] |
 | T-44 | Screenshots, README, CHANGELOG, Release 1.2.0 | R-2, R-3 | [ ] |
 
 ## Backlog
