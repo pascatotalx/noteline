@@ -42,12 +42,24 @@ const ziel = path.join(__dirname, '..', 'docs');
 fs.mkdirSync(ziel, { recursive: true });
 
 // Name → Ansicht, Fenstergröße, Erscheinungsbild
+// Ausgedachte Beispieldaten für den Statusmonitor (keine echte Störung)
+const jetztMinus = (min) => new Date(Date.now() - min * 60000).toISOString();
+const DEMO_STATUS = [
+  { id: 'ti', name: 'TI-Lagebild (gematik)', art: 'ti', link: 'https://fachportal.gematik.de/ti-status', zustand: 'stoerung', geprueft: jetztMinus(2),
+    meldungen: [{ schluessel: 'ti-1', titel: 'Pot. Einschränkung bei KIM (Beispiel)', text: 'Es wurden funktionale Einschränkungen festgestellt, diese deuten auf einen Teilausfall hin.', seit: jetztMinus(25), zustand: 'stoerung' }] },
+  { id: 'doctolib', name: 'Doctolib', art: 'statuspage', link: 'https://status.doctolib.com', zustand: 'ok', geprueft: jetztMinus(2), meldungen: [] },
+];
+const DEMO_STATUS_EINST = { aktiv: true, intervall: 15, quellen: [
+  { id: 'ti', name: 'TI-Lagebild (gematik)', art: 'ti', url: 'https://ti-lage.prod.ccs.gematik.solutions/lageapi/v1/tistatus/incident', aktiv: true },
+  { id: 'doctolib', name: 'Doctolib', art: 'statuspage', url: 'https://status.doctolib.com', aktiv: true }] };
+
 const AUFNAHMEN = [
   { name: 'hotline', tab: 'hotline', groesse: '460x900', theme: 'dunkel' },
   { name: 'wissen', tab: 'wissen', groesse: '460x900', theme: 'dunkel' },
   { name: 'einstellungen', tab: 'einstellungen', groesse: '460x900', theme: 'dunkel' },
   { name: 'breit', tab: 'notiz', groesse: '880x560', theme: 'dunkel' },
   { name: 'breit-hell', tab: 'hotline', groesse: '880x560', theme: 'hell' },
+  { name: 'status', tab: 'status', groesse: '880x560', theme: 'dunkel', status: true },
 ];
 const nur = process.argv.slice(2);
 
@@ -55,13 +67,13 @@ for (const a of AUFNAHMEN.filter(x => !nur.length || nur.includes(x.name))) {
   const ordner = fs.mkdtempSync(path.join(os.tmpdir(), 'noteline-demo-'));
   try {
     fs.writeFileSync(path.join(ordner, 'daten.json'), JSON.stringify(demo));
-    fs.writeFileSync(path.join(ordner, 'einstellungen.json'), JSON.stringify({ ticketLink: 'https://support.example.org/tickets?id=<TICKET>' }));
+    fs.writeFileSync(path.join(ordner, 'einstellungen.json'), JSON.stringify({ ticketLink: 'https://support.example.org/tickets?id=<TICKET>', ...(a.status ? { status: DEMO_STATUS_EINST } : {}) }));
     const datei = path.join(ziel, `screenshot-${a.name}.png`);
     fs.rmSync(datei, { force: true }); // alte Aufnahme darf nicht als Erfolg zählen
     const r = spawnSync(electron, ['.'], {
       cwd: path.join(__dirname, '..'), stdio: 'inherit', timeout: 60000,
       env: { ...process.env, NOTELINE_DATA_DIR: ordner, NOTELINE_SCREENSHOT: datei, NOTELINE_SCREENSHOT_TAB: a.tab,
-        NOTELINE_SCREENSHOT_SIZE: a.groesse, NOTELINE_SCREENSHOT_THEME: a.theme },
+        NOTELINE_SCREENSHOT_SIZE: a.groesse, NOTELINE_SCREENSHOT_THEME: a.theme, ...(a.status ? { NOTELINE_SCREENSHOT_STATUS: JSON.stringify(DEMO_STATUS) } : {}) },
     });
     if (r.status !== 0 || !fs.existsSync(datei)) throw new Error(`Screenshot ${a.name} fehlgeschlagen (Code ${r.status})`);
     console.log('✓', path.relative(process.cwd(), datei));

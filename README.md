@@ -95,14 +95,32 @@ Was sich geändert hat, steht im [Changelog](CHANGELOG.md) und bei jedem [Releas
 | <kbd>Strg</kbd>+<kbd>Alt</kbd>+<kbd>H</kbd> | Noteline aus jeder Anwendung nach vorne holen |
 | <kbd>Esc</kbd> | Schließen / Suche leeren |
 
+## Statusmonitor (optional)
+
+<p align="center"><img src="docs/screenshot-status.png" width="600" alt="Dienst-Status mit einer Beispiel-Störung im TI-Lagebild und Doctolib in Ordnung"></p>
+
+Im Hotline-Alltag im Gesundheitswesen bekommt man Ausfälle von Online-Diensten oft erst mit, wenn die ersten Anrufe
+kommen. Deshalb kann Noteline öffentliche Statusseiten im Blick behalten:
+
+- **Standardmäßig aus.** Wer die Funktion nicht braucht, merkt nichts davon, und es gibt keine zusätzlichen Netzwerkzugriffe.
+- In den Einstellungen einschalten und Dienste anhaken. Mitgeliefert sind das
+  [TI-Lagebild der gematik](https://fachportal.gematik.de/ti-status) (über die
+  [offizielle TI-Status-API](https://github.com/gematik/api-tilage)) und [Doctolib](https://status.doctolib.com).
+- **Eigene Dienste** lassen sich mit Name und Adresse ergänzen. Noteline erkennt Statusseiten im verbreiteten
+  Statuspage-Format selbst, sonst prüft es, ob die Webseite erreichbar ist.
+- Geprüft wird alle 5, 15 oder 30 Minuten. Oben in der Titelleiste zeigt ein kleines Feld den Gesamtzustand, ein Klick
+  öffnet die Übersicht mit allen Meldungen.
+- **Bei jeder Änderung** (neue Störung, Verschlechterung, Behebung) kommt eine Windows-Benachrichtigung, die stehen bleibt,
+  bis man sie wegklickt.
+
 ## Datenschutz
 
 Noteline ist für Notizen mit Kundendaten gemacht und behandelt sie entsprechend:
 
 - Alle Daten liegen **nur lokal** in `Dokumente\Noteline\`: `daten.json` (Notizen und Wissen),
   `einstellungen.json` und im Unterordner `Backups` automatische Tagessicherungen der letzten 30 Tage.
-- **Kein Upload, keine Cloud, keine Telemetrie.** Die einzige Verbindung nach außen ist die Update-Prüfung
-  bei GitHub, und dabei werden keine Daten gesendet.
+- **Kein Upload, keine Cloud, keine Telemetrie.** Verbindungen nach außen sind nur die Update-Prüfung bei GitHub und,
+  wenn eingeschaltet, die Abrufe der Statusseiten im Statusmonitor. Dabei werden nie eigene Daten gesendet.
 - Deinstallieren löscht keine Daten.
 - Ist `daten.json` beschädigt, geht Noteline in einen Schutzmodus und überschreibt nichts.
 

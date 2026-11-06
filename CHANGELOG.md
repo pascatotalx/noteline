@@ -3,6 +3,19 @@
 Alle nennenswerten Änderungen an Noteline. Format nach [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
+## [1.3.0] – 2026-11-06
+
+### Neu
+- **Statusmonitor (optional, standardmäßig aus):** Noteline behält öffentliche Statusseiten im Blick und meldet jede
+  Änderung sofort per Windows-Benachrichtigung, die stehen bleibt, bis man sie wegklickt: neue Störung, Verschlechterung,
+  Behebung.
+  - Mitgeliefert: **TI-Lagebild der gematik** (über die offizielle TI-Status-API) und **Doctolib**.
+  - Eigene Dienste mit Name und Adresse ergänzen. Statusseiten im verbreiteten Statuspage-Format werden erkannt, sonst wird
+    die Erreichbarkeit der Webseite geprüft.
+  - Prüfabstand 5, 15 oder 30 Minuten, dazu beim Start und per „Jetzt prüfen“.
+  - Kleines Statusfeld oben in der Titelleiste (grün, gelb, pink), ein Klick öffnet die Übersicht mit allen Meldungen.
+  - Fehlt das Internet, zeigt Noteline „unbekannt“ statt falscher Störungsmeldungen.
+
 ## [1.2.5] – 2026-11-06
 
 ### Behoben
@@ -134,6 +147,7 @@ Erste veröffentlichte Version. Neuaufbau des Prototyps „Hotline-Notizen“ na
 - Eine ins Fenster gezogene Datei ersetzt nicht mehr die App-Oberfläche.
 - Strengere Sicherheitseinstellungen (Sandbox, Content-Security-Policy ohne Inline-Skripte).
 
+[1.3.0]: https://github.com/pascatotalx/noteline/releases/tag/v1.3.0
 [1.2.5]: https://github.com/pascatotalx/noteline/releases/tag/v1.2.5
 [1.2.4]: https://github.com/pascatotalx/noteline/releases/tag/v1.2.4
 [1.2.3]: https://github.com/pascatotalx/noteline/releases/tag/v1.2.3

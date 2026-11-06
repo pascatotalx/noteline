@@ -12,6 +12,7 @@ Unterstützt wird nur die jeweils neueste Version. Noteline aktualisiert sich au
 ## Umgang mit Daten
 
 - Nutzerdaten liegen ausschließlich lokal in `Dokumente\Noteline\`. Die App lädt keine Daten hoch.
-- Einzige Netzwerkverbindung: lesende Update-Prüfung bei GitHub Releases.
+- Netzwerkverbindungen: lesende Update-Prüfung bei GitHub Releases und, nur wenn eingeschaltet, lesende Abrufe der im
+  Statusmonitor eingestellten öffentlichen Statusseiten. Es werden nie eigene Daten gesendet.
 - Das Repository enthält keine Nutzerdaten. Ein Git-Hook und eine Prüfung in GitHub Actions
   (`scripts/check-sensitive.js`) blockieren Datendateien und Zugangsdaten.
