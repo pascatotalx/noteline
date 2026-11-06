@@ -9,17 +9,17 @@ const lokal = (y, m, d, h = 0, min = 0) => new Date(y, m - 1, d, h, min);
 const notiz = (patch = {}) => ({ ...NL.normalizeNotiz({}), ...patch });
 
 test('H-1: „Kunde: Stichpunkt“ trennt Kunde und Text', () => {
-  assert.deepEqual(NL.parseQuickInput('Muster GmbH: Drucker offline'), { kunde: 'Muster GmbH', text: 'Drucker offline', telefon: '', ticket: '' });
-  assert.deepEqual(NL.parseQuickInput('  nur Text  '), { kunde: '', text: 'nur Text', telefon: '', ticket: '' });
+  assert.deepEqual(NL.parseQuickInput('Muster GmbH: Drucker offline'), { kunde: 'Muster GmbH', ansprechpartner: '', text: 'Drucker offline', telefon: '', ticket: '' });
+  assert.deepEqual(NL.parseQuickInput('  nur Text  '), { kunde: '', ansprechpartner: '', text: 'nur Text', telefon: '', ticket: '' });
 });
 
 test('H-1: Telefonnummer landet im Feld Telefon', () => {
   const p = (s) => NL.parseQuickInput(s);
-  assert.deepEqual(p('+49 30 1234567 Beispiel AG: Drucker'), { kunde: 'Beispiel AG', text: 'Drucker', telefon: '+49 30 1234567', ticket: '' });
+  assert.deepEqual(p('+49 30 1234567 Beispiel AG: Drucker'), { kunde: 'Beispiel AG', ansprechpartner: '', text: 'Drucker', telefon: '+49 30 1234567', ticket: '' });
   assert.equal(p('+493012345678').telefon, '+493012345678');
   assert.equal(p('Rückruf an 030/1234567-0 bitte').telefon, '030/1234567-0');
   assert.equal(p('Rückruf an 030/1234567-0 bitte').text, 'Rückruf an bitte');
-  assert.deepEqual(p('Kunde: Nummer 030 1234 5678'), { kunde: 'Kunde', text: 'Nummer', telefon: '030 1234 5678', ticket: '' });
+  assert.deepEqual(p('Kunde: Nummer 030 1234 5678'), { kunde: 'Kunde', ansprechpartner: '', text: 'Nummer', telefon: '030 1234 5678', ticket: '' });
 });
 
 test('H-1: keine Telefonnummer bei Ports, IPs, Datum, Ticket und Links', () => {
@@ -31,8 +31,8 @@ test('H-1: keine Telefonnummer bei Ports, IPs, Datum, Ticket und Links', () => {
 
 test('H-1: Ticketnummer mit # oder nach „Ticket“', () => {
   const p = (s) => NL.parseQuickInput(s);
-  assert.deepEqual(p('Beispiel AG #0012345: Router tauschen'), { kunde: 'Beispiel AG', text: 'Router tauschen', telefon: '', ticket: '#0012345' });
-  assert.deepEqual(p('#0012345: Router'), { kunde: '', text: 'Router', telefon: '', ticket: '#0012345' });
+  assert.deepEqual(p('Beispiel AG #0012345: Router tauschen'), { kunde: 'Beispiel AG', ansprechpartner: '', text: 'Router tauschen', telefon: '', ticket: '#0012345' });
+  assert.deepEqual(p('#0012345: Router'), { kunde: '', ansprechpartner: '', text: 'Router', telefon: '', ticket: '#0012345' });
   assert.equal(p('Ticket 4711 nachfassen').ticket, '#4711');
   assert.equal(p('Ticketnr.: #98765').ticket, '#98765');
   assert.equal(p('Farbe #12 ist kein Ticket').ticket, '');
@@ -40,7 +40,7 @@ test('H-1: Ticketnummer mit # oder nach „Ticket“', () => {
 
 test('H-1: Telefon, Ticket und Kunde in beliebiger Reihenfolge', () => {
   assert.deepEqual(NL.parseQuickInput('Beispiel AG: Drucker #0012345 +49 30 1234567'),
-    { kunde: 'Beispiel AG', text: 'Drucker', telefon: '+49 30 1234567', ticket: '#0012345' });
+    { kunde: 'Beispiel AG', ansprechpartner: '', text: 'Drucker', telefon: '+49 30 1234567', ticket: '#0012345' });
   const n = NL.neueNotiz('0301234567 #123: Test');
   assert.equal(n.telefon, '0301234567');
   assert.equal(n.ticket, '#123');
@@ -158,11 +158,93 @@ test('D-5: Prototyp-Format (Platzhalter als String) wird übernommen', () => {
     ui: { closed: { erledigt: false }, platzhalter: { w1: '192.0.2.5', weg: 'x' } },
   });
   assert.deepEqual(d.ui.platzhalter, { w1: { IP: '192.0.2.5' } });
-  assert.equal(d.wissen[0].gruppe, 'Allgemein');
+  assert.equal(d.wissen[0].gruppe, ''); assert.equal(d.wissen[0].favorit, false);
   assert.deepEqual(d.ui.closed, { erledigt: false });
 });
 
 test('tageZwischen ist sommerzeitfest', () => {
   assert.equal(NL.tageZwischen(lokal(2026, 10, 24, 23), lokal(2026, 10, 25, 1)), 1); // Umstellung 25.10.2026
   assert.equal(NL.tageZwischen(lokal(2026, 3, 28, 12), lokal(2026, 3, 30, 12)), 2);
+});
+
+test('H-9: „Kunde / Ansprechpartner: Stichpunkt“ füllt beide Felder', () => {
+  const p = (s) => NL.parseQuickInput(s);
+  assert.deepEqual(p('Beispiel AG / Frau Muster: Drucker'), { kunde: 'Beispiel AG', ansprechpartner: 'Frau Muster', text: 'Drucker', telefon: '', ticket: '' });
+  assert.equal(p('A/B GmbH: Router').kunde, 'A/B GmbH');
+  assert.equal(p('A/B GmbH: Router').ansprechpartner, '');
+  const n = NL.neueNotiz('+49 123 4567890 Beispiel AG / Herr Test #4711: Rückruf');
+  assert.deepEqual([n.kunde, n.ansprechpartner, n.telefon, n.ticket, n.text], ['Beispiel AG', 'Herr Test', '+49 123 4567890', '#4711', 'Rückruf']);
+});
+
+test('H-9: Ansprechpartner in Suche, Anzeige, Leer-Prüfung und Normalisierung', () => {
+  const n = notiz({ kunde: 'Beispiel AG', ansprechpartner: 'Frau Muster' });
+  assert.deepEqual(NL.lanes([n], 'muster').flatMap(l => l.items).length, 1);
+  assert.equal(NL.kundeMitAnsprechpartner(n), 'Beispiel AG · Frau Muster');
+  assert.equal(NL.kundeMitAnsprechpartner(notiz({ ansprechpartner: 'Frau Muster' })), 'Frau Muster');
+  assert.equal(NL.istLeer(notiz({ ansprechpartner: 'Frau Muster' })), false);
+  assert.equal(NL.normalize({ notizen: [{ id: 'alt' }] }).notizen[0].ansprechpartner, '');
+});
+
+test('H-6: Rückruf-Datum ist heute vorbelegt, Uhrzeit separat', () => {
+  const now = lokal(2026, 11, 6, 10, 44);
+  assert.equal(NL.rueckrufDatum(null, now), '2026-11-06');
+  assert.equal(NL.rueckrufZeit(null), '');
+  const iso = NL.rueckrufAus('2026-11-06', '14:30');
+  assert.equal(iso, lokal(2026, 11, 6, 14, 30).toISOString());
+  assert.equal(NL.rueckrufDatum(iso), '2026-11-06');
+  assert.equal(NL.rueckrufZeit(iso), '14:30');
+  assert.equal(NL.rueckrufAus('2026-11-06', ''), null);
+  assert.equal(NL.rueckrufAus('', '14:30'), null);
+  assert.equal(NL.rueckrufAus('2026-11-06', '25:00'), null);
+});
+
+test('W-2: Art eines Werts wird erkannt', () => {
+  const t = (v) => NL.wissenTyp(v);
+  assert.equal(t('https://example.org/download'), 'link');
+  assert.equal(t('support@example.org'), 'email');
+  assert.equal(t('192.0.2.10'), 'ip');
+  assert.equal(t('192.0.2.0/24'), 'ip');
+  assert.equal(t('198.51.100.7:8443'), 'ip');
+  assert.equal(t('5938'), 'port');
+  assert.equal(t('70000'), 'befehl');
+  assert.equal(t('0800 1234567'), 'telefon');
+  assert.equal(t('+49 123 4567890'), 'telefon');
+  assert.equal(t('route add <IP> mask 255.255.255.255 <GATEWAY>'), 'befehl');
+  assert.equal(t('Bitte Karte neu stecken'), 'befehl');
+});
+
+test('W-1: Eingabe in einer Zeile wird in Name und Wert zerlegt', () => {
+  const p = (s) => NL.parseWissenEingabe(s);
+  assert.deepEqual(p('Support-Hotline 0800 1234567'), { titel: 'Support-Hotline', wert: '0800 1234567' });
+  assert.deepEqual(p('Support-E-Mail support@example.org'), { titel: 'Support-E-Mail', wert: 'support@example.org' });
+  assert.deepEqual(p('Firmware Kartenterminal https://example.org/fw?x=1'), { titel: 'Firmware Kartenterminal', wert: 'https://example.org/fw?x=1' });
+  assert.deepEqual(p('https://example.org/fw Firmware'), { titel: 'Firmware', wert: 'https://example.org/fw' });
+  assert.deepEqual(p('Fachdienst A 192.0.2.10'), { titel: 'Fachdienst A', wert: '192.0.2.10' });
+  assert.deepEqual(p('Fernwartung 5938'), { titel: 'Fernwartung', wert: '5938' });
+  assert.deepEqual(p('Route Fachdienst: route add <IP> mask 255.255.255.255 <GATEWAY>'), { titel: 'Route Fachdienst', wert: 'route add <IP> mask 255.255.255.255 <GATEWAY>' });
+  assert.deepEqual(p('ipconfig /flushdns'), { titel: '', wert: 'ipconfig /flushdns' });
+  assert.deepEqual(p('https://example.org'), { titel: '', wert: 'https://example.org' });
+  assert.deepEqual(p('   '), { titel: '', wert: '' });
+});
+
+test('W-2/W-5: Abschnitte nach Art, Favoriten zuerst, alphabetisch, Suche', () => {
+  const w = (titel, wert, favorit = false) => NL.normalizeWissen({ titel, wert, favorit });
+  const liste = [w('Port B', '8443'), w('Hotline', '0800 1234567', true), w('Port A', '5938'), w('Doku', 'https://example.org'), w('Zeta', 'ping <IP>')];
+  const ab = NL.wissenAbschnitte(liste);
+  assert.deepEqual(ab.map(a => a.key), ['favoriten', 'link', 'port', 'befehl']);
+  assert.deepEqual(ab.find(a => a.key === 'port').items.map(x => x.titel), ['Port A', 'Port B']);
+  assert.deepEqual(NL.wissenAbschnitte(liste, 'port').map(a => a.key), ['port']);
+  assert.deepEqual(NL.favoriten(liste).map(x => x.titel), ['Hotline']);
+});
+
+test('W-4: Platzhalter in Links werden URL-sicher eingesetzt', () => {
+  assert.equal(NL.fillTemplate('https://example.org/s?q=<MODELL>', { MODELL: 'ORGA 6141 & Co' }, { url: true }), 'https://example.org/s?q=ORGA%206141%20%26%20Co');
+  assert.equal(NL.fillTemplate('ping <IP>', { IP: '192.0.2.1' }), 'ping 192.0.2.1');
+});
+
+test('H-10: Notiz als Text', () => {
+  const n = notiz({ kunde: 'Beispiel AG', ansprechpartner: 'Frau Muster', telefon: '+49 123 4567890', ticket: '#4711',
+    status: 'wartet', rueckruf: lokal(2026, 11, 6, 14, 30).toISOString(), text: 'Drucker offline\nTreiber neu' });
+  assert.equal(NL.notizAlsText(n), 'Kunde: Beispiel AG\nAnsprechpartner: Frau Muster\nTelefon: +49 123 4567890\nTicket: #4711\nStatus: Wartet\nRückruf: 06.11.2026 14:30 Uhr\n\nDrucker offline\nTreiber neu');
+  assert.equal(NL.notizAlsText(notiz({ text: 'nur Text' })), 'Status: Offen\n\nnur Text');
 });
