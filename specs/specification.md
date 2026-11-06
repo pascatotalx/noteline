@@ -196,6 +196,9 @@ Standardwerte, statt abzustürzen.
 
 - **B-1 Import aus Notepad++**: bestehende Textdatei einlesen und in Notizen aufteilen. Trennregel klären.
 - **B-2 Export** einer Notiz als Text für das Ticketsystem (Format wie Skill „Ticket schreiben").
+- **B-3 Feld Ansprechpartner** (06.11.2026): Notizen bekommen ein Feld *Ansprechpartner*, also mit wem telefoniert
+  wurde bzw. wer beim Kunden zuständig ist. Es soll in der Liste sichtbar und durchsuchbar sein. Wunsch von Pascal, noch nicht eingeplant.
+- **B-4 Neues Logo** (06.11.2026): Pascal liefert Logo-Dateien. Einbauen als App-Icon, Symbol im Infobereich, Titelleiste und README.
 
 ## 6. Entscheidungen (Clarify)
 

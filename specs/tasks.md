@@ -46,3 +46,5 @@ Kleine, einzeln prüfbare Schritte in Abhängigkeitsreihenfolge. Jede Aufgabe ne
 |---|---|---|
 | T-20 | Import aus Notepad++ (Trennregel mit Pascal klären) | B-1 |
 | T-21 | Notiz als Ticket-Text exportieren | B-2 |
+| T-22 | Feld Ansprechpartner in Notiz, Liste und Suche | B-3 |
+| T-23 | Neues Logo einbauen (Icon, Infobereich, Titelleiste, README) | B-4 |
