@@ -3,6 +3,15 @@
 Alle nennenswerten Änderungen an Noteline. Format nach [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
+## [1.2.4] – 2026-11-06
+
+### Behoben
+- **Kürzel auch kleingeschrieben:** `px sonnenschein`, `kd müller`, `asp frau müller` werden jetzt erkannt. Der Name wird mit
+  großem Anfangsbuchstaben übernommen (`kd muster gmbh` → „Muster GmbH“).
+- **Kundenname nicht mehr zu lang:** `KD Müller Drucker offline` ergibt den Kunden „Müller“ und den Stichpunkt „Drucker offline“.
+  Mehrere Wörter gehören zum Namen, wenn ein Komma folgt, eine Rechtsform darin steht oder danach ein Verb wie „meldet“ kommt.
+- Steht nur `PX` oder `KD` da, sagt die Vorschau „Jetzt den Namen eintippen“.
+
 ## [1.2.3] – 2026-11-06
 
 ### Verbessert
@@ -116,6 +125,7 @@ Erste veröffentlichte Version. Neuaufbau des Prototyps „Hotline-Notizen“ na
 - Eine ins Fenster gezogene Datei ersetzt nicht mehr die App-Oberfläche.
 - Strengere Sicherheitseinstellungen (Sandbox, Content-Security-Policy ohne Inline-Skripte).
 
+[1.2.4]: https://github.com/pascatotalx/noteline/releases/tag/v1.2.4
 [1.2.3]: https://github.com/pascatotalx/noteline/releases/tag/v1.2.3
 [1.2.2]: https://github.com/pascatotalx/noteline/releases/tag/v1.2.2
 [1.2.1]: https://github.com/pascatotalx/noteline/releases/tag/v1.2.1
