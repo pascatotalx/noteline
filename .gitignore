@@ -1,0 +1,29 @@
+# ── Nutzerdaten: dürfen NIE ins Repository (Spezifikation R-1) ──
+daten*.json
+fenster.json
+Backups/
+*.tmp
+demo-data/
+
+# ── Zugangsdaten ──
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.pfx
+
+# ── Build und Abhängigkeiten ──
+node_modules/
+dist/
+out/
+
+# ── System und Editor ──
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+.claude/

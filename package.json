@@ -1,0 +1,82 @@
+{
+  "name": "noteline",
+  "productName": "Noteline",
+  "version": "1.0.0",
+  "description": "Schneller Notizblock und Nachschlagewerk für den Hotline-Alltag – lokal, ohne Cloud.",
+  "author": "Pascal Uffmann",
+  "license": "MIT",
+  "homepage": "https://github.com/pascatotalx/noteline#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pascatotalx/noteline.git"
+  },
+  "bugs": {
+    "url": "https://github.com/pascatotalx/noteline/issues"
+  },
+  "private": true,
+  "main": "src/main/main.js",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test \"test/**/*.test.js\"",
+    "check:sensitive": "node scripts/check-sensitive.js --all",
+    "dist": "electron-builder --win --publish never",
+    "release": "node scripts/release.js",
+    "screenshot": "node scripts/screenshot.js",
+    "prepare": "git config core.hooksPath .githooks || exit 0"
+  },
+  "build": {
+    "appId": "de.pascatotalx.noteline",
+    "productName": "Noteline",
+    "copyright": "© 2026 Pascal Uffmann",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "src/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.png"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Noteline",
+      "artifactName": "Noteline-Setup-${version}.${ext}",
+      "deleteAppDataOnUninstall": false,
+      "runAfterFinish": true
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "pascatotalx",
+        "repo": "noteline",
+        "releaseType": "draft"
+      }
+    ]
+  },
+  "dependencies": {
+    "electron-updater": "^6.8.11"
+  },
+  "devDependencies": {
+    "electron": "^45.2.3",
+    "electron-builder": "^26.18.0"
+  },
+  "allowScripts": {
+    "electron-winstaller": false
+  }
+}
