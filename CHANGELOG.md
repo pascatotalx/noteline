@@ -3,6 +3,23 @@
 Alle nennenswerten Änderungen an Noteline. Format nach [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
+## [1.2.2] – 2026-11-06
+
+### Verbessert
+- **Befehle werden direkt erkannt:** PowerShell-Befehle wie `New-NetIPAddress …` oder `New-NetRoute …` und Windows-Befehle
+  wie `route`, `ping`, `ipconfig` oder `netsh` markieren den Anfang des Werts. Ein Eintrag wie
+  `Feste IP setzen New-NetIPAddress -IPAddress <IP> …` landet ohne Nachbearbeiten mit Name und vollständigem Befehl
+  unter „Befehle und Texte“, auch wenn IP-Adressen oder Masken im Befehl stehen.
+- **Notizen verstehen mehr:** Ansprechpartner werden an der Anrede erkannt („Frau Müller“, „Herr Dr. Schmidt“, „Hr. Weber“),
+  Kunden an typischen Wörtern oder der Rechtsform („Praxis Sonnenschein“, „Muster GmbH“, „Pflegedienst … e.V.“).
+  `Praxis Sonnenschein, Frau Müller, Connector startet neu` füllt Kunde, Ansprechpartner und Stichpunkt in einem Rutsch.
+  Bei einem Satz wie „Frau Müller meldet, …“ bleibt der Satz vollständig als Stichpunkt stehen.
+- **Vorschau beim Anlegen einer Notiz:** Unter dem Eingabefeld leuchtet live auf, was als Kunde, Ansprechpartner,
+  Telefon, Ticket und Stichpunkt erkannt wird, mit einem Tipp, falls der Kunde noch fehlt.
+- Die leere Notizliste erklärt das Anlegen jetzt einfacher, mit Beispiel.
+- Die Vorschau nennt Platzhalter wie `<IP>`, die nach dem Speichern ein Eingabefeld bekommen. Die Vorschläge zeigen
+  „Befehl“ und „Text“ jetzt getrennt mit Beispiel.
+
 ## [1.2.1] – 2026-11-06
 
 ### Verbessert
@@ -87,6 +104,7 @@ Erste veröffentlichte Version. Neuaufbau des Prototyps „Hotline-Notizen“ na
 - Eine ins Fenster gezogene Datei ersetzt nicht mehr die App-Oberfläche.
 - Strengere Sicherheitseinstellungen (Sandbox, Content-Security-Policy ohne Inline-Skripte).
 
+[1.2.2]: https://github.com/pascatotalx/noteline/releases/tag/v1.2.2
 [1.2.1]: https://github.com/pascatotalx/noteline/releases/tag/v1.2.1
 [1.2.0]: https://github.com/pascatotalx/noteline/releases/tag/v1.2.0
 [1.1.0]: https://github.com/pascatotalx/noteline/releases/tag/v1.1.0

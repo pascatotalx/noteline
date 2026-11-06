@@ -42,7 +42,8 @@ Was sich geändert hat, steht im [Changelog](CHANGELOG.md) und bei jedem [Releas
 ## Funktionen
 
 ### Hotline
-- **Sofort mitschreiben:** Tippen und Enter drücken. `Kunde / Ansprechpartner: Stichpunkt` füllt beide Felder gleich mit aus,
+- **Sofort mitschreiben:** Tippen und Enter drücken. `Praxis Sonnenschein, Frau Müller, Connector startet neu` füllt Kunde,
+  Ansprechpartner und Stichpunkt gleich mit aus. Eine Vorschau unter dem Eingabefeld zeigt vorher, was erkannt wird.
   Telefonnummern und `#Ticketnummern` landen automatisch in ihren Feldern.
 - **Ticket mit einem Klick öffnen:** Einmal die Ticket-Adresse eures Systems hinterlegen, dann wird jede
   Ticketnummer zum Link.
@@ -56,7 +57,8 @@ Was sich geändert hat, steht im [Changelog](CHANGELOG.md) und bei jedem [Releas
 - **Suche** über Kunde, Ticket, Telefon und Text.
 
 ### Wissen
-- **Eine Zeile reicht:** `Support-Hotline 0800 1234567` oder `Download https://…` eintippen, Enter. Noteline erkennt
+- **Eine Zeile reicht:** `Support-Hotline 0800 1234567`, `Download https://…` oder `Feste IP setzen New-NetIPAddress …`
+  eintippen, Enter. Noteline erkennt
   Telefonnummer, E-Mail, Link, IP-Adresse, Port oder Befehl und sortiert den Eintrag selbst ein, ohne Gruppen.
   Eine Live-Vorschau zeigt beim Tippen, was als Name und was als Wert erkannt wird, und schlägt passende Werte vor.
 - **Ein Klick kopiert** den Wert. Links lassen sich öffnen, E-Mail-Adressen direkt anschreiben.
