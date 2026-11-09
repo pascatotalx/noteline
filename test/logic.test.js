@@ -389,3 +389,55 @@ test('H-11 (1.2.4): nur Kürzel ohne Namen', () => {
   for (const s of ['PX', 'px', 'KD', 'kd.', 'Kunde', 'asp', 'KD: ']) assert.equal(NL.nurKuerzel(s), true, s);
   for (const s of ['PX Sonnenschein', 'Drucker', '']) assert.equal(NL.nurKuerzel(s), false, s);
 });
+
+test('H-1 (1.4.0): bekannte Kunden werden in voller Länge erkannt', () => {
+  const kunden = ['Praxis Sonnenschein am Park', 'Muster Logistik', 'Test'];
+  const p = (s) => NL.parseQuickInput(s, { kunden });
+  assert.deepEqual(p('PX Sonnenschein am Park Connector defekt'),
+    { kunde: 'Praxis Sonnenschein am Park', ansprechpartner: '', text: 'Connector defekt', telefon: '', ticket: '' });
+  assert.deepEqual(p('px sonnenschein am park drucker offline'),
+    { kunde: 'Praxis Sonnenschein am Park', ansprechpartner: '', text: 'drucker offline', telefon: '', ticket: '' });
+  assert.equal(p('kd muster logistik drucker offline').kunde, 'Muster Logistik');
+  assert.equal(p('kd muster logistik drucker offline').text, 'drucker offline');
+  assert.equal(p('Muster Logistik, Frau Müller, Router').kunde, 'Muster Logistik');
+  assert.equal(p('Test läuft wieder').kunde, '');                       // einzelnes Wort ohne Merkmal: bleibt Text
+  assert.equal(p('Test, Router neu gestartet').kunde, 'Test');
+  assert.equal(NL.parseQuickInput('PX Sonnenschein am Park Connector defekt').kunde, 'Praxis Sonnenschein'); // ohne Liste wie bisher
+});
+
+test('H-11 (1.4.0): Vorschlag bekannter Kunden mit Tab', () => {
+  const kunden = ['Praxis Sonnenschein am Park', 'Muster Logistik'];
+  assert.deepEqual(NL.kundenVorschlag('px sonnen', kunden), { name: 'Praxis Sonnenschein am Park', eingabe: 'Praxis Sonnenschein am Park, ' });
+  assert.deepEqual(NL.kundenVorschlag('kd mus', kunden), { name: 'Muster Logistik', eingabe: 'kd Muster Logistik, ' });
+  assert.equal(NL.kundenVorschlag('Praxis Sonnenschein am Park', kunden), null);   // schon vollständig
+  assert.equal(NL.kundenVorschlag('px sonnen, drucker', kunden), null);            // Name schon abgeschlossen
+  assert.equal(NL.kundenVorschlag('px', kunden), null);
+  assert.equal(NL.kundenVorschlag('px sonnen', []), null);
+});
+
+test('H-12 (1.4.0): TeamViewer-ID und Passwort', () => {
+  const p = (s) => NL.parseQuickInput(s);
+  assert.deepEqual(p('TV 123 456 789 PW ab12cd Fernwartung'),
+    { kunde: '', ansprechpartner: '', text: 'Fernwartung', telefon: '', ticket: '', tvId: '123456789', tvPw: 'ab12cd' });
+  assert.equal(p('TeamViewer-ID: 1 234 567 890 Kennwort: x9y8z7').tvId, '1234567890');
+  assert.equal(p('TeamViewer-ID: 1 234 567 890 Kennwort: x9y8z7').tvPw, 'x9y8z7');
+  assert.equal(p('tv 1234567 pw: q1w2e3').tvPw, 'q1w2e3');
+  assert.equal(p('PW vergessen, bitte zurücksetzen').tvPw, undefined);          // Passwort nur zusammen mit einer ID
+  const mitTel = p('TV 123456789 0711 1234567 Drucker');
+  assert.deepEqual([mitTel.tvId, mitTel.telefon, mitTel.text], ['123456789', '0711 1234567', 'Drucker']);
+  assert.equal(p('PX Sonnenschein, TV 123 456 789, Connector').kunde, 'Praxis Sonnenschein');
+  const n = NL.neueNotiz('KD Muster GmbH TV 123 456 789 PW geheim1 Fernwartung');
+  assert.deepEqual([n.kunde, n.tvId, n.tvPw, n.text], ['Muster GmbH', '123456789', 'geheim1', 'Fernwartung']);
+});
+
+test('H-12 (1.4.0): Passwort nicht in Suche und Text-Export, ID schon', () => {
+  const n = notiz({ kunde: 'Beispiel AG', tvId: '123456789', tvPw: 'geheim1' });
+  assert.equal(NL.tvAnzeige('1234567890'), '1 234 567 890');
+  assert.equal(NL.lanes([n], '123 456 789').flatMap(l => l.items).length, 1);
+  assert.equal(NL.lanes([n], 'geheim1').flatMap(l => l.items).length, 0);
+  const text = NL.notizAlsText(n);
+  assert.match(text, /TeamViewer-ID: 123 456 789/);
+  assert.doesNotMatch(text, /geheim1/);
+  assert.equal(NL.istLeer(notiz({ tvId: '123456789' })), false);
+  assert.equal(NL.normalize({ notizen: [{ id: 'alt' }] }).notizen[0].tvId, '');
+});

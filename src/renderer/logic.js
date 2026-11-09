@@ -29,6 +29,11 @@
   const TELEFON_BEZ = /(?<![\wäöüÄÖÜß])(?:Tel(?:efon)?\.?|Fon|Mobil|Handy)\s*:?\s*((?:\+\d|\d)[\d /()-]*\d|\d)/i;
   const TICKET = [/(?<![\w&])#\s?(\d{3,})\b/, /(?<![\wäöüÄÖÜß])(?:Ticket(?:-?(?:nummer|nr\.?))?|Tkt\.?)\s*:?\s*#?\s*(\d{3,})\b/i];
   const ziffern = (s) => s.replace(/\D/g, '').length;
+  // TeamViewer (H-12, 1.4.0): „TV 123 456 789“, „TeamViewer-ID: 1 234 567 890“; Passwort nur zusammen mit einer ID
+  const TV_BEZ = /(?<![\wäöüÄÖÜß])(?:team\s?viewer|tv)(?:[-\s]?id)?\s*:?\s*(\d{1,3}(?: \d{3})+|\d{7,12})(?!\d)/i;
+  const PW_BEZ = /(?<![\wäöüÄÖÜß])(?:pw|passwort|kennwort)(?:\s*:\s*|\s+)(\S+)/i;
+  /** TeamViewer-ID lesbar: 1234567890 → „1 234 567 890“. */
+  const tvAnzeige = (id) => str(id).replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
 
   // Ansprechpartner per Anrede (H-1, 1.2.2): „Frau Müller“, „Herr Dr. Schmidt“, „Fr. Meier“, „Hr. Weber-Lang“
   const ANREDE_QUELLE = '(?:Frau|Herr|Fr\\.|Hr\\.)\\s+(?:(?:Dr|Prof)\\.\\s*(?:med\\.\\s*)?)*[A-ZÄÖÜ][a-zäöüß]+(?:-[A-ZÄÖÜ][a-zäöüß]+)?';
@@ -149,6 +154,56 @@
     return tokens[ende].index + ohneSatzzeichen(tokens[ende][0]).length;
   }
 
+  /** Längster bekannter Kunde ab tokens[i0], in bisheriger Schreibweise: { ende, name } oder null (1.4.0). */
+  function bekannterName(tokens, i0, kunden) {
+    if (!kunden || !kunden.length || i0 >= tokens.length) return null;
+    const nachSchluessel = new Map();
+    for (const k of kunden) {
+      const n = str(k).trim().replace(/\s+/g, ' ');
+      if (n && !nachSchluessel.has(n.toLowerCase())) nachSchluessel.set(n.toLowerCase(), n);
+    }
+    for (let e = Math.min(tokens.length - 1, i0 + 9); e >= i0; e--) {
+      if (tokens.slice(i0, e).some(t => /[,:;]$/.test(t[0]))) continue;              // nicht über ein Komma hinweg
+      const roh = tokens.slice(i0, e + 1).map(t => t[0]).join(' ').replace(/[,:;]+$/, '');
+      const name = nachSchluessel.get(nameSchreiben(roh).toLowerCase()) || nachSchluessel.get(roh.toLowerCase());
+      if (name) return { ende: e, name };
+    }
+    return null;
+  }
+
+  /** Kunde am Anfang: bekannter Kunde (längster Treffer) oder Merkmal (Branche, PX, Dr., Rechtsform). */
+  function kundeVorn(v, kunden) {
+    const tokens = [...v.matchAll(/\S+/g)];
+    const heuristik = kundeAmAnfang(v);
+    const b = bekannterName(tokens, 0, kunden);
+    if (b) {
+      const laenge = tokens[b.ende].index + ohneSatzzeichen(tokens[b.ende][0]).length;
+      // Ohne Merkmal zählt ein einzelnes bekanntes Wort nur mit Satzzeichen danach oder allein („Test läuft“ bleibt Text)
+      const alleinOhneMerkmal = !heuristik && b.ende === 0 && tokens.length > 1 && !/[,:;]$/.test(tokens[0][0]);
+      if (!alleinOhneMerkmal && laenge >= heuristik) return { laenge, name: b.name };
+    }
+    return heuristik ? { laenge: heuristik, name: nameSchreiben(v.slice(0, heuristik)) } : null;
+  }
+
+  /**
+   * Vorschlag beim Tippen (H-11, 1.4.0): Ist der getippte Kundenname der Anfang eines bekannten Kunden,
+   * liefert die Funktion den vollen Namen und den neuen Text der Eingabe („…Name, “). Sonst null.
+   */
+  function kundenVorschlag(raw, kunden) {
+    const v = str(raw);
+    if (!kunden || !kunden.length || /[,:;]/.test(v)) return null;
+    const label = /^(?:kd\.?|kunde)\s*:?\s+/i.exec(v);
+    const start = label ? label[0].length : 0;
+    const getippt = v.slice(start).replace(/\s+/g, ' ').trim();
+    if (getippt.replace(/^px\.?\s*/i, '').length < 3) return null;
+    const norm = nameSchreiben(getippt).toLowerCase(), roh = getippt.toLowerCase();
+    const treffer = kunden.map(k => str(k).trim().replace(/\s+/g, ' ')).find(k => {
+      const kl = k.toLowerCase();
+      return (kl.startsWith(norm) || kl.startsWith(roh)) && kl !== norm && kl !== roh;
+    });
+    return treffer ? { name: treffer, eingabe: v.slice(0, start) + treffer + ', ' } : null;
+  }
+
   /** Was nach einem erkannten Namen kommt: Satzzeichen/Großschreibung → Name raus, Verb → Satz bleibt. */
   function nachName(rest) {
     const sep = /^\s*(?:[,:;–]|\s-)\s*/.exec(rest);
@@ -162,26 +217,37 @@
   const ausschneiden = (v, start, ende) => v.slice(0, start) + ', ' + v.slice(ende);
 
   /** Bezeichnung + Name suchen („KD Muster GmbH“, „asp müller“). Liefert { name, start, ende } oder null. */
-  function bezeichnung(v, varianten, anredeErlaubt) {
+  function bezeichnung(v, varianten, anredeErlaubt, kunden) {
     for (const { re, klein } of varianten) {
       const m = v.match(re);
       if (!m) continue;
       const start = m.index + m[0].length;
       const tokens = [...v.slice(start).matchAll(/\S+/g)];
       if (!tokens.length) continue;
-      const ende = nameEnde(tokens, 0, { klein, anredeErlaubt, fenster: anredeErlaubt ? 5 : 7 });
+      let ende = nameEnde(tokens, 0, { klein, anredeErlaubt, fenster: anredeErlaubt ? 5 : 7 });
+      const b = bekannterName(tokens, 0, kunden);
+      if (b && b.ende >= ende) ende = b.ende;
       if (ende < 0) continue;
       const laenge = tokens[ende].index + ohneSatzzeichen(tokens[ende][0]).length;
-      return { name: nameSchreiben(v.slice(start, start + laenge)), start: m.index, ende: start + laenge };
+      return { name: b && b.ende === ende ? b.name : nameSchreiben(v.slice(start, start + laenge)), start: m.index, ende: start + laenge };
     }
     return null;
   }
 
   /** Teilt die Schnellerfassung auf: Telefon, Ticket, Kunde, Ansprechpartner, Stichpunkt (H-1, H-9). */
-  function parseQuickInput(raw) {
+  function parseQuickInput(raw, optionen = {}) {
     let v = str(raw).trim();
-    let telefon = '', ticket = '', kunde = '', ansprechpartner = '';
+    let telefon = '', ticket = '', kunde = '', ansprechpartner = '', tvId = '', tvPw = '';
     let geaendert = false;
+    const kunden = Array.isArray(optionen.kunden) ? optionen.kunden : [];
+    const mitTv = (o) => (tvId ? { ...o, tvId, tvPw } : o);
+
+    const tv = v.match(TV_BEZ);
+    if (tv && ziffern(tv[1]) >= 7 && ziffern(tv[1]) <= 12) {
+      tvId = tv[1].replace(/\D/g, ''); v = ausschneiden(v, tv.index, tv.index + tv[0].length); geaendert = true;
+      const pw = v.match(PW_BEZ);
+      if (pw) { tvPw = pw[1].replace(/[,;]+$/, ''); v = ausschneiden(v, pw.index, pw.index + pw[0].length); }
+    }
 
     // Telefon: erst mit Bezeichnung (auch kurze Durchwahl), sonst lange Nummer irgendwo
     const tb = v.match(TELEFON_BEZ);
@@ -196,7 +262,7 @@
       if (m) { ticket = '#' + m[1]; v = v.slice(0, m.index) + ' ' + v.slice(m.index + m[0].length); geaendert = true; break; }
     }
     // Bezeichnungen: „KD Muster GmbH“, „kd müller“, „Kunde: Sonnenschein“, „ASP Frau Müller“
-    const bk = bezeichnung(v, BEZ_KUNDE, false);
+    const bk = bezeichnung(v, BEZ_KUNDE, false, kunden);
     if (bk) { kunde = bk.name; v = ausschneiden(v, bk.start, bk.ende); geaendert = true; }
     const ba = bezeichnung(v, BEZ_ANSPRECHPARTNER, true);
     if (ba) { ansprechpartner = ba.name; v = ausschneiden(v, ba.start, ba.ende); geaendert = true; }
@@ -211,22 +277,22 @@
         const t = teil.trim();
         if (!t) continue;
         if (!ansprechpartner && istAnrede(t)) ansprechpartner = t;
-        else if (!kunde) kunde = /^px\.?\s/i.test(t) ? nameSchreiben(t) : t;
+        else if (!kunde) { const b = bekannterName([...t.matchAll(/\S+/g)], 0, kunden); kunde = b ? b.name : /^px\.?\s/i.test(t) ? nameSchreiben(t) : t; }
         else if (!ansprechpartner) ansprechpartner = t;
       }
       if (!ansprechpartner) { const m = text.match(ANREDE_IRGENDWO); if (m) ansprechpartner = m[0]; }
-      return { kunde, ansprechpartner, text, telefon, ticket };
+      return mitTv({ kunde, ansprechpartner, text, telefon, ticket });
     }
 
     // 2. Ohne Doppelpunkt: Kunde am Anfang (Branchenwort/PX/Dr./Rechtsform), dann Anrede
     let rest = v;
-    const k = kunde ? 0 : kundeAmAnfang(v);
-    if (k) {
-      kunde = nameSchreiben(v.slice(0, k));
-      const n = nachName(v.slice(k));
+    const kv = kunde ? null : kundeVorn(v, kunden);
+    if (kv) {
+      kunde = kv.name;
+      const n = nachName(v.slice(kv.laenge));
       if (!n.raus) {
         const m = ansprechpartner ? null : v.match(ANREDE_IRGENDWO);
-        return { kunde, ansprechpartner: ansprechpartner || (m ? m[0] : ''), text: v, telefon, ticket };
+        return mitTv({ kunde, ansprechpartner: ansprechpartner || (m ? m[0] : ''), text: v, telefon, ticket });
       }
       rest = n.rest;
     }
@@ -241,7 +307,7 @@
         if (m) ansprechpartner = m[0];
       }
     }
-    return { kunde, ansprechpartner, text: rest.trim(), telefon, ticket };
+    return mitTv({ kunde, ansprechpartner, text: rest.trim(), telefon, ticket });
   }
 
   /** Steht nur ein Kürzel ohne Namen da („PX“, „kd“)? Für den Hinweis in der Vorschau (1.2.4). */
@@ -249,10 +315,10 @@
 
   const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 
-  function neueNotiz(raw, now = new Date()) {
-    const { kunde, ansprechpartner, text, telefon, ticket } = parseQuickInput(raw);
+  function neueNotiz(raw, now = new Date(), optionen = {}) {
+    const { kunde, ansprechpartner, text, telefon, ticket, tvId = '', tvPw = '' } = parseQuickInput(raw, optionen);
     const iso = now.toISOString();
-    return { id: uid(), erstellt: iso, geaendert: iso, kunde, ansprechpartner, ticket, telefon, text,
+    return { id: uid(), erstellt: iso, geaendert: iso, kunde, ansprechpartner, ticket, telefon, tvId, tvPw, text,
       status: 'offen', prio: 'normal', rueckruf: null, erinnertFuer: null };
   }
 
@@ -274,7 +340,7 @@
     return v.replace(/<TICKET>/g, () => encodeURIComponent(nr));
   }
 
-  const istLeer = (n) => ![n.kunde, n.ansprechpartner, n.text, n.ticket, n.telefon].some(x => str(x).trim());
+  const istLeer = (n) => ![n.kunde, n.ansprechpartner, n.text, n.ticket, n.telefon, n.tvId, n.tvPw].some(x => str(x).trim());
 
   /** "Kunde · Ansprechpartner" für Listenzeile und Benachrichtigung (H-9). */
   const kundeMitAnsprechpartner = (n) => [str(n.kunde).trim(), str(n.ansprechpartner).trim()].filter(Boolean).join(' · ');
@@ -312,7 +378,8 @@
   const anzahlFaellig = (notizen, now = new Date()) => notizen.filter(n => ['over', 'today'].includes(rrState(n, now))).length;
 
   // ---------- H-4 / H-5 Spuren und Suche ----------
-  const passtNotiz = (n, q) => !q || [n.kunde, n.ansprechpartner, n.ticket, n.telefon, n.text].join(' ').toLowerCase().includes(q);
+  // Suche bewusst ohne TeamViewer-Passwort (H-12); die ID wird mit und ohne Leerzeichen gefunden
+  const passtNotiz = (n, q) => !q || [n.kunde, n.ansprechpartner, n.ticket, n.telefon, n.text, n.tvId, tvAnzeige(n.tvId)].join(' ').toLowerCase().includes(q);
   const passtWissen = (w, q) => !q || [w.titel, w.wert].join(' ').toLowerCase().includes(q);
 
   function lanes(notizen, suche = '', now = new Date()) {
@@ -459,6 +526,7 @@
     feld('Ansprechpartner', n.ansprechpartner);
     feld('Telefon', n.telefon);
     feld('Ticket', n.ticket);
+    feld('TeamViewer-ID', tvAnzeige(n.tvId)); // Passwort bewusst nicht (H-12)
     feld('Status', { offen: 'Offen', wartet: 'Wartet', erledigt: 'Erledigt' }[n.status]);
     if (n.rueckruf) {
       const d = new Date(n.rueckruf);
@@ -481,6 +549,8 @@
       ansprechpartner: str(n && n.ansprechpartner),
       ticket: str(n && n.ticket),
       telefon: str(n && n.telefon),
+      tvId: str(n && n.tvId).replace(/\D/g, ''),
+      tvPw: str(n && n.tvPw),
       text: str(n && n.text),
       status: STATUS.includes(n && n.status) ? n.status : 'offen',
       prio: PRIOS.includes(n && n.prio) ? n.prio : 'normal',
@@ -515,7 +585,7 @@
     STATUS, PRIOS, PRIO_RANG, DATEN_VERSION,
     startOfDay, endOfDay, tageZwischen,
     parseQuickInput, neueNotiz, istLeer, ersteZeile, uid, pruefeTicketVorlage, ticketUrl,
-    kundeMitAnsprechpartner, nurKuerzel, rueckrufDatum, rueckrufZeit, rueckrufAus,
+    kundeMitAnsprechpartner, nurKuerzel, kundenVorschlag, tvAnzeige, rueckrufDatum, rueckrufZeit, rueckrufAus,
     rrState, faelligeErinnerungen, anzahlFaellig,
     passtNotiz, passtWissen, lanes,
     placeholders, fillTemplate, istLink, wissenTyp, parseWissenEingabe, wissenVorschau, wissenAbschnitte, favoriten, notizAlsText,
