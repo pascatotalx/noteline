@@ -45,7 +45,8 @@ Was sich geändert hat, steht im [Changelog](CHANGELOG.md) und bei jedem [Releas
 - **Sofort mitschreiben:** Tippen und Enter drücken. `Praxis Sonnenschein, Frau Müller, Connector startet neu` füllt Kunde,
   Ansprechpartner und Stichpunkt gleich mit aus. Eine Vorschau unter dem Eingabefeld zeigt vorher, was erkannt wird.
   Telefonnummern und `#Ticketnummern` landen automatisch in ihren Feldern. Kürzel wie `KD`, `ASP`, `Tel`, `Tkt`, `PX` (Praxis)
-  und `Dr.` am Anfang werden ebenfalls verstanden, auch kleingeschrieben.
+  und `Dr.` am Anfang werden ebenfalls verstanden, auch kleingeschrieben. Nach `Praxis` oder `PX` gehört alles bis zum
+  Komma zum Kundennamen, danach folgt der Stichpunkt.
 - **Ticket mit einem Klick öffnen:** Einmal die Ticket-Adresse eures Systems hinterlegen, dann wird jede
   Ticketnummer zum Link.
 - **Spuren statt Textwüste:** *Jetzt*, *Offen*, *Wartet*, *Erledigt*, mit Priorität und Ticketnummer.

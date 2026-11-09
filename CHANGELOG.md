@@ -3,6 +3,16 @@
 Alle nennenswerten Änderungen an Noteline. Format nach [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
+## [1.4.2] – 2026-11-09
+
+### Geändert
+- **Nach „Praxis“ gehört alles bis zum Komma zum Kunden.** `PX Sonnenschein am Park Haus B, Connector defekt` ergibt den
+  Kunden „Praxis Sonnenschein am Park Haus B“ und den Stichpunkt „Connector defekt“. Noteline rät die Namenslänge
+  nicht mehr. Das gilt für alle Branchenwörter am Anfang (Praxis, PX, Zahnarztpraxis, Apotheke, MVZ, …).
+- Der Name endet auch an einer Anrede („Frau Müller“), an einer Telefon- oder Ticketnummer und an Bezeichnungen wie
+  `Tel` oder `Ticket`. Bekannte Kunden werden weiterhin auch ohne Komma erkannt.
+- Solange das Komma fehlt, erinnert die Vorschau daran: „Komma beendet den Namen, danach folgt der Stichpunkt.“
+
 ## [1.4.1] – 2026-11-09
 
 ### Verbessert
@@ -171,6 +181,7 @@ Erste veröffentlichte Version. Neuaufbau des Prototyps „Hotline-Notizen“ na
 - Eine ins Fenster gezogene Datei ersetzt nicht mehr die App-Oberfläche.
 - Strengere Sicherheitseinstellungen (Sandbox, Content-Security-Policy ohne Inline-Skripte).
 
+[1.4.2]: https://github.com/pascatotalx/noteline/releases/tag/v1.4.2
 [1.4.1]: https://github.com/pascatotalx/noteline/releases/tag/v1.4.1
 [1.4.0]: https://github.com/pascatotalx/noteline/releases/tag/v1.4.0
 [1.3.0]: https://github.com/pascatotalx/noteline/releases/tag/v1.3.0
