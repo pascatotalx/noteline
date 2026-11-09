@@ -96,6 +96,7 @@ const ICON = {
   ext: svg(14, 1.75, '<path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>'),
   saved: svg(13, 2.25, '<path d="M20 6 9 17l-5-5"/>', 'var(--lime-text)'),
   stern: svg(16, 1.75, '<path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"/>'),
+  kopie: svg(14, 1.75, '<rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>'),
   mail: svg(14, 1.75, '<rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>'),
 };
 
@@ -328,13 +329,24 @@ function renderBanner() {
 // ---------- Notizen ----------
 function createNote(raw, instant) {
   if (schreibgeschuetzt()) return;
-  const n = NL.neueNotiz(raw);
+  const n = NL.neueNotiz(raw, new Date(), { kunden: bekannteKunden() });
   D.notizen.unshift(n); save();
   S.q = ''; $('#q').value = ''; notizVorschau();
   S.tab = 'hotline';
   openSheet(n.id, instant, !n.kunde);
 }
 const findN = (id) => D.notizen.find(n => n.id === id);
+/** Kunden aus bisherigen Notizen, zuletzt bearbeitete zuerst (H-1, 1.4.0). Die gerade offene Notiz zählt nicht mit. */
+function bekannteKunden() {
+  const gesehen = new Set(), liste = [];
+  for (const n of [...D.notizen].sort((a, b) => b.geaendert.localeCompare(a.geaendert))) {
+    const k = n.kunde.trim().replace(/\s+/g, ' ');
+    if (!k || n.id === S.openId || gesehen.has(k.toLowerCase())) continue;
+    gesehen.add(k.toLowerCase()); liste.push(k);
+    if (liste.length >= 300) break;
+  }
+  return liste;
+}
 function upd(id, patch) { const n = findN(id); if (!n) return; Object.assign(n, patch, { geaendert: nowIso() }); save(); render(); }
 
 function notizHtml(n, imBlatt) {
@@ -353,6 +365,8 @@ function notizHtml(n, imBlatt) {
       <div class="s-fields">
         <label>Ticket<span class="field-row"><input class="field" id="sTicket" type="text" autocomplete="off" spellcheck="false" placeholder="z. B. #12345 …" value="${esc(n.ticket)}"><button class="q-btn press" type="button" id="sTicketLink" title="Ticket öffnen" hidden><span class="sr">Ticket öffnen</span>${ICON.ext}</button></span></label>
         <label>Telefon<input class="field" id="sTel" type="tel" inputmode="tel" autocomplete="off" placeholder="Rückrufnummer …" value="${esc(n.telefon)}" style="font-family:var(--body)"></label>
+        <label>TeamViewer-ID<span class="field-row"><input class="field mono" id="sTvId" type="text" inputmode="numeric" autocomplete="off" spellcheck="false" placeholder="123 456 789" value="${esc(NL.tvAnzeige(n.tvId))}"><button class="q-btn press" type="button" data-kopiere="tvId" title="ID kopieren"><span class="sr">TeamViewer-ID kopieren</span>${ICON.kopie}</button></span></label>
+        <label>Passwort<span class="field-row"><input class="field mono" id="sTvPw" type="text" autocomplete="off" spellcheck="false" placeholder="TeamViewer-Passwort …" value="${esc(n.tvPw)}"><button class="q-btn press" type="button" data-kopiere="tvPw" title="Passwort kopieren"><span class="sr">Passwort kopieren</span>${ICON.kopie}</button></span></label>
       </div>
       <textarea class="s-text" id="sText" aria-label="Stichpunkte" placeholder="Stichpunkte zum Anruf …">${esc(n.text)}</textarea>
       <div class="s-foot"><span class="saved">${ICON.saved}<span>${S.schutz ? 'Schutzmodus: nicht gespeichert' : 'Automatisch gespeichert'}</span></span><button class="btn-ghost press" type="button" id="sKopie" title="Kunde, Ansprechpartner, Telefon, Ticket, Rückruf und Stichpunkte als Text kopieren">Als Text kopieren</button><button class="link-danger" type="button" id="sDel">Löschen</button></div>
@@ -380,10 +394,11 @@ function openSheet(id, instant, focusKunde) {
   ticketLinkAnzeigen();
   const bind = (sel, key) => $(sel).addEventListener('input', (e) => {
     const x = findN(S.openId); if (!x) return;
-    x[key] = e.target.value; x.geaendert = nowIso(); save(); renderSheetMeta(); scheduleListRefresh();
+    x[key] = key === 'tvId' ? e.target.value.replace(/\D/g, '') : e.target.value; x.geaendert = nowIso(); save(); renderSheetMeta(); scheduleListRefresh();
     if (key === 'ticket') ticketLinkAnzeigen();
   });
   bind('#sKunde', 'kunde'); bind('#sAp', 'ansprechpartner'); bind('#sTicket', 'ticket'); bind('#sTel', 'telefon'); bind('#sText', 'text');
+  bind('#sTvId', 'tvId'); bind('#sTvPw', 'tvPw');
   bridge.notizOffen(true);
   render();
   (focusKunde ? $('#sKunde') : $('#sText')).focus({ preventScroll: true });
@@ -719,6 +734,10 @@ document.addEventListener('click', (e) => {
     notizSchliessen(true); render(); $('#q').focus({ preventScroll: true });
     return rueckgaengig('Notiz gelöscht', () => { D.notizen.splice(Math.min(index, D.notizen.length), 0, kopie); save(); render(); });
   }
+  if (d.kopiere) { // TeamViewer-ID oder -Passwort kopieren (H-12)
+    const n = findN(S.openId); if (!n || !n[d.kopiere]) return toast('Noch nichts eingetragen');
+    copyText(n[d.kopiere], null); return toast(d.kopiere === 'tvId' ? 'TeamViewer-ID kopiert' : 'Passwort kopiert');
+  }
   if (t.id === 'sKopie') { const n = findN(S.openId); if (n) { copyText(NL.notizAlsText(n), null); toast('Notiz als Text kopiert'); } return; }
   if (d.undo !== undefined) return rueckgaengigAusfuehren();
   if (t.id === 'qCreate') return createNote(S.q, false);
@@ -782,15 +801,30 @@ function notizVorschau() {
   const aktiv = !!S.q.trim() && (S.breit || S.tab === 'hotline');
   box.hidden = !aktiv;
   if (!aktiv) return;
-  const p = NL.parseQuickInput(S.q);
+  const kunden = bekannteKunden();
+  const p = NL.parseQuickInput(S.q, { kunden });
+  S.kundenVorschlag = NL.kundenVorschlag(S.q, kunden);
   const chip = (label, wert) => `<span class="vs-chip${wert ? ' an' : ''}"><b>${label}</b><span>${wert ? esc(wert) : '<i>–</i>'}</span></span>`;
-  const tipp = NL.nurKuerzel(S.q) ? ' Jetzt den Namen eintippen, z. B. „PX Sonnenschein“ oder „KD Müller“.'
-    : p.kunde ? '' : ' Tipp: Kunde zuerst, z. B. „PX Sonnenschein, …“, „KD Muster GmbH …“, „Dr. Müller, …“ oder „Name: …“.';
-  box.innerHTML = `<div class="vs-chips">${chip('Kunde', p.kunde)}${chip('Ansprechpartner', p.ansprechpartner)}${chip('Telefon', p.telefon)}${chip('Ticket', p.ticket)}${chip('Stichpunkt', p.text)}</div>
-    <div class="vs-hinweis"><span>Enter legt die Notiz an, alles bleibt danach änderbar.${tipp}</span></div>`;
+  const bekannt = p.kunde && kunden.some(k => k.toLowerCase() === p.kunde.toLowerCase());
+  let tipp;
+  if (S.kundenVorschlag) tipp = `<span class="vs-vorschlag-kunde">Bekannter Kunde: <b>${esc(S.kundenVorschlag.name)}</b> – <span class="kbd">Tab</span> übernimmt</span>`;
+  else if (NL.nurKuerzel(S.q)) tipp = 'Jetzt den Namen eintippen, z. B. „PX Sonnenschein“ oder „KD Müller“.';
+  else if (!p.kunde) tipp = 'Tipp: Kunde zuerst, z. B. „PX Sonnenschein, …“, „KD Muster GmbH …“, „Dr. Müller, …“ oder „Name: …“.';
+  else if (!bekannt && !/[,:;]/.test(S.q) && /^[A-ZÄÖÜ]/.test(p.text)) tipp = `Name länger als „${esc(p.kunde)}“? Komma nach dem Namen setzen, z. B. „PX Sonnenschein am Park, …“. Danach kennt Noteline den Kunden.`;
+  else tipp = bekannt ? 'Bekannter Kunde erkannt.' : '';
+  const tv = p.tvId ? chip('TeamViewer', NL.tvAnzeige(p.tvId) + (p.tvPw ? ' · Passwort ✓' : '')) : '';
+  box.innerHTML = `<div class="vs-chips">${chip('Kunde', p.kunde)}${chip('Ansprechpartner', p.ansprechpartner)}${chip('Telefon', p.telefon)}${chip('Ticket', p.ticket)}${tv}${chip('Stichpunkt', p.text)}</div>
+    <div class="vs-hinweis"><span>Enter legt die Notiz an, alles bleibt danach änderbar.</span>${tipp ? `<span>${tipp}</span>` : ''}</div>`;
 }
 $('#q').addEventListener('input', (e) => { S.q = e.target.value; render(); notizVorschau(); });
 $('#q').addEventListener('keydown', (e) => {
+  if (e.key === 'Tab' && !e.shiftKey && S.kundenVorschlag && (S.breit || S.tab === 'hotline')) {
+    e.preventDefault();
+    S.q = S.kundenVorschlag.eingabe; e.target.value = S.q;
+    e.target.setSelectionRange(S.q.length, S.q.length);
+    render(); notizVorschau();
+    return;
+  }
   const wissenTab = !S.breit && S.tab === 'wissen';
   if (e.key === 'Enter' && (e.ctrlKey || wissenTab) && S.q.trim()) {
     e.preventDefault();
