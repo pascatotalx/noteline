@@ -3,7 +3,7 @@
 Beschreibt **was** Noteline kann und **warum**. Das Wie steht in `plan.md`.
 Die Kennungen (z. B. `H-3`) werden in `tasks.md`, im Code und in den Tests referenziert.
 
-Stand: Version 1.3.0 (06.11.2026). `[x]` = umgesetzt und getestet, `[ ]` = offen oder nur manuell prüfbar (T-16).
+Stand: Version 1.4.0 (09.11.2026). `[x]` = umgesetzt und getestet, `[ ]` = offen oder nur manuell prüfbar (T-16).
 
 ---
 
@@ -66,6 +66,14 @@ damit ich beim Anruf nichts verpasse.
       großgeschriebenen Wörter vor einem Personen-Verb („meldet“, „bittet“, „fragt“ …). Gibt es nichts davon, ist es ein
       Wort (bei PX/Praxis/Dr. das Wort danach): „KD Müller Drucker offline“ → Kunde „Müller“.
 - [x] Steht nur ein Kürzel ohne Namen da („PX“, „KD“), sagt die Vorschau „Jetzt den Namen eintippen“.
+- [x] **Bekannte Kunden** (1.4.0, Rückmeldung von Pascal: lange Praxisnamen wurden abgeschnitten): Kunden aus bisherigen
+      Notizen werden in voller Länge erkannt, auch ohne Komma, mit Kürzel davor oder am Anfang. Der längste passende Name
+      gewinnt, übernommen wird die bisherige Schreibweise.
+- [x] **Vorschlag mit Tab:** Ist der getippte Kundenname der Anfang eines bekannten Kunden, zeigt die Vorschau
+      „Bekannter Kunde: … – Tab übernimmt“. Tab setzt den vollen Namen mit Komma ein. Vorgeschlagen wird der zuletzt
+      bearbeitete passende Kunde.
+- [x] Bei einem neuen Kunden, hinter dem ein großgeschriebenes Wort folgt, weist die Vorschau darauf hin, dass ein Komma
+      nach dem Namen den vollen Namen sichert.
 - [x] Ein Name ohne Merkmal (z. B. nur „Sonnenschein“) wird wie bisher mit Doppelpunkt zum Kunden:
       „Sonnenschein: Connector läuft nicht“ (siehe K-4).
 - [x] Strg+N legt von überall eine leere Notiz an. Der Cursor steht im Feld *Kunde*.
@@ -111,6 +119,14 @@ Groß-/Kleinschreibung. Während der Suche sind alle Spuren aufgeklappt. Esc lee
 - [x] ~~Ist das Fenster nicht aktiv, blinkt zusätzlich das Taskleistensymbol.~~ Entfällt ab 1.2.3 (kein Taskleisten-Knopf mehr, A-3).
 - [x] Pro Rückrufzeitpunkt wird genau einmal erinnert. Ein neuer Zeitpunkt löst erneut aus.
 - [x] Der Reiter *Hotline* zeigt die Zahl der heute fälligen und überfälligen Rückrufe als Badge.
+
+**H-12 TeamViewer-Daten.** (1.4.0, Wunsch von Pascal: Kunden geben oft TeamViewer-ID und Passwort durch.)
+- [x] Die Notiz hat zwei Felder *TeamViewer-ID* und *Passwort*, jeweils mit Kopier-Knopf. Die ID wird ohne Leerzeichen
+      kopiert.
+- [x] Schnellerfassung: `TV`, `TeamViewer`, `TV-ID` vor einer 7–12-stelligen Nummer (Leerzeichen erlaubt) → ID.
+      `PW`, `Passwort`, `Kennwort` vor einem Wort → Passwort, **nur wenn in derselben Eingabe eine ID steht**.
+- [x] Das Passwort erscheint nicht in der Liste, nicht in der Suche und nicht bei *Als Text kopieren* (kein Passwort im
+      Ticket). Die ID ist durchsuchbar und wird mit kopiert.
 
 **H-10 Notiz als Text kopieren.** Damit die Notiz ohne Abtippen ins Ticketsystem kommt.
 - [x] Ein Knopf *Als Text kopieren* in der Notiz kopiert Kunde, Ansprechpartner, Telefon, Ticket, Status,

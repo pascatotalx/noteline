@@ -1,4 +1,4 @@
-# Noteline – Aufgaben
+| [x] || [x] || [x] |# Noteline – Aufgaben
 
 Kleine, einzeln prüfbare Schritte in Abhängigkeitsreihenfolge. Jede Aufgabe nennt die Spec-Kennungen.
 `[x]` = erledigt und getestet.
@@ -72,6 +72,14 @@ Kleine, einzeln prüfbare Schritte in Abhängigkeitsreihenfolge. Jede Aufgabe ne
 | T-62 | Hauptprozess: Zeitplan, Abruf, Benachrichtigungen, IPC | S-1, S-4 | [x] |
 | T-63 | Oberfläche: Statusfeld, Übersicht, Einstellungen mit Vorlagen und eigenen Quellen | S-1, S-3 | [x] |
 | T-64 | Prüfung in der echten App mit simulierter Störung, README, Changelog | S-1 – S-4 | [x] |
+
+## Meilenstein 1.4.0 – Kunden merken, TeamViewer
+
+| # | Aufgabe | Spec | Status |
+|---|---|---|---|
+| T-65 | Bekannte Kunden in voller Länge erkennen, Vorschlag mit Tab, Komma-Hinweis + Tests | H-1, H-11 | [ ] |
+| T-66 | TeamViewer-ID und Passwort: Datenmodell, Schnellerfassung, Felder mit Kopieren + Tests | H-12 | [ ] |
+| T-67 | Prüfung in der echten App, Changelog, README | H-1, H-12 | [ ] |
 
 ## Backlog
 
