@@ -77,9 +77,11 @@ Kleine, einzeln prüfbare Schritte in Abhängigkeitsreihenfolge. Jede Aufgabe ne
 
 | # | Aufgabe | Spec | Status |
 |---|---|---|---|
-| T-65 | Bekannte Kunden in voller Länge erkennen, Vorschlag mit Tab, Komma-Hinweis + Tests | H-1, H-11 | [ ] |
-| T-66 | TeamViewer-ID und Passwort: Datenmodell, Schnellerfassung, Felder mit Kopieren + Tests | H-12 | [ ] |
-| T-67 | Prüfung in der echten App, Changelog, README | H-1, H-12 | [ ] |
+| T-65 | Bekannte Kunden in voller Länge erkennen, Vorschlag mit Tab, Komma-Hinweis + Tests | H-1, H-11 | [x] |
+| T-66 | TeamViewer-ID und Passwort: Datenmodell, Schnellerfassung, Felder mit Kopieren + Tests | H-12 | [x] |
+| T-67 | Prüfung in der echten App, Changelog, README | H-1, H-12 | [x] |
+| T-68 | Statusmonitor: 5 Minuten als Standard, alter Standard wird umgestellt + Tests (1.4.1) | S-1 | [x] |
+| T-69 | Benachrichtigungen mit Namen „Noteline“: eigene App-Kennung für Entwicklungsläufe (1.4.1) | S-4 | [x] |
 
 ## Backlog
 

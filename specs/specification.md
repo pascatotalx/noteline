@@ -3,7 +3,7 @@
 Beschreibt **was** Noteline kann und **warum**. Das Wie steht in `plan.md`.
 Die Kennungen (z. B. `H-3`) werden in `tasks.md`, im Code und in den Tests referenziert.
 
-Stand: Version 1.4.0 (09.11.2026). `[x]` = umgesetzt und getestet, `[ ]` = offen oder nur manuell prüfbar (T-16).
+Stand: Version 1.4.1 (09.11.2026). `[x]` = umgesetzt und getestet, `[ ]` = offen oder nur manuell prüfbar (T-16).
 
 ---
 
@@ -259,7 +259,8 @@ standardmäßig aus (Constitution 2).
 - [x] In den Einstellungen gibt es einen Schalter *Statusmonitor*. Standard: aus. Aus heißt: kein Abruf, keine Anzeige.
 - [x] Mitgelieferte Vorlagen zum Anhaken: *TI-Lagebild (gematik)* und *Doctolib*. Weitere Dienste (z. B. Hoster ohne
       Statusseite) lassen sich als eigene Quelle ergänzen.
-- [x] Prüfabstand wählbar: 5, 15 (Standard) oder 30 Minuten. Zusätzlich wird beim Start und per Knopf geprüft.
+- [x] Prüfabstand wählbar: **5 (Standard ab 1.4.1)**, 15 oder 30 Minuten. Zusätzlich wird beim Start und per Knopf geprüft.
+      Ein früher gespeicherter, nicht selbst gewählter Abstand (alter Standard 15) wird auf 5 umgestellt.
 
 **S-2 Arten von Quellen.**
 - [x] **TI-Lagebild:** offizielle TI-Status-API der gematik (`/lageapi/v1/tistatus/incident`). Offene Einschränkungen
@@ -281,6 +282,8 @@ standardmäßig aus (Constitution 2).
 - [x] Bei jeder Änderung kommt eine Windows-Benachrichtigung, die stehen bleibt, bis sie weggeklickt wird:
       neue Störung, Verschlechterung, Behebung. Ein Klick öffnet die Übersicht.
 - [x] Beim allerersten Abruf nach dem Einschalten wird nichts gemeldet (keine Flut für längst bekannte Störungen).
+- [x] Benachrichtigungen tragen den Namen **Noteline** (1.4.1, Rückmeldung von Pascal: dort stand „Electron“).
+      Entwicklungs- und Testläufe verwenden eine eigene App-Kennung, damit sie das installierte Noteline nicht stören.
 - [x] Ein fehlgeschlagener Abruf (z. B. kein Internet) löst keine Störungsmeldung aus, er zeigt nur „unbekannt“.
 
 ### Installation und Updates
