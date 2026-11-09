@@ -9,7 +9,9 @@ const { createStorage } = require('./storage');
 const { createUpdater } = require('./updater');
 const statusMonitor = require('./status');
 
-const APP_ID = 'de.pascatotalx.noteline';
+// App-Kennung für Windows (Benachrichtigungen, Verknüpfung). Entwicklungsläufe bekommen eine eigene, sonst legt Electron
+// eine Verknüpfung „Electron“ mit der echten Kennung an und Benachrichtigungen zeigen „Electron“ statt „Noteline“ (1.4.1).
+const APP_ID = app.isPackaged ? 'de.pascatotalx.noteline' : 'de.pascatotalx.noteline.dev';
 const RENDERER = path.join(__dirname, '..', 'renderer');
 const ICON = path.join(RENDERER, 'icon.png');     // Benachrichtigungen
 const ICON_ICO = path.join(RENDERER, 'icon.ico'); // Fenster, Taskleiste, Infobereich (alle Größen 16–256 px)
@@ -289,7 +291,7 @@ function statusEinstellungSetzen(patch) {
   const alt = statusKonfig();
   const neu = { ...alt };
   if (typeof patch.aktiv === 'boolean') neu.aktiv = patch.aktiv;
-  if ([5, 15, 30].includes(patch.intervall)) neu.intervall = patch.intervall;
+  if ([5, 15, 30].includes(patch.intervall)) { neu.intervall = patch.intervall; neu.intervallGewaehlt = true; }
   if (Array.isArray(patch.quellen)) {
     neu.quellen = patch.quellen.slice(0, 30).map(q => ({
       id: String(q.id).slice(0, 40), name: String(q.name || '').trim().slice(0, 60) || 'Dienst', art: q.art,
