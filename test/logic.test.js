@@ -365,7 +365,7 @@ test('H-1 (1.2.3): keine falschen Treffer', () => {
 
 test('H-1 (1.2.4): Kürzel in Kleinschreibung, Namen werden großgeschrieben', () => {
   const p = (s) => NL.parseQuickInput(s);
-  assert.deepEqual(p('px sonnenschein drucker defekt'), { kunde: 'Praxis Sonnenschein', ansprechpartner: '', text: 'drucker defekt', telefon: '', ticket: '' });
+  assert.deepEqual(p('px sonnenschein, drucker defekt'), { kunde: 'Praxis Sonnenschein', ansprechpartner: '', text: 'drucker defekt', telefon: '', ticket: '' });
   assert.deepEqual(p('kd müller, drucker offline'), { kunde: 'Müller', ansprechpartner: '', text: 'drucker offline', telefon: '', ticket: '' });
   assert.equal(p('Px Sonnenschein').kunde, 'Praxis Sonnenschein');
   assert.equal(p('kd. müller').kunde, 'Müller');
@@ -380,8 +380,8 @@ test('H-1 (1.2.4): Namenslänge – Komma, Rechtsform, Personen-Verb, sonst ein 
   assert.equal(p('KD Muster Logistik GmbH Drucker offline').kunde, 'Muster Logistik GmbH');
   assert.equal(p('KD Muster Logistik, Drucker offline').kunde, 'Muster Logistik');
   assert.equal(p('PX Dr. Anna Beispiel meldet Kartenleser defekt').kunde, 'Praxis Dr. Anna Beispiel');
-  assert.equal(p('PX Dr. Sonnenschein Kartenleser defekt').kunde, 'Praxis Dr. Sonnenschein');
-  assert.equal(p('PX Sonnenschein Kartenleser defekt').text, 'Kartenleser defekt');
+  assert.equal(p('PX Dr. Sonnenschein, Kartenleser defekt').kunde, 'Praxis Dr. Sonnenschein');
+  assert.equal(p('PX Sonnenschein, Kartenleser defekt').text, 'Kartenleser defekt');
   assert.equal(p('px meldet ausfall').kunde, '');
 });
 
@@ -402,7 +402,38 @@ test('H-1 (1.4.0): bekannte Kunden werden in voller Länge erkannt', () => {
   assert.equal(p('Muster Logistik, Frau Müller, Router').kunde, 'Muster Logistik');
   assert.equal(p('Test läuft wieder').kunde, '');                       // einzelnes Wort ohne Merkmal: bleibt Text
   assert.equal(p('Test, Router neu gestartet').kunde, 'Test');
-  assert.equal(NL.parseQuickInput('PX Sonnenschein am Park Connector defekt').kunde, 'Praxis Sonnenschein'); // ohne Liste wie bisher
+  assert.equal(NL.parseQuickInput('PX Sonnenschein am Park Connector defekt').kunde, 'Praxis Sonnenschein am Park Connector Defekt'); // ohne Liste: bis zum Komma (1.4.2)
+});
+
+test('H-1 (1.4.2): nach Praxis gehört alles bis zum Komma zum Kunden', () => {
+  const p = (s, kunden) => NL.parseQuickInput(s, { kunden });
+  assert.deepEqual(p('PX Sonnenschein am Park Haus B'),
+    { kunde: 'Praxis Sonnenschein am Park Haus B', ansprechpartner: '', text: '', telefon: '', ticket: '', kundeOffen: true });
+  assert.deepEqual(p('px sonnenschein am park haus b, connector defekt'),
+    { kunde: 'Praxis Sonnenschein am Park Haus B', ansprechpartner: '', text: 'connector defekt', telefon: '', ticket: '' });
+  assert.equal(p('Zahnarztpraxis Dr. Beispiel und Kollegen, Drucker').kunde, 'Zahnarztpraxis Dr. Beispiel und Kollegen');
+  assert.equal(p('Apotheke am Markt Nord - Kasse hängt').kunde, 'Apotheke am Markt Nord');
+  // Anrede, Bezeichnung und Nummern beenden den Namen
+  assert.deepEqual(p('PX Sonnenschein am Park Frau Müller Drucker kaputt'),
+    { kunde: 'Praxis Sonnenschein am Park', ansprechpartner: 'Frau Müller', text: 'Drucker kaputt', telefon: '', ticket: '' });
+  assert.deepEqual(p('PX Sonnenschein am Park 0201 1234567 Drucker kaputt'),
+    { kunde: 'Praxis Sonnenschein am Park', ansprechpartner: '', text: 'Drucker kaputt', telefon: '0201 1234567', ticket: '' });
+  assert.deepEqual(p('PX Sonnenschein am Park Tel 0201 1234567 Drucker kaputt'),
+    { kunde: 'Praxis Sonnenschein am Park', ansprechpartner: '', text: 'Drucker kaputt', telefon: '0201 1234567', ticket: '' });
+  assert.deepEqual(p('PX Sonnenschein #0012345 Drucker'),
+    { kunde: 'Praxis Sonnenschein', ansprechpartner: '', text: 'Drucker', telefon: '', ticket: '#0012345' });
+  assert.equal(p('PX Sonnenschein 0201 1234567').kunde, 'Praxis Sonnenschein');
+  assert.equal(p('0201 1234567 PX Sonnenschein, Drucker').kunde, 'Praxis Sonnenschein');
+  // Satz mit Personen-Verb bleibt Stichpunkt, bekannter Kunde gewinnt auch ohne Komma
+  const satz = p('Praxis Sonnenschein meldet Drucker kaputt');
+  assert.deepEqual([satz.kunde, satz.text], ['Praxis Sonnenschein', 'Praxis Sonnenschein meldet Drucker kaputt']);
+  assert.deepEqual(p('px sonnenschein am park drucker offline', ['Praxis Sonnenschein am Park']),
+    { kunde: 'Praxis Sonnenschein am Park', ansprechpartner: '', text: 'drucker offline', telefon: '', ticket: '' });
+  // KD und Rechtsform wie bisher, Telefonnummer mitten im Text bleibt ohne Markierung
+  assert.equal(p('KD Müller Drucker offline').kunde, 'Müller');
+  assert.equal(p('Drucker 0201 1234567 kaputt').text, 'Drucker kaputt');
+  assert.equal(p('Frau Müller 0201 1234567 Drucker').text, 'Drucker');
+  assert.ok(!JSON.stringify(p('PX Sonnenschein 0201 1234567, Drucker #0012345 neu')).includes('⁣'));
 });
 
 test('H-11 (1.4.0): Vorschlag bekannter Kunden mit Tab', () => {

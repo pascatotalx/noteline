@@ -810,6 +810,7 @@ function notizVorschau() {
   if (S.kundenVorschlag) tipp = `<span class="vs-vorschlag-kunde">Bekannter Kunde: <b>${esc(S.kundenVorschlag.name)}</b> – <span class="kbd">Tab</span> übernimmt</span>`;
   else if (NL.nurKuerzel(S.q)) tipp = 'Jetzt den Namen eintippen, z. B. „PX Sonnenschein“ oder „KD Müller“.';
   else if (!p.kunde) tipp = 'Tipp: Kunde zuerst, z. B. „PX Sonnenschein, …“, „KD Muster GmbH …“, „Dr. Müller, …“ oder „Name: …“.';
+  else if (p.kundeOffen) tipp = '<span class="kbd">,</span> Komma beendet den Namen, danach folgt der Stichpunkt.'; // H-1 (1.4.2)
   else if (!bekannt && !/[,:;]/.test(S.q) && /^[A-ZÄÖÜ]/.test(p.text)) tipp = `Name länger als „${esc(p.kunde)}“? Komma nach dem Namen setzen, z. B. „PX Sonnenschein am Park, …“. Danach kennt Noteline den Kunden.`;
   else tipp = bekannt ? 'Bekannter Kunde erkannt.' : '';
   const tv = p.tvId ? chip('TeamViewer', NL.tvAnzeige(p.tvId) + (p.tvPw ? ' · Passwort ✓' : '')) : '';

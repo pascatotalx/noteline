@@ -66,6 +66,9 @@
   ];
   const BEZ_WORT = /^(?:Kunde|Kd\.?|Ansprechpartner(?:in)?|Asp\.?|Tel(?:efon)?\.?|Fon|Mobil|Handy|Ticket|Tkt\.?)$/i;
   const ohneSatzzeichen = (t) => t.replace(/[,:;]+$/, '');
+  // Unsichtbare Markierung an der Stelle einer herausgenommenen Telefon- oder Ticketnummer: beendet einen Namen (1.4.2)
+  const TRENNER = '\u2063';
+  const ohneTrenner = (t) => !str(t).includes(TRENNER) ? str(t) : str(t).replace(/\s*\u2063\s*/g, ' ').replace(/\s+/g, ' ').replace(/^[\s,;–-]+|[\s,;–-]+$/g, '');
   const grossAnfang = (t) => t.charAt(0).toUpperCase() + t.slice(1);
   /** Name aufbereiten: PX → Praxis, kleingeschriebene Wörter mit großem Anfang, Rechtsformen in üblicher Schreibweise. */
   function nameSchreiben(name) {
@@ -137,21 +140,41 @@
     return Math.min(e, lauf);
   }
 
-  /** Länge eines Kundennamens am Anfang (Branchenwort, PX, Dr. oder Rechtsform), sonst 0. */
+  /**
+   * Nach einem Branchenwort reicht der Name bis zum Komma (H-1, K-5, 1.4.2). Er endet auch an Doppelpunkt, Semikolon,
+   * Gedankenstrich, Anrede, Bezeichnung oder einer herausgenommenen Nummer. Liefert { ende, offen }; offen = bis zum Schluss.
+   */
+  function brancheBisKomma(tokens) {
+    let ende = 0;
+    for (let j = 1; j < tokens.length; j++) {
+      const roh = tokens[j][0], t = ohneSatzzeichen(roh);
+      if (roh === TRENNER || /^[–-]$/.test(t) || ANREDE_WORT.test(t) || BEZ_WORT.test(t)) return { ende, offen: false };
+      ende = j;
+      if (roh !== t) return { ende, offen: false };
+    }
+    return { ende, offen: true };
+  }
+
+  /** Kundenname am Anfang (Branchenwort, PX, Dr. oder Rechtsform): { laenge, offen } oder null. */
   function kundeAmAnfang(v) {
     const tokens = [...v.matchAll(/\S+/g)];
-    if (!tokens.length) return 0;
+    if (!tokens.length) return null;
     const erstes = ohneSatzzeichen(tokens[0][0]);
     const branche = BRANCHE.test(erstes) || TITEL_VORN.test(erstes);
     const klein = /^px\.?$/i.test(erstes);
-    if (!branche && tokens.slice(0, 7).findIndex(t => RECHTSFORM.test(ohneSatzzeichen(t[0]))) < 0) return 0;
+    if (!branche && tokens.slice(0, 7).findIndex(t => RECHTSFORM.test(ohneSatzzeichen(t[0]))) < 0) return null;
     let ende = nameEnde(tokens, 0, { klein });
+    let offen = false;
+    // Branchenwort: alles bis zum Komma, außer es ist ein Satz mit Personen-Verb („Praxis Sonnenschein meldet …“)
+    const danach = ende >= 0 && tokens[ende + 1] && ohneSatzzeichen(tokens[ende + 1][0]);
+    const satz = danach && /^[a-zäöüß]/.test(danach) && PERSONEN_VERB.has(danach) && !/[,:;]$/.test(tokens[ende][0]);
+    if (BRANCHE.test(erstes) && !satz) ({ ende, offen } = brancheBisKomma(tokens));
     while (ende > 0 && (VERBINDER.has(ohneSatzzeichen(tokens[ende][0])) || TITEL_TEIL.test(ohneSatzzeichen(tokens[ende][0])))) ende--;
-    if (ende < 0) return 0;
-    if (branche && ende < 1) return 0;                                         // „Praxis“/„Dr.“ allein reicht nicht
-    if (!branche && !tokens.slice(0, ende + 1).some(t => RECHTSFORM.test(ohneSatzzeichen(t[0])))) return 0;
-    if (klein && /^[a-zäöüß]/.test(ohneSatzzeichen(tokens[1][0])) && PERSONEN_VERB.has(ohneSatzzeichen(tokens[1][0]))) return 0;
-    return tokens[ende].index + ohneSatzzeichen(tokens[ende][0]).length;
+    if (ende < 0) return null;
+    if (branche && ende < 1) return null;                                      // „Praxis“/„Dr.“ allein reicht nicht
+    if (!branche && !tokens.slice(0, ende + 1).some(t => RECHTSFORM.test(ohneSatzzeichen(t[0])))) return null;
+    if (klein && /^[a-zäöüß]/.test(ohneSatzzeichen(tokens[1][0])) && PERSONEN_VERB.has(ohneSatzzeichen(tokens[1][0]))) return null;
+    return { laenge: tokens[ende].index + ohneSatzzeichen(tokens[ende][0]).length, offen };
   }
 
   /** Längster bekannter Kunde ab tokens[i0], in bisheriger Schreibweise: { ende, name } oder null (1.4.0). */
@@ -163,7 +186,7 @@
       if (n && !nachSchluessel.has(n.toLowerCase())) nachSchluessel.set(n.toLowerCase(), n);
     }
     for (let e = Math.min(tokens.length - 1, i0 + 9); e >= i0; e--) {
-      if (tokens.slice(i0, e).some(t => /[,:;]$/.test(t[0]))) continue;              // nicht über ein Komma hinweg
+      if (tokens.slice(i0, e + 1).some(t => t[0] === TRENNER) || tokens.slice(i0, e).some(t => /[,:;]$/.test(t[0]))) continue; // nicht über ein Komma hinweg
       const roh = tokens.slice(i0, e + 1).map(t => t[0]).join(' ').replace(/[,:;]+$/, '');
       const name = nachSchluessel.get(nameSchreiben(roh).toLowerCase()) || nachSchluessel.get(roh.toLowerCase());
       if (name) return { ende: e, name };
@@ -174,15 +197,17 @@
   /** Kunde am Anfang: bekannter Kunde (längster Treffer) oder Merkmal (Branche, PX, Dr., Rechtsform). */
   function kundeVorn(v, kunden) {
     const tokens = [...v.matchAll(/\S+/g)];
-    const heuristik = kundeAmAnfang(v);
+    const h = kundeAmAnfang(v);
+    const heuristik = h ? h.laenge : 0;
     const b = bekannterName(tokens, 0, kunden);
     if (b) {
       const laenge = tokens[b.ende].index + ohneSatzzeichen(tokens[b.ende][0]).length;
       // Ohne Merkmal zählt ein einzelnes bekanntes Wort nur mit Satzzeichen danach oder allein („Test läuft“ bleibt Text)
       const alleinOhneMerkmal = !heuristik && b.ende === 0 && tokens.length > 1 && !/[,:;]$/.test(tokens[0][0]);
-      if (!alleinOhneMerkmal && laenge >= heuristik) return { laenge, name: b.name };
+      // Bekannter Kunde gewinnt, wenn er mindestens so lang ist oder der Name nach Branchenwort ohne Komma offen bleibt
+      if (!alleinOhneMerkmal && (laenge >= heuristik || h.offen)) return { laenge, name: b.name, offen: false };
     }
-    return heuristik ? { laenge: heuristik, name: nameSchreiben(v.slice(0, heuristik)) } : null;
+    return h ? { laenge: heuristik, name: nameSchreiben(v.slice(0, heuristik)), offen: h.offen } : null;
   }
 
   /**
@@ -206,14 +231,14 @@
 
   /** Was nach einem erkannten Namen kommt: Satzzeichen/Großschreibung → Name raus, Verb → Satz bleibt. */
   function nachName(rest) {
-    const sep = /^\s*(?:[,:;–]|\s-)\s*/.exec(rest);
+    const sep = /^\s*(?:[,:;–\u2063]|\s-)\s*/.exec(rest);
     if (sep) return { raus: true, rest: rest.slice(sep[0].length) };
     if (/^\s+[a-zäöüß]/.test(rest) && PERSONEN_VERB.has(rest.trim().split(/\s+/)[0].replace(/[,:;]+$/, ''))) return { raus: false };
     return { raus: true, rest: rest.trim() };
   }
 
   const aufraeumen = (v) => v.replace(/\s+/g, ' ').replace(/\s+([:,;])/g, '$1').replace(/([,;:])(?:\s*[,;])+/g, '$1')
-    .replace(/^[\s:,;–-]+|[\s,;–-]+$/g, '');
+    .replace(/^[\s:,;–\u2063-]+|[\s,;–\u2063-]+$/g, '');
   const ausschneiden = (v, start, ende) => v.slice(0, start) + ', ' + v.slice(ende);
 
   /** Bezeichnung + Name suchen („KD Muster GmbH“, „asp müller“). Liefert { name, start, ende } oder null. */
@@ -240,7 +265,12 @@
     let telefon = '', ticket = '', kunde = '', ansprechpartner = '', tvId = '', tvPw = '';
     let geaendert = false;
     const kunden = Array.isArray(optionen.kunden) ? optionen.kunden : [];
-    const mitTv = (o) => (tvId ? { ...o, tvId, tvPw } : o);
+    let offen = false;
+    const mitTv = (o) => {
+      const sauber = { ...o, kunde: ohneTrenner(o.kunde), ansprechpartner: ohneTrenner(o.ansprechpartner), text: ohneTrenner(o.text) };
+      if (offen) sauber.kundeOffen = true;                       // für den Vorschau-Hinweis „Komma beendet den Namen“
+      return tvId ? { ...sauber, tvId, tvPw } : sauber;
+    };
 
     const tv = v.match(TV_BEZ);
     if (tv && ziffern(tv[1]) >= 7 && ziffern(tv[1]) <= 12) {
@@ -254,12 +284,12 @@
     if (tb && ziffern(tb[1]) >= 3) { telefon = tb[1].trim(); v = ausschneiden(v, tb.index, tb.index + tb[0].length); geaendert = true; }
     else {
       for (const m of v.matchAll(TELEFON)) {
-        if (ziffern(m[0]) >= 9) { telefon = m[0].trim(); v = v.slice(0, m.index) + ' ' + v.slice(m.index + m[0].length); geaendert = true; break; }
+        if (ziffern(m[0]) >= 9) { telefon = m[0].trim(); v = v.slice(0, m.index) + ` ${TRENNER} ` + v.slice(m.index + m[0].length); geaendert = true; break; }
       }
     }
     for (const re of TICKET) {
       const m = v.match(re);
-      if (m) { ticket = '#' + m[1]; v = v.slice(0, m.index) + ' ' + v.slice(m.index + m[0].length); geaendert = true; break; }
+      if (m) { ticket = '#' + m[1]; v = v.slice(0, m.index) + ` ${TRENNER} ` + v.slice(m.index + m[0].length); geaendert = true; break; }
     }
     // Bezeichnungen: „KD Muster GmbH“, „kd müller“, „Kunde: Sonnenschein“, „ASP Frau Müller“
     const bk = bezeichnung(v, BEZ_KUNDE, false, kunden);
@@ -288,7 +318,7 @@
     let rest = v;
     const kv = kunde ? null : kundeVorn(v, kunden);
     if (kv) {
-      kunde = kv.name;
+      kunde = kv.name; offen = kv.offen;
       const n = nachName(v.slice(kv.laenge));
       if (!n.raus) {
         const m = ansprechpartner ? null : v.match(ANREDE_IRGENDWO);
