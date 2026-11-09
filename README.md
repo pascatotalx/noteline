@@ -49,6 +49,9 @@ Was sich geändert hat, steht im [Changelog](CHANGELOG.md) und bei jedem [Releas
 - **Ticket mit einem Klick öffnen:** Einmal die Ticket-Adresse eures Systems hinterlegen, dann wird jede
   Ticketnummer zum Link.
 - **Spuren statt Textwüste:** *Jetzt*, *Offen*, *Wartet*, *Erledigt*, mit Priorität und Ticketnummer.
+- **Kunden werden gemerkt:** Bekannte Kunden erkennt Noteline in voller Länge, beim Tippen schlägt es sie vor (**Tab** übernimmt).
+- **TeamViewer-ID und Passwort** je Notiz mit Kopier-Knopf (`TV 123 456 789 PW …` wird erkannt). Das Passwort bleibt aus
+  Suche und Text-Export heraus.
 - **Ansprechpartner** je Notiz: mit wem telefoniert wurde bzw. wer beim Kunden zuständig ist.
 - **Als Text kopieren:** Die ganze Notiz mit einem Klick fertig zum Einfügen ins Ticketsystem.
 - **Löschen mit Rückgängig:** kein Nachfragen, dafür 6 Sekunden zum Zurückholen.

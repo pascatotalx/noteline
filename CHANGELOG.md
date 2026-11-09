@@ -3,6 +3,19 @@
 Alle nennenswerten Änderungen an Noteline. Format nach [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
+## [1.4.0] – 2026-11-09
+
+### Neu
+- **Noteline merkt sich Kunden:** Jeder Kunde aus einer bisherigen Notiz wird beim nächsten Mal in voller Länge erkannt,
+  auch ohne Komma. „PX Sonnenschein am Park Connector defekt“ ergibt den Kunden „Praxis Sonnenschein am Park“, wenn
+  dieser schon einmal vorkam.
+- **Vorschlag mit Tab:** Beim Tippen eines Kundennamens zeigt die Vorschau passende bekannte Kunden. **Tab** setzt den
+  vollen Namen samt Komma ein, man schreibt einfach weiter.
+- Bei neuen, langen Namen weist die Vorschau darauf hin, dass ein Komma nach dem Namen den vollen Namen sichert.
+- **TeamViewer-ID und Passwort** als eigene Felder in der Notiz, jeweils mit Kopier-Knopf. In der Schnellerfassung wird
+  `TV 123 456 789 PW ab12cd` erkannt. Das Passwort erscheint bewusst nicht in der Liste, in der Suche und bei
+  „Als Text kopieren“, damit es nicht im Ticket landet.
+
 ## [1.3.0] – 2026-11-06
 
 ### Neu
@@ -147,6 +160,7 @@ Erste veröffentlichte Version. Neuaufbau des Prototyps „Hotline-Notizen“ na
 - Eine ins Fenster gezogene Datei ersetzt nicht mehr die App-Oberfläche.
 - Strengere Sicherheitseinstellungen (Sandbox, Content-Security-Policy ohne Inline-Skripte).
 
+[1.4.0]: https://github.com/pascatotalx/noteline/releases/tag/v1.4.0
 [1.3.0]: https://github.com/pascatotalx/noteline/releases/tag/v1.3.0
 [1.2.5]: https://github.com/pascatotalx/noteline/releases/tag/v1.2.5
 [1.2.4]: https://github.com/pascatotalx/noteline/releases/tag/v1.2.4
