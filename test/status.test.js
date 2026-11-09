@@ -105,9 +105,12 @@ test('S-2: Art einer eigenen Quelle erkennen', async () => {
 test('S-1: Einstellungen – Standard aus, Vorlagen vorhanden, nicht angehakt', () => {
   const s = S.statusEinstellungen(undefined);
   assert.equal(s.aktiv, false);
-  assert.equal(s.intervall, 15);
+  assert.equal(s.intervall, 5);
   assert.deepEqual(s.quellen.map(q => [q.id, q.aktiv]), [['ti', false], ['doctolib', false]]);
   const eigen = S.statusEinstellungen({ aktiv: true, intervall: 5, quellen: [{ id: 'x', name: 'X', art: 'erreichbar', url: 'https://x.example', aktiv: true }, { id: 'kaputt' }] });
   assert.deepEqual(eigen.quellen.map(q => q.id), ['x', 'ti', 'doctolib']);
-  assert.equal(S.statusEinstellungen({ intervall: 7 }).intervall, 15);
+  assert.equal(S.statusEinstellungen({ intervall: 7 }).intervall, 5);
+  assert.equal(S.statusEinstellungen({ aktiv: true, intervall: 15 }).intervall, 5);                          // alter Standard → 5
+  assert.equal(S.statusEinstellungen({ intervall: 30, intervallGewaehlt: true }).intervall, 30);             // selbst gewählt bleibt
+  assert.equal(S.statusEinstellungen({ intervall: 15, intervallGewaehlt: true }).intervall, 15);
 });

@@ -176,7 +176,9 @@ function statusEinstellungen(e) {
   const s = e && typeof e === 'object' ? e : {};
   const quellen = Array.isArray(s.quellen) ? s.quellen.filter(q => q && q.id && q.url && ['ti', 'statuspage', 'erreichbar'].includes(q.art)) : [];
   for (const v of VORLAGEN) if (!quellen.some(q => q.id === v.id)) quellen.push({ ...v });
-  return { aktiv: !!s.aktiv, intervall: [5, 15, 30].includes(s.intervall) ? s.intervall : 15, quellen };
+  // Standard 5 Minuten (1.4.1). Ein gespeicherter Abstand zählt nur, wenn er selbst gewählt wurde – der alte Standard 15 nicht.
+  const gewaehlt = !!s.intervallGewaehlt && [5, 15, 30].includes(s.intervall);
+  return { aktiv: !!s.aktiv, intervall: gewaehlt ? s.intervall : 5, intervallGewaehlt: gewaehlt, quellen };
 }
 
 function kurz(e) {
