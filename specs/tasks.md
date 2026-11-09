@@ -82,6 +82,8 @@ Kleine, einzeln prüfbare Schritte in Abhängigkeitsreihenfolge. Jede Aufgabe ne
 | T-67 | Prüfung in der echten App, Changelog, README | H-1, H-12 | [x] |
 | T-68 | Statusmonitor: 5 Minuten als Standard, alter Standard wird umgestellt + Tests (1.4.1) | S-1 | [x] |
 | T-69 | Benachrichtigungen mit Namen „Noteline“: eigene App-Kennung für Entwicklungsläufe (1.4.1) | S-4 | [x] |
+| T-70 | Nach Branchenwort gehört alles bis zum Komma zum Kunden, Telefon/Ticket beenden den Namen + Tests (1.4.2) | H-1, K-5 | [x] |
+| T-71 | Vorschau-Hinweis „Komma beendet den Namen“, Prüfung in der echten App, README, Changelog (1.4.2) | H-1, H-11 | [x] |
 
 ## Backlog
 

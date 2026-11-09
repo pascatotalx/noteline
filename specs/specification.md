@@ -3,7 +3,7 @@
 Beschreibt **was** Noteline kann und **warum**. Das Wie steht in `plan.md`.
 Die Kennungen (z. B. `H-3`) werden in `tasks.md`, im Code und in den Tests referenziert.
 
-Stand: Version 1.4.1 (09.11.2026). `[x]` = umgesetzt und getestet, `[ ]` = offen oder nur manuell prüfbar (T-16).
+Stand: Version 1.4.2 (09.11.2026). `[x]` = umgesetzt und getestet, `[ ]` = offen oder nur manuell prüfbar (T-16).
 
 ---
 
@@ -64,7 +64,8 @@ damit ich beim Anruf nichts verpasse.
       wird mit großem Anfangsbuchstaben übernommen (Rechtsformen in üblicher Schreibweise, z. B. „gmbh“ → „GmbH“).
       Der Name reicht bis zu einem Komma, Doppelpunkt oder Gedankenstrich, sonst bis zu einer Rechtsform, sonst über alle
       großgeschriebenen Wörter vor einem Personen-Verb („meldet“, „bittet“, „fragt“ …). Gibt es nichts davon, ist es ein
-      Wort (bei PX/Praxis/Dr. das Wort danach): „KD Müller Drucker offline“ → Kunde „Müller“.
+      Wort (bei Dr. das Wort danach): „KD Müller Drucker offline“ → Kunde „Müller“. Nach PX/Praxis gilt seit 1.4.2
+      „bis zum Komma“ (siehe unten).
 - [x] Steht nur ein Kürzel ohne Namen da („PX“, „KD“), sagt die Vorschau „Jetzt den Namen eintippen“.
 - [x] **Bekannte Kunden** (1.4.0, Rückmeldung von Pascal: lange Praxisnamen wurden abgeschnitten): Kunden aus bisherigen
       Notizen werden in voller Länge erkannt, auch ohne Komma, mit Kürzel davor oder am Anfang. Der längste passende Name
@@ -74,6 +75,13 @@ damit ich beim Anruf nichts verpasse.
       bearbeitete passende Kunde.
 - [x] Bei einem neuen Kunden, hinter dem ein großgeschriebenes Wort folgt, weist die Vorschau darauf hin, dass ein Komma
       nach dem Namen den vollen Namen sichert.
+- [x] **Nach Praxis bis zum Komma** (1.4.2, Wunsch von Pascal): Beginnt die Eingabe mit einem Branchenwort (Praxis, PX,
+      Zahnarztpraxis, Apotheke, MVZ, …), gehört **alles bis zum Komma** zum Kunden: „PX Sonnenschein am Park Haus B“ →
+      Kunde „Praxis Sonnenschein am Park Haus B“. Nach dem Komma folgt der Stichpunkt. Der Name endet außerdem an
+      Doppelpunkt, Semikolon, Gedankenstrich, an einer Anrede („Frau Müller“), an einer Bezeichnung (Tel, Ticket, ASP …)
+      und an einer Telefon- oder Ticketnummer. Ausnahmen: Ein bekannter Kunde wird auch ohne Komma erkannt, und ein Satz
+      mit Personen-Verb („Praxis Sonnenschein meldet …“) bleibt wie bisher ganz als Stichpunkt stehen.
+      Solange kein Komma da ist, sagt die Vorschau „Komma beendet den Namen, danach folgt der Stichpunkt“.
 - [x] Ein Name ohne Merkmal (z. B. nur „Sonnenschein“) wird wie bisher mit Doppelpunkt zum Kunden:
       „Sonnenschein: Connector läuft nicht“ (siehe K-4).
 - [x] Strg+N legt von überall eine leere Notiz an. Der Cursor steht im Feld *Kunde*.
@@ -357,6 +365,9 @@ Standardwerte, statt abzustürzen.
 - **K-4 Kundenerkennung (06.11.2026):** Automatisch nur mit sicheren Merkmalen (Anrede, Branchenwort am Anfang,
   Rechtsform). Ein reines Komma reicht nicht, weil „Connector läuft nicht, bitte zurückrufen“ sonst einen falschen
   Kunden ergäbe. Für Namen ohne Merkmal gilt der Doppelpunkt. Die Live-Vorschau (H-11) zeigt vor dem Enter, was erkannt wurde.
+- **K-5 Namenslänge nach Branchenwort (09.11.2026):** Pascal will Praxisnamen nicht raten lassen: Nach einem Branchenwort
+  reicht der Name bis zum Komma. Das Raten (ein Wort, Großschreibung) gilt nur noch für Namen mit Kürzel `KD` oder Rechtsform.
+  Wer Kunde und Stichpunkt in einem Zug tippt, setzt ein Komma dazwischen.
 
 ## 7. Öffentliches Repository
 
