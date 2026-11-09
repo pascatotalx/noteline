@@ -111,7 +111,7 @@ kommen. Deshalb kann Noteline öffentliche Statusseiten im Blick behalten:
   [offizielle TI-Status-API](https://github.com/gematik/api-tilage)) und [Doctolib](https://status.doctolib.com).
 - **Eigene Dienste** lassen sich mit Name und Adresse ergänzen. Noteline erkennt Statusseiten im verbreiteten
   Statuspage-Format selbst, sonst prüft es, ob die Webseite erreichbar ist.
-- Geprüft wird alle 5, 15 oder 30 Minuten. Oben in der Titelleiste zeigt ein kleines Feld den Gesamtzustand, ein Klick
+- Geprüft wird standardmäßig alle 5 Minuten (einstellbar: 15 oder 30). Oben in der Titelleiste zeigt ein kleines Feld den Gesamtzustand, ein Klick
   öffnet die Übersicht mit allen Meldungen.
 - **Bei jeder Änderung** (neue Störung, Verschlechterung, Behebung) kommt eine Windows-Benachrichtigung, die stehen bleibt,
   bis man sie wegklickt.

@@ -3,6 +3,17 @@
 Alle nennenswerten Änderungen an Noteline. Format nach [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
+## [1.4.1] – 2026-11-09
+
+### Verbessert
+- **Statusmonitor prüft standardmäßig alle 5 Minuten** statt alle 15. Störungen fallen damit deutlich früher auf, die
+  gematik prüft selbst im 5-Minuten-Takt. Wer den Abstand bisher nicht selbst geändert hat, wird automatisch umgestellt.
+
+### Behoben
+- **Benachrichtigungen zeigen „Noteline“ statt „Electron“.** Ursache waren Entwicklungs- und Testläufe, die dieselbe
+  Windows-App-Kennung verwendet und dabei eine Startmenü-Verknüpfung „Electron“ angelegt haben. Sie laufen jetzt unter einer
+  eigenen Kennung.
+
 ## [1.4.0] – 2026-11-09
 
 ### Neu
@@ -160,6 +171,7 @@ Erste veröffentlichte Version. Neuaufbau des Prototyps „Hotline-Notizen“ na
 - Eine ins Fenster gezogene Datei ersetzt nicht mehr die App-Oberfläche.
 - Strengere Sicherheitseinstellungen (Sandbox, Content-Security-Policy ohne Inline-Skripte).
 
+[1.4.1]: https://github.com/pascatotalx/noteline/releases/tag/v1.4.1
 [1.4.0]: https://github.com/pascatotalx/noteline/releases/tag/v1.4.0
 [1.3.0]: https://github.com/pascatotalx/noteline/releases/tag/v1.3.0
 [1.2.5]: https://github.com/pascatotalx/noteline/releases/tag/v1.2.5
