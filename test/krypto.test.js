@@ -52,3 +52,16 @@ test('D-6: fehlender Schlüssel wird vor dem Start wiederhergestellt', () => {
   fs.rmSync(ud, { recursive: true });
   assert.equal(K.schluesselWiederherstellen(ud, daten), 'keine-sicherung');
 });
+
+test('D-6 (1.5.2): nach erkanntem Schlüssel-Fehler gilt die Sicherung', () => {
+  const basis = tmpOrdner(), ud = path.join(basis, 'userData'), daten = path.join(basis, 'Noteline');
+  fs.mkdirSync(daten);
+  assert.equal(K.schluesselErzwingen(ud, daten), 'keine-sicherung');
+  fs.writeFileSync(path.join(daten, K.SCHLUESSEL_DATEI), SCHLUESSEL);
+  localState(ud, { os_crypt: { encrypted_key: 'QU5ERVJFUg==', audit_enabled: true }, browser: { x: 1 } });
+  assert.equal(K.schluesselWiederherstellen(ud, daten), 'vorhanden');              // normaler Start ändert nichts
+  assert.equal(K.schluesselErzwingen(ud, daten), 'ersetzt');
+  assert.deepEqual(JSON.parse(fs.readFileSync(path.join(ud, 'Local State'), 'utf8')),
+    { os_crypt: { encrypted_key: SCHLUESSEL, audit_enabled: true }, browser: { x: 1 } });
+  assert.equal(K.schluesselErzwingen(ud, daten), 'gleich');
+});

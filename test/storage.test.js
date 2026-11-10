@@ -150,7 +150,8 @@ test('D-6: Daten, Einstellungen und Backups liegen verschlüsselt', () => {
   jetzt = new Date(2026, 10, 10, 12, 0);
   s.save(notiz('Praxis Sonnenschein am Park'));
   s.speichereEinstellungen({ ticketLink: 'https://tickets.example.org/{ticket}' });
-  assert.deepEqual(fs.readdirSync(ordner).sort(), ['Backups', 'daten.enc', 'einstellungen.enc']);
+  assert.deepEqual(fs.readdirSync(ordner).sort(), ['Backups', 'daten.enc', 'einstellungen.enc', 'pruefung.enc']);
+  nurVerschluesselt(path.join(ordner, 'pruefung.enc'));
   nurVerschluesselt(path.join(ordner, 'daten.enc'), 'Sonnenschein', 'geheim123');
   nurVerschluesselt(path.join(ordner, 'einstellungen.enc'), 'tickets.example.org');
   nurVerschluesselt(path.join(ordner, 'Backups', 'daten-2026-11-10.enc'), 'Sonnenschein');
@@ -199,10 +200,10 @@ test('D-6: nicht zu entschlüsseln → Schutzmodus mit Ursache, nichts wird übe
   const s = createStorage({ ordner, krypto: attrappe({ falscherSchluessel: true }) });
   const r = s.load();
   assert.equal(r.status, 'defekt');
-  assert.match(r.fehler, /anderen Windows-Konto/);
+  assert.match(r.fehler, /neu starten.*anderen Windows-Konto/);
   assert.throws(() => s.save(notiz('X')), /Schutzmodus/);
   assert.ok(fs.readFileSync(path.join(ordner, 'daten.enc')).equals(vorher));
-  assert.ok(fs.readFileSync(r.kopie).equals(vorher));
+  assert.equal(r.kopie, undefined); // bei falschem Schlüssel entsteht keine weitere Datei (1.5.2)
 });
 
 test('D-6: verschlüsselte Daten ohne verfügbare Verschlüsselung → Schutzmodus statt leerem Neustart', () => {
@@ -213,4 +214,48 @@ test('D-6: verschlüsselte Daten ohne verfügbare Verschlüsselung → Schutzmod
   assert.equal(r.status, 'defekt');
   assert.match(r.fehler, /nicht verfügbar/);
   assert.equal(s.verschluesselt, false);
+});
+
+test('D-6 (1.5.2): Prüfwert erkennt einen falsch geladenen Schlüssel, dann wird nichts geschrieben', () => {
+  const ordner = tmpOrdner();
+  const s1 = createStorage({ ordner, krypto: attrappe() });
+  assert.equal(s1.schluessel, 'neu');
+  s1.save(notiz('Praxis Sonnenschein'));
+  s1.speichereEinstellungen({ ticketLink: 'https://tickets.example.org/{ticket}' });
+  assert.ok(fs.existsSync(path.join(ordner, 'pruefung.enc')));
+  assert.equal(createStorage({ ordner, krypto: attrappe() }).schluessel, 'ok');
+  const vorher = Object.fromEntries(fs.readdirSync(ordner).filter(f => f.endsWith('.enc')).map(f => [f, fs.readFileSync(path.join(ordner, f))]));
+  const s2 = createStorage({ ordner, krypto: attrappe({ falscherSchluessel: true }) });
+  assert.equal(s2.schluessel, 'falsch');
+  const r = s2.load();
+  assert.equal(r.status, 'defekt');
+  assert.equal(r.schluesselFalsch, true);
+  assert.throws(() => s2.save(notiz('X')), /Schutzmodus/);
+  s2.speichereEinstellungen({ theme: 'hell' });                       // bleibt nur im Speicher
+  assert.equal(s2.ladeEinstellungen().theme, 'hell');
+  for (const [f, inhalt] of Object.entries(vorher)) assert.ok(fs.readFileSync(path.join(ordner, f)).equals(inhalt), f + ' unverändert');
+  assert.deepEqual(fs.readdirSync(ordner).filter(f => f.endsWith('.enc')).sort(), Object.keys(vorher).sort(), 'keine neuen Dateien');
+  // Mit dem richtigen Schlüssel ist alles wieder da
+  const s3 = createStorage({ ordner, krypto: attrappe() });
+  assert.equal(s3.load().daten.notizen[0].kunde, 'Praxis Sonnenschein');
+  assert.equal(s3.ladeEinstellungen().ticketLink, 'https://tickets.example.org/{ticket}');
+});
+
+test('D-6 (1.5.2): ohne Prüfwert entscheidet die Datendatei; unlesbare Einstellungen werden vor dem Ersetzen aufgehoben', () => {
+  const ordner = tmpOrdner();
+  createStorage({ ordner, krypto: attrappe() }).save(notiz('Praxis Sonnenschein'));
+  fs.unlinkSync(path.join(ordner, 'pruefung.enc'));                    // Stand aus 1.5.0/1.5.1
+  fs.writeFileSync(path.join(ordner, 'einstellungen.enc'), Buffer.concat([KOPF, Buffer.from('mit anderem Schlüssel')]));
+  const s = createStorage({ ordner, krypto: attrappe() });
+  assert.equal(s.schluessel, 'ok');
+  assert.ok(fs.existsSync(path.join(ordner, 'pruefung.enc')), 'Prüfwert wird nachgetragen');
+  assert.deepEqual(s.ladeEinstellungen(), {});
+  s.speichereEinstellungen({ theme: 'hell' });
+  assert.equal(fs.readdirSync(ordner).filter(f => f.startsWith('einstellungen-defekt-')).length, 1);
+  assert.equal(createStorage({ ordner, krypto: attrappe() }).ladeEinstellungen().theme, 'hell');
+  // Nur unlesbare verschlüsselte Dateien, kein Prüfwert → falsch
+  const o2 = tmpOrdner();
+  createStorage({ ordner: o2, krypto: attrappe() }).save(notiz('Praxis Sonnenschein'));
+  fs.unlinkSync(path.join(o2, 'pruefung.enc'));
+  assert.equal(createStorage({ ordner: o2, krypto: attrappe({ falscherSchluessel: true }) }).schluessel, 'falsch');
 });

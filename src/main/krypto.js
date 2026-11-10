@@ -48,6 +48,22 @@ function schluesselWiederherstellen(userData, datenOrdner) {
 }
 
 /**
+ * Nur nach einem erkannten Schlüssel-Fehler (Neustart mit --noteline-neustart, 1.5.2): Weicht der Schlüssel in
+ * „Local State“ von der Sicherung ab, gilt die Sicherung. Sie wird nur überschrieben, wenn die Daten lesbar waren.
+ * Liefert 'gleich', 'ersetzt' oder 'keine-sicherung'.
+ */
+function schluesselErzwingen(userData, datenOrdner) {
+  let sicherung;
+  try { sicherung = fs.readFileSync(path.join(datenOrdner, SCHLUESSEL_DATEI), 'utf8').trim(); } catch { return 'keine-sicherung'; }
+  if (!BASE64.test(sicherung)) return 'keine-sicherung';
+  if (schluesselAusLocalState(userData) === sicherung) return 'gleich';
+  const ls = localStateLesen(userData) || {};
+  fs.mkdirSync(userData, { recursive: true });
+  schreibeAtomar(localStateDatei(userData), JSON.stringify({ ...ls, os_crypt: { ...(ls.os_crypt || {}), encrypted_key: sicherung } }));
+  return 'ersetzt';
+}
+
+/**
  * Sichert den Schlüssel im Datenordner. Er bleibt dort per DPAPI geschützt, nur dasselbe Windows-Konto kann ihn nutzen.
  * `ueberschreiben` nur, wenn die Daten mit dem aktuellen Schlüssel gelesen wurden. Liefert true, wenn geschrieben wurde.
  */
@@ -62,4 +78,4 @@ function schluesselSichern(userData, datenOrdner, { ueberschreiben = false } = {
   return true;
 }
 
-module.exports = { createKrypto, schluesselWiederherstellen, schluesselSichern, SCHLUESSEL_DATEI };
+module.exports = { createKrypto, schluesselWiederherstellen, schluesselErzwingen, schluesselSichern, SCHLUESSEL_DATEI };

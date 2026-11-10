@@ -8,7 +8,7 @@ const path = require('path');
 const fs = require('fs');
 const { pathToFileURL } = require('url');
 const { createStorage } = require('./storage');
-const { createKrypto, schluesselSichern, schluesselWiederherstellen } = require('./krypto');
+const { createKrypto, schluesselSichern, schluesselWiederherstellen, schluesselErzwingen } = require('./krypto');
 const { createUpdater } = require('./updater');
 const statusMonitor = require('./status');
 
@@ -318,7 +318,9 @@ function statusEinstellungSetzen(patch) {
 // ---------- Schlüssel-Sicherung (D-6) ----------
 /** Sichert den Schlüssel im Datenordner. Überschreiben nur, wenn die Daten mit dem aktuellen Schlüssel lesbar waren. */
 function schluesselSicherung(ueberschreiben) {
-  if (!storage || !storage.verschluesselt || (ueberschreiben && storage.gesperrt)) return;
+  if (!storage || !storage.verschluesselt || storage.schluessel === 'falsch') return;
+  // Überschreiben nur, wenn der Prüfwert bestätigt hat, dass der geladene Schlüssel der richtige ist (1.5.2)
+  if (ueberschreiben && (storage.gesperrt || storage.schluessel !== 'ok')) ueberschreiben = false;
   try { schluesselSichern(app.getPath('userData'), storage.pfade.ordner, { ueberschreiben }); } catch { /* nächster Versuch beim nächsten Start */ }
 }
 
@@ -418,13 +420,24 @@ function rechteSperren() {
 if (!SCREENSHOT && !app.requestSingleInstanceLock()) {
   app.quit();
 } else {
-  // Schlüssel aus der Sicherung zurückschreiben, bevor Electron ihn lädt (D-6)
-  try { schluesselWiederherstellen(app.getPath('userData'), datenOrdner().ordner); } catch { /* ohne Sicherung legt Electron einen neuen an */ }
+  // Schlüssel aus der Sicherung zurückschreiben, bevor Electron ihn lädt (D-6). Nach einem erkannten Schlüssel-Fehler
+  // (Neustart mit --noteline-neustart) gilt die Sicherung auch dann, wenn „Local State“ einen anderen Schlüssel enthält.
+  const NEUSTART = process.argv.includes('--noteline-neustart');
+  try {
+    if (NEUSTART) schluesselErzwingen(app.getPath('userData'), datenOrdner().ordner);
+    else schluesselWiederherstellen(app.getPath('userData'), datenOrdner().ordner);
+  } catch { /* ohne Sicherung legt Electron einen neuen an */ }
   app.on('second-instance', zeigen);
   app.whenReady().then(() => {
     app.setAppUserModelId(APP_ID);
     rechteSperren();
     storage = createStorage({ ...datenOrdner(), krypto: createKrypto(safeStorage) });
+    // Falscher Schlüssel geladen (vorkommt z. B. beim ersten Start nach einem Update): nichts schreiben, einmal neu starten (1.5.2)
+    if (storage.schluessel === 'falsch' && !NEUSTART) {
+      app.relaunch({ args: [...process.argv.slice(1), '--noteline-neustart'] });
+      app.exit(0);
+      return;
+    }
     schluesselSicherung(false); // erste Sicherung, sobald Electron den Schlüssel abgelegt hat (spätestens beim 2. Start)
     setTimeout(() => schluesselSicherung(!storage.gesperrt), 2 * 60 * 1000);
     updater = createUpdater(updateStatusMelden);

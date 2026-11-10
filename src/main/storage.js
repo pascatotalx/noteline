@@ -54,7 +54,11 @@ function createStorage({ ordner, altOrdner, jetzt = () => new Date(), krypto = n
   const klar = { daten: path.join(ordner, 'daten.json'), einstellungen: path.join(ordner, 'einstellungen.json') };
   const verschluesselt = { daten: path.join(ordner, 'daten.enc') };
   const altFensterDatei = path.join(ordner, 'fenster.json'); // Version 1.0
+  // Prüfwert: zeigt beim Start, ob der geladene Schlüssel zu den vorhandenen Dateien passt (D-6, 1.5.2)
+  const pruefDatei = path.join(ordner, 'pruefung.enc');
+  const PRUEFTEXT = 'NOTELINE-SCHLUESSEL-OK';
   let gesperrt = false;
+  let einstellungenSitzung = null; // bei falschem Schlüssel: Einstellungen nur im Speicher, nie auf die Platte
 
   fs.mkdirSync(backupOrdner, { recursive: true });
 
@@ -73,6 +77,21 @@ function createStorage({ ordner, altOrdner, jetzt = () => new Date(), krypto = n
   /** Text schreiben, mit Verschlüsselung als Kennung + verschlüsselter Inhalt. */
   function schreiben(datei, text) {
     schreibeAtomar(datei, krypto ? Buffer.concat([KOPF, krypto.verschluesseln(text)]) : text);
+  }
+
+  const lesbar = (datei) => { try { lesen(datei); return true; } catch { return false; } };
+
+  /**
+   * Passt der geladene Schlüssel zu den vorhandenen verschlüsselten Dateien? (D-6, 1.5.2)
+   * 'ok' = passt, 'neu' = noch nichts verschlüsselt, 'falsch' = Electron hat einen anderen Schlüssel geladen,
+   * 'aus' = ohne Verschlüsselung. Bei 'falsch' schreibt Noteline in dieser Sitzung keine einzige Datei.
+   */
+  function schluesselPruefen() {
+    if (!krypto) return 'aus';
+    if (fs.existsSync(pruefDatei)) return lesbar(pruefDatei) && lesen(pruefDatei) === PRUEFTEXT ? 'ok' : 'falsch';
+    const vorhanden = [verschluesselt.daten, einstellungenDatei].filter(d => fs.existsSync(d));
+    if (!vorhanden.length) return 'neu';
+    return vorhanden.some(lesbar) ? 'ok' : 'falsch';
   }
 
   /** Klartext-Datei verschlüsselt ablegen. Das Original wird erst gelöscht, wenn das Zurücklesen gelingt (D-6). */
@@ -127,6 +146,11 @@ function createStorage({ ordner, altOrdner, jetzt = () => new Date(), krypto = n
 
   /** @returns {{status: 'neu'|'ok'|'defekt', daten: object|null, fehler?: string, kopie?: string, migriert?: boolean}} */
   function load() {
+    if (schluessel === 'falsch') {
+      gesperrt = true;
+      return { status: 'defekt', daten: null, schluesselFalsch: true,
+        fehler: 'Der Schlüssel passt nicht zu den gespeicherten Dateien, es wurde nichts verändert. Bitte Noteline über das Symbol im Infobereich beenden und neu starten. Bleibt der Hinweis, gehören die Dateien zu einem anderen Windows-Konto oder der Schlüssel fehlt.' };
+    }
     const migriert = migrieren();
     // Verschlüsselte Datei zuerst; ohne Verschlüsselung führt sie in den Schutzmodus statt zu einem leeren Neustart.
     const quelle = [verschluesselt.daten, klar.daten].find(d => fs.existsSync(d));
@@ -163,6 +187,7 @@ function createStorage({ ordner, altOrdner, jetzt = () => new Date(), krypto = n
 
   /** Einstellungen (D-1). Fehlt die Datei, wird die Fassung aus älteren Versionen übernommen. */
   function ladeEinstellungen() {
+    if (einstellungenSitzung) return { ...einstellungenSitzung };
     for (const datei of [einstellungenDatei, klar.einstellungen, altFensterDatei]) {
       try { const e = JSON.parse(lesen(datei)); if (e && typeof e === 'object') return e; } catch { /* nächste Quelle */ }
     }
@@ -170,18 +195,29 @@ function createStorage({ ordner, altOrdner, jetzt = () => new Date(), krypto = n
   }
   function speichereEinstellungen(patch) {
     const neu = { ...ladeEinstellungen(), ...patch };
+    if (schluessel === 'falsch') { einstellungenSitzung = neu; return neu; } // nichts mit falschem Schlüssel schreiben
     try {
+      // Unlesbare Einstellungen (mit einem nicht gespeicherten Schlüssel geschrieben) vor dem Ersetzen aufheben
+      if (krypto && fs.existsSync(einstellungenDatei) && !lesbar(einstellungenDatei)) {
+        fs.copyFileSync(einstellungenDatei, path.join(ordner, `einstellungen-defekt-${zeitstempel(jetzt())}.enc`));
+      }
       schreiben(einstellungenDatei, JSON.stringify(neu, null, 1));
       for (const alt of [klar.einstellungen, altFensterDatei]) if (alt !== einstellungenDatei && fs.existsSync(alt)) fs.unlinkSync(alt);
     } catch { /* Einstellungen sind unkritisch, nächster Versuch beim nächsten Ändern */ }
     return neu;
   }
 
-  klartextUmstellen();
+  const schluessel = schluesselPruefen();
+  if (schluessel === 'falsch') gesperrt = true;
+  else if (krypto) {
+    try { if (!fs.existsSync(pruefDatei)) schreiben(pruefDatei, PRUEFTEXT); } catch { /* nächster Start legt ihn an */ }
+    klartextUmstellen();
+  }
 
   return {
     load, save, dailyBackup, ladeEinstellungen, speichereEinstellungen,
     get gesperrt() { return gesperrt; },
+    schluessel,
     verschluesselt: !!krypto,
     pfade: { ordner, datenDatei, backupOrdner, einstellungenDatei },
   };
