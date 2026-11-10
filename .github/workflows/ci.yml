@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   test:
-    name: Tests und Prüfung auf sensible Daten
+    name: Code-Prüfung, Tests und Prüfung auf sensible Daten
     runs-on: ubuntu-latest
     env:
       ELECTRON_SKIP_BINARY_DOWNLOAD: "1"
@@ -23,5 +23,7 @@ jobs:
       - run: npm ci --ignore-scripts
       - name: Keine Nutzerdaten oder Zugangsdaten im Repository
         run: node scripts/check-sensitive.js --all
+      - name: Code-Prüfung (ESLint mit Sicherheitsregeln)
+        run: npm run lint
       - name: Tests
         run: npm test

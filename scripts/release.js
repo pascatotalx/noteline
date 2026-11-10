@@ -25,6 +25,7 @@ const schritt = (msg) => console.log(`\n▸ ${msg}`);
 
 function changelogAbschnitt(v) {
   const text = fs.readFileSync(path.join(ROOT, 'CHANGELOG.md'), 'utf8');
+  // eslint-disable-next-line security/detect-non-literal-regexp -- Version aus package.json, Punkte maskiert
   const start = text.search(new RegExp(`^## \\[${v.replace(/\./g, '\\.')}\\]`, 'm'));
   if (start < 0) return null;
   const rest = text.slice(start);
@@ -42,6 +43,7 @@ const notes = changelogAbschnitt(version);
 if (!notes) stopp(`CHANGELOG.md hat keinen Abschnitt „## [${version}]".`);
 
 schritt('Tests und Prüfung auf sensible Daten');
+if (!shell('npm run lint')) stopp('Code-Prüfung (ESLint) ist fehlgeschlagen.');
 if (!shell('npm test')) stopp('Tests sind fehlgeschlagen.');
 if (!shell('node scripts/check-sensitive.js --all')) stopp('Prüfung auf sensible Daten ist fehlgeschlagen.');
 

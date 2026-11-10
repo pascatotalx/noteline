@@ -27,12 +27,15 @@
   const TELEFON = /(?<![\w#+/.:=-])(?:\+\d|0)[\d /()-]{6,}\d/g;
   // Mit Bezeichnung davor reichen 3 Ziffern, z. B. eine Durchwahl (1.2.3): „Tel. 123“, „Mobil: 0151 …“
   const TELEFON_BEZ = /(?<![\wäöüÄÖÜß])(?:Tel(?:efon)?\.?|Fon|Mobil|Handy)\s*:?\s*((?:\+\d|\d)[\d /()-]*\d|\d)/i;
+  // eslint-disable-next-line security/detect-unsafe-regex -- linear: Wiederholungen durch festes Trennzeichen getrennt, Eingabe ist eigene Tastatureingabe
   const TICKET = [/(?<![\w&])#\s?(\d{3,})\b/, /(?<![\wäöüÄÖÜß])(?:Ticket(?:-?(?:nummer|nr\.?))?|Tkt\.?)\s*:?\s*#?\s*(\d{3,})\b/i];
   const ziffern = (s) => s.replace(/\D/g, '').length;
   // TeamViewer (H-12, 1.4.0): „TV 123 456 789“, „TeamViewer-ID: 1 234 567 890“; Passwort nur zusammen mit einer ID
+  // eslint-disable-next-line security/detect-unsafe-regex -- linear: Wiederholungen durch festes Trennzeichen getrennt, Eingabe ist eigene Tastatureingabe
   const TV_BEZ = /(?<![\wäöüÄÖÜß])(?:team\s?viewer|tv)(?:[-\s]?id)?\s*:?\s*(\d{1,3}(?: \d{3})+|\d{7,12})(?!\d)/i;
   const PW_BEZ = /(?<![\wäöüÄÖÜß])(?:pw|passwort|kennwort)(?:\s*:\s*|\s+)(\S+)/i;
   /** TeamViewer-ID lesbar: 1234567890 → „1 234 567 890“. */
+  // eslint-disable-next-line security/detect-unsafe-regex -- linear: Wiederholungen durch festes Trennzeichen getrennt, Eingabe ist eigene Tastatureingabe
   const tvAnzeige = (id) => str(id).replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
 
   // Ansprechpartner per Anrede (H-1, 1.2.2): „Frau Müller“, „Herr Dr. Schmidt“, „Fr. Meier“, „Hr. Weber-Lang“
@@ -237,6 +240,7 @@
     return { raus: true, rest: rest.trim() };
   }
 
+  // eslint-disable-next-line security/detect-unsafe-regex -- linear: Wiederholungen durch festes Trennzeichen getrennt, Eingabe ist eigene Tastatureingabe
   const aufraeumen = (v) => v.replace(/\s+/g, ' ').replace(/\s+([:,;])/g, '$1').replace(/([,;:])(?:\s*[,;])+/g, '$1')
     .replace(/^[\s:,;–\u2063-]+|[\s,;–\u2063-]+$/g, '');
   const ausschneiden = (v, start, ende) => v.slice(0, start) + ', ' + v.slice(ende);
@@ -451,7 +455,9 @@
 
   // ---------- W-1 / W-2 Wissen: Art erkennen, Eingabe zerlegen, Abschnitte ----------
   const RE_LINK = /\bhttps?:\/\/\S+/i;
+  // eslint-disable-next-line security/detect-unsafe-regex -- linear: Wiederholungen durch festes Trennzeichen getrennt, Eingabe ist eigene Tastatureingabe
   const RE_EMAIL = /[\w.+-]+@[\w-]+(?:\.[\w-]+)+/;
+  // eslint-disable-next-line security/detect-unsafe-regex -- nur begrenzte Wiederholungen ({3}, {1,5})
   const RE_IP = /(?<![\d.])(?:(?:25[0-5]|2[0-4]\d|1?\d?\d)\.){3}(?:25[0-5]|2[0-4]\d|1?\d?\d)(?:\/\d{1,2}|:\d{1,5})?(?![\d.])/;
   const RE_TEL = /(?<![\w#+/.:=-])(?:\+\d|0)[\d /()-]{4,}\d(?![\d])/;
   const istPort = (v) => /^\d{1,5}$/.test(v) && +v >= 1 && +v <= 65535;
@@ -460,9 +466,12 @@
   function wissenTyp(wert) {
     const v = str(wert).trim();
     if (/^https?:\/\/\S+$/i.test(v)) return 'link';
+    // eslint-disable-next-line security/detect-non-literal-regexp -- Quelle ist eine feste Regex-Konstante
     if (new RegExp(`^${RE_EMAIL.source}$`).test(v)) return 'email';
+    // eslint-disable-next-line security/detect-non-literal-regexp -- Quelle ist eine feste Regex-Konstante
     if (new RegExp(`^${RE_IP.source}$`).test(v)) return 'ip';
     if (istPort(v)) return 'port';
+    // eslint-disable-next-line security/detect-non-literal-regexp -- Quelle ist eine feste Regex-Konstante
     const tel = v.match(new RegExp(`^${RE_TEL.source}$`));
     if (tel && ziffern(v) >= 6) return 'telefon';
     return 'befehl';
