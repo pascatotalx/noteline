@@ -120,3 +120,97 @@ test('D-1: fenster.json aus Version 1.0 wird übernommen und danach entfernt', (
 test('lokalesDatum nutzt die lokale Zeitzone', () => {
   assert.equal(lokalesDatum(new Date(2026, 0, 2, 0, 15)), '2026-01-02');
 });
+
+// ---------- D-6: Verschlüsselung (Attrappe statt Windows-DPAPI) ----------
+const { KOPF } = require('../src/main/storage.js');
+const xor = (buf) => Buffer.from(buf.map(b => b ^ 0x5a));
+function attrappe({ falscherSchluessel = false } = {}) {
+  return {
+    verschluesseln: (text) => xor(Buffer.from('ok:' + text, 'utf8')),
+    entschluesseln: (buf) => {
+      const t = xor(buf).toString('utf8');
+      if (falscherSchluessel || !t.startsWith('ok:')) throw new Error('falscher Schlüssel');
+      return t.slice(3);
+    },
+  };
+}
+const notiz = (kunde) => JSON.stringify({ version: 2, notizen: [{ id: 'n1', kunde, tvPw: 'geheim123' }], wissen: [] });
+const nurVerschluesselt = (datei, ...woerter) => {
+  const roh = fs.readFileSync(datei);
+  assert.ok(roh.subarray(0, KOPF.length).equals(KOPF), `${path.basename(datei)} beginnt mit der Kennung`);
+  for (const w of woerter) assert.ok(!roh.toString('latin1').includes(w), `${path.basename(datei)} enthält „${w}“ nicht im Klartext`);
+};
+
+test('D-6: Daten, Einstellungen und Backups liegen verschlüsselt', () => {
+  let jetzt = new Date(2026, 10, 9, 12, 0);
+  const ordner = tmpOrdner();
+  const s = createStorage({ ordner, krypto: attrappe(), jetzt: () => jetzt });
+  assert.equal(s.verschluesselt, true);
+  s.save(notiz('Praxis Sonnenschein'));
+  jetzt = new Date(2026, 10, 10, 12, 0);
+  s.save(notiz('Praxis Sonnenschein am Park'));
+  s.speichereEinstellungen({ ticketLink: 'https://tickets.example.org/{ticket}' });
+  assert.deepEqual(fs.readdirSync(ordner).sort(), ['Backups', 'daten.enc', 'einstellungen.enc']);
+  nurVerschluesselt(path.join(ordner, 'daten.enc'), 'Sonnenschein', 'geheim123');
+  nurVerschluesselt(path.join(ordner, 'einstellungen.enc'), 'tickets.example.org');
+  nurVerschluesselt(path.join(ordner, 'Backups', 'daten-2026-11-10.enc'), 'Sonnenschein');
+  const r = createStorage({ ordner, krypto: attrappe() }).load();
+  assert.equal(r.status, 'ok');
+  assert.equal(r.daten.notizen[0].kunde, 'Praxis Sonnenschein am Park');
+  assert.equal(createStorage({ ordner, krypto: attrappe() }).ladeEinstellungen().ticketLink, 'https://tickets.example.org/{ticket}');
+});
+
+test('D-6: vorhandene Klartext-Dateien werden umgestellt und danach gelöscht', () => {
+  const ordner = tmpOrdner();
+  fs.mkdirSync(path.join(ordner, 'Backups'));
+  fs.writeFileSync(path.join(ordner, 'daten.json'), notiz('Praxis Sonnenschein'));
+  fs.writeFileSync(path.join(ordner, 'einstellungen.json'), JSON.stringify({ theme: 'hell' }));
+  fs.writeFileSync(path.join(ordner, 'fenster.json'), JSON.stringify({ immerVorne: true }));
+  fs.writeFileSync(path.join(ordner, 'Backups', 'daten-2026-11-01.json'), notiz('Praxis Alt'));
+  fs.writeFileSync(path.join(ordner, 'daten-defekt-2026-11-02_10-00-00.json'), '{ kaputt Sonnenschein');
+  const s = createStorage({ ordner, krypto: attrappe() });
+  const r = s.load();
+  assert.equal(r.status, 'ok');
+  assert.equal(r.daten.notizen[0].kunde, 'Praxis Sonnenschein');
+  assert.equal(s.ladeEinstellungen().theme, 'hell');
+  const alle = [...fs.readdirSync(ordner), ...fs.readdirSync(path.join(ordner, 'Backups'))];
+  assert.deepEqual(alle.filter(f => f.endsWith('.json')), [], 'keine Klartext-Datei mehr');
+  nurVerschluesselt(path.join(ordner, 'daten.enc'), 'Sonnenschein');
+  nurVerschluesselt(path.join(ordner, 'Backups', 'daten-2026-11-01.enc'), 'Praxis Alt');
+  nurVerschluesselt(path.join(ordner, 'daten-defekt-2026-11-02_10-00-00.enc'), 'Sonnenschein');
+});
+
+test('D-6: defekte Klartext-Datei wird nicht umgestellt, Schutzmodus greift', () => {
+  const ordner = tmpOrdner();
+  fs.writeFileSync(path.join(ordner, 'daten.json'), '{ kaputt Sonnenschein');
+  const s = createStorage({ ordner, krypto: attrappe() });
+  const r = s.load();
+  assert.equal(r.status, 'defekt');
+  assert.equal(fs.readFileSync(path.join(ordner, 'daten.json'), 'utf8'), '{ kaputt Sonnenschein'); // Original unangetastet
+  assert.ok(r.kopie.endsWith('.enc'));
+  nurVerschluesselt(r.kopie, 'Sonnenschein');
+  assert.throws(() => s.save(notiz('X')), /Schutzmodus/);
+});
+
+test('D-6: nicht zu entschlüsseln → Schutzmodus mit Ursache, nichts wird überschrieben', () => {
+  const ordner = tmpOrdner();
+  createStorage({ ordner, krypto: attrappe() }).save(notiz('Praxis Sonnenschein'));
+  const vorher = fs.readFileSync(path.join(ordner, 'daten.enc'));
+  const s = createStorage({ ordner, krypto: attrappe({ falscherSchluessel: true }) });
+  const r = s.load();
+  assert.equal(r.status, 'defekt');
+  assert.match(r.fehler, /anderen Windows-Konto/);
+  assert.throws(() => s.save(notiz('X')), /Schutzmodus/);
+  assert.ok(fs.readFileSync(path.join(ordner, 'daten.enc')).equals(vorher));
+  assert.ok(fs.readFileSync(r.kopie).equals(vorher));
+});
+
+test('D-6: verschlüsselte Daten ohne verfügbare Verschlüsselung → Schutzmodus statt leerem Neustart', () => {
+  const ordner = tmpOrdner();
+  createStorage({ ordner, krypto: attrappe() }).save(notiz('Praxis Sonnenschein'));
+  const s = createStorage({ ordner });
+  const r = s.load();
+  assert.equal(r.status, 'defekt');
+  assert.match(r.fehler, /nicht verfügbar/);
+  assert.equal(s.verschluesselt, false);
+});

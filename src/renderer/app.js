@@ -7,7 +7,7 @@ const NL = window.NL;
 const bridge = window.api || (() => {
   const KEY = 'noteline-daten';
   const lesen = () => { try { return JSON.parse(localStorage.getItem(KEY) || 'null'); } catch { return null; } };
-  const schreiben = (j) => { try { localStorage.setItem(KEY, j); } catch {} return true; };
+  const schreiben = (j) => { try { localStorage.setItem(KEY, j); } catch { /* nur Vorschau im Browser */ } return true; };
   const keineUpdates = { zustand: 'dev', text: 'Im Browser gibt es keine Updates.' };
   return {
     laden: async () => ({ status: lesen() ? 'ok' : 'neu', daten: lesen(), ordner: 'Browser (localStorage)' }),
@@ -17,7 +17,7 @@ const bridge = window.api || (() => {
     immerVorne: async (an) => an, istImmerVorne: async () => false,
     autostart: async () => ({ an: false, moeglich: false }),
     ordnerOeffnen: async () => {}, linkOeffnen: async (u) => window.open(u, '_blank', 'noopener'),
-    erinnern: async ({ titel, text }) => { try { if (Notification.permission === 'granted') new Notification(titel, { body: text }); } catch {} },
+    erinnern: async ({ titel, text }) => { try { if (Notification.permission === 'granted') new Notification(titel, { body: text }); } catch { /* nur Vorschau im Browser */ } },
     notizOffen: async () => {}, version: async () => 'Browser',
     updateSuchen: async () => keineUpdates, updateStatus: async () => keineUpdates, updateInstallieren: async () => {},
     beiNotizOeffnen: () => {}, beiUpdateStatus: () => {}, beiTheme: () => {},
@@ -33,7 +33,7 @@ const BREIT = window.matchMedia('(min-width: 760px)'); // L-1
 const S = {
   tab: 'hotline', q: '', openId: null, settingsOpen: false, rrOpen: false, breit: BREIT.matches,
   copied: null, editW: null, wDraft: null, focusForm: false, wNeu: '', firstRender: true,
-  schutz: null, ordner: '', version: '', update: { zustand: 'idle' }, autostart: { an: false, moeglich: false }, immerVorne: false,
+  schutz: null, ordner: '', datei: 'daten.json', verschluesselt: false, version: '', update: { zustand: 'idle' }, autostart: { an: false, moeglich: false }, immerVorne: false,
   einst: { theme: 'dunkel', uhr: false, ticketLink: '' }, ticketEntwurf: null, ticketFehler: '',
   status: { aktiv: false, intervall: 15, quellen: [], ergebnisse: [], gesamt: { zustand: 'aus' }, vorlagen: [] },
   statusOpen: false, statusNeu: { name: '', url: '' }, statusFehler: '', statusTestet: false,
@@ -296,7 +296,7 @@ function render() {
     S.focusForm = false;
   } else if (fokus) {
     const el = main.querySelector(fokus.sel);
-    if (el) { el.focus({ preventScroll: true }); try { el.setSelectionRange(fokus.start, fokus.end); } catch {} }
+    if (el) { el.focus({ preventScroll: true }); try { el.setSelectionRange(fokus.start, fokus.end); } catch { /* Feld ohne Textauswahl */ } }
   }
   const due = NL.anzahlFaellig(D.notizen);
   const b = $('#badge'); b.hidden = !due; b.textContent = due;
@@ -314,8 +314,8 @@ function renderBanner() {
   if (S.schutz) {
     html = `<div class="banner schutz" role="alert">
       <div><strong>Schutzmodus: Es wird nichts gespeichert.</strong><br>
-      Die Datei daten.json konnte nicht gelesen werden (${esc(S.schutz.fehler)}).
-      Datei reparieren oder eine Sicherung aus dem Unterordner „Backups“ als daten.json zurückkopieren, dann Noteline neu starten.
+      Die Datei ${esc(S.datei)} konnte nicht gelesen werden (${esc(S.schutz.fehler)}).
+      Eine Sicherung aus dem Unterordner „Backups“ als ${esc(S.datei)} zurückkopieren, dann Noteline neu starten.
       ${S.schutz.kopie ? `<div class="b-mono">Sicherungskopie im Datenordner: ${esc(S.schutz.kopie.split(/[\\/]/).pop())}</div>` : ''}</div>
       <div class="b-actions"><button class="btn-ghost press" type="button" data-set="ordner">Datenordner öffnen</button></div>
     </div>`;
@@ -544,7 +544,7 @@ function renderSettings() {
     ${statusEinstellungenHtml(sw)}
     <div class="set-row"><div class="set-label"><strong>Mit Windows starten</strong><span>${S.autostart.moeglich ? 'Noteline öffnet sich beim Anmelden.' : 'Nur in der installierten Version.'}</span></div>${sw('autostart', S.autostart.an, !S.autostart.moeglich)}</div>
     <div class="set-row"><div class="set-label"><strong>Immer im Vordergrund</strong><span>Fenster bleibt über anderen Programmen.</span></div>${sw('pin', S.immerVorne)}</div>
-    <div class="set-row"><div class="set-label"><strong>Speicherort</strong><button class="pfad press" type="button" data-set="ordner" title="Ordner im Explorer öffnen">${esc(S.ordner)}</button><span>Notizen und Wissen als Datei, nur auf diesem Rechner.</span></div></div>
+    <div class="set-row"><div class="set-label"><strong>Speicherort</strong><button class="pfad press" type="button" data-set="ordner" title="Ordner im Explorer öffnen">${esc(S.ordner)}</button><span>${S.verschluesselt ? 'Notizen und Wissen verschlüsselt, nur auf diesem Rechner und nur für dein Windows-Konto lesbar.' : 'Notizen und Wissen als Datei, nur auf diesem Rechner. Die Verschlüsselung von Windows ist nicht verfügbar.'}</span></div></div>
     <div class="set-row"><div class="set-label"><strong>Im Hintergrund</strong><span>Noteline zeigt sich nur als Symbol unten rechts im Infobereich, nicht in der Taskleiste. Klick darauf oder Strg+Alt+H öffnet es, das Kreuz versteckt es wieder. Beenden über Rechtsklick auf das Symbol.</span></div></div>
     <div class="set-row stack"><div class="set-label"><strong>Tastenkürzel</strong></div>
       <div class="keys">
@@ -559,7 +559,7 @@ function renderSettings() {
     </div>
   </div>`;
   body.scrollTop = scroll;
-  if (fokusId) { const el = document.getElementById(fokusId); if (el) { el.focus({ preventScroll: true }); try { el.setSelectionRange(...auswahl); } catch {} } }
+  if (fokusId) { const el = document.getElementById(fokusId); if (el) { el.focus({ preventScroll: true }); try { el.setSelectionRange(...auswahl); } catch { /* Feld ohne Textauswahl */ } } }
 }
 async function ticketLinkSpeichern(wert) {
   const v = wert.trim();
@@ -874,17 +874,21 @@ function tick() { const d = new Date(); $('#clock').textContent = fClock.format(
 (async () => {
   const r = await bridge.laden();
   S.ordner = r.ordner || '';
+  S.datei = r.datei || 'daten.json';
+  S.verschluesselt = !!r.verschluesselt;
   if (r.status === 'defekt') S.schutz = r;
   else if (r.daten) D = NL.normalize(r.daten);
-  try { S.einst = { ...S.einst, ...(await bridge.einstellungen()) }; } catch {}
-  try { S.immerVorne = !!(await bridge.istImmerVorne()); $('#pin').setAttribute('aria-pressed', String(S.immerVorne)); } catch {}
-  try { S.version = await bridge.version(); } catch {}
-  try { S.autostart = await bridge.autostart(); } catch {}
-  try { S.update = await bridge.updateStatus(); } catch {}
-  try { S.status = await bridge.statusDaten(); } catch {}
+  // Fehlt eine Angabe, bleibt der Standardwert aus S stehen – die Oberfläche startet trotzdem.
+  const optional = async (fn) => { try { await fn(); } catch { /* Standardwert bleibt */ } };
+  await optional(async () => { S.einst = { ...S.einst, ...(await bridge.einstellungen()) }; });
+  await optional(async () => { S.immerVorne = !!(await bridge.istImmerVorne()); $('#pin').setAttribute('aria-pressed', String(S.immerVorne)); });
+  await optional(async () => { S.version = await bridge.version(); });
+  await optional(async () => { S.autostart = await bridge.autostart(); });
+  await optional(async () => { S.update = await bridge.updateStatus(); });
+  await optional(async () => { S.status = await bridge.statusDaten(); });
   const start = new URLSearchParams(location.search).get('tab'); // nur für Screenshots
   if (start === 'wissen') S.tab = 'wissen';
-  if (!window.api && 'Notification' in window && Notification.permission === 'default') { try { Notification.requestPermission(); } catch {} }
+  if (!window.api && 'Notification' in window && Notification.permission === 'default') { try { Notification.requestPermission(); } catch { /* nur Vorschau im Browser */ } }
   uhrAnzeigen(); setInterval(tick, 15000);
   renderBanner();
   render();
