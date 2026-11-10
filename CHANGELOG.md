@@ -3,6 +3,13 @@
 Alle nennenswerten Änderungen an Noteline. Format nach [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
+## [1.5.1] – 2026-11-10
+
+### Behoben
+- **Leeres Fenster nach dem Update auf 1.5.0.** Ein neuer Sicherheitsschalter verhinderte, dass die Oberfläche aus der
+  Programmdatei geladen wird. Der Schalter ist wieder an, alle anderen Schutzmaßnahmen aus 1.5.0 bleiben. Die Daten waren
+  nicht betroffen: Sie werden erst umgestellt, wenn die Oberfläche sie lädt, und blieben deshalb unverändert erhalten.
+
 ## [1.5.0] – 2026-11-10
 
 ### Sicherheit
@@ -200,6 +207,7 @@ Erste veröffentlichte Version. Neuaufbau des Prototyps „Hotline-Notizen“ na
 - Eine ins Fenster gezogene Datei ersetzt nicht mehr die App-Oberfläche.
 - Strengere Sicherheitseinstellungen (Sandbox, Content-Security-Policy ohne Inline-Skripte).
 
+[1.5.1]: https://github.com/pascatotalx/noteline/releases/tag/v1.5.1
 [1.5.0]: https://github.com/pascatotalx/noteline/releases/tag/v1.5.0
 [1.4.2]: https://github.com/pascatotalx/noteline/releases/tag/v1.4.2
 [1.4.1]: https://github.com/pascatotalx/noteline/releases/tag/v1.4.1
