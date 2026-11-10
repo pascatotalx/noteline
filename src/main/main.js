@@ -2,10 +2,13 @@
 'use strict';
 const {
   app, BrowserWindow, ipcMain, shell, screen, globalShortcut, Notification, Tray, Menu, nativeImage, nativeTheme, powerMonitor, clipboard,
+  safeStorage, session,
 } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const { pathToFileURL } = require('url');
 const { createStorage } = require('./storage');
+const { createKrypto, schluesselSichern, schluesselWiederherstellen } = require('./krypto');
 const { createUpdater } = require('./updater');
 const statusMonitor = require('./status');
 
@@ -17,9 +20,12 @@ const ICON = path.join(RENDERER, 'icon.png');     // Benachrichtigungen
 const ICON_ICO = path.join(RENDERER, 'icon.ico'); // Fenster, Taskleiste, Infobereich (alle Größen 16–256 px)
 const TITELLEISTE = 44; // Höhe der eigenen Titelleiste in px (A-1)
 const RUHE_SEKUNDEN = 10 * 60; // stilles Update erst nach 10 min ohne Eingabe (K-2)
+// Die einzige Seite, die mit dem Hauptprozess sprechen darf (D-7)
+const SEITE = pathToFileURL(path.join(RENDERER, 'index.html')).href;
 
-// Nur für scripts/screenshot.js
-const SCREENSHOT = process.env.NOTELINE_SCREENSHOT;
+// Test- und Screenshot-Schalter nur in der Entwicklerversion, nie im installierten Programm (D-7)
+const ENTWICKLUNG = !app.isPackaged;
+const SCREENSHOT = ENTWICKLUNG ? process.env.NOTELINE_SCREENSHOT : undefined;
 const SCREENSHOT_GROESSE = (process.env.NOTELINE_SCREENSHOT_SIZE || '460x900').split('x').map(Number);
 
 const FARBEN = {
@@ -39,7 +45,7 @@ const istHttp = (url) => /^https?:\/\//i.test(String(url || ''));
 const einstellungen = () => storage.ladeEinstellungen();
 
 function datenOrdner() {
-  if (process.env.NOTELINE_DATA_DIR) return { ordner: path.resolve(process.env.NOTELINE_DATA_DIR) };
+  if (ENTWICKLUNG && process.env.NOTELINE_DATA_DIR) return { ordner: path.resolve(process.env.NOTELINE_DATA_DIR) };
   const docs = app.getPath('documents');
   return { ordner: path.join(docs, 'Noteline'), altOrdner: path.join(docs, 'Hotline-Notizen') };
 }
@@ -67,7 +73,7 @@ function themaAnwenden() {
   const aktiv = themaAktiv();
   const f = FARBEN[aktiv];
   win.setBackgroundColor(f.hintergrund);
-  try { win.setTitleBarOverlay({ color: f.hintergrund, symbolColor: f.symbole, height: TITELLEISTE }); } catch {}
+  try { win.setTitleBarOverlay({ color: f.hintergrund, symbolColor: f.symbole, height: TITELLEISTE }); } catch { /* Fenster ohne Titelleisten-Overlay */ }
   senden('theme', aktiv);
 }
 
@@ -309,7 +315,26 @@ function statusEinstellungSetzen(patch) {
   return d;
 }
 
+// ---------- Schlüssel-Sicherung (D-6) ----------
+/** Sichert den Schlüssel im Datenordner. Überschreiben nur, wenn die Daten mit dem aktuellen Schlüssel lesbar waren. */
+function schluesselSicherung(ueberschreiben) {
+  if (!storage || !storage.verschluesselt || (ueberschreiben && storage.gesperrt)) return;
+  try { schluesselSichern(app.getPath('userData'), storage.pfade.ordner, { ueberschreiben }); } catch { /* nächster Versuch beim nächsten Start */ }
+}
+
 // ---------- IPC ----------
+/** Nur das eigene Fenster mit der eigenen Seite darf anfragen (D-7). */
+function vomFenster(e) {
+  const url = e.senderFrame && e.senderFrame.url;
+  if (!win || win.isDestroyed() || e.sender !== win.webContents || !url) return false;
+  const ohneZusatz = (u) => decodeURIComponent(u.split(/[?#]/)[0]).toLowerCase();
+  return ohneZusatz(url) === ohneZusatz(SEITE);
+}
+const handle = (kanal, fn) => ipcMain.handle(kanal, (e, ...args) => {
+  if (!vomFenster(e)) throw new Error('Anfrage von unbekanntem Absender abgelehnt');
+  return fn(e, ...args);
+});
+
 const ERLAUBTE_EINSTELLUNGEN = {
   theme: (v) => ['dunkel', 'hell', 'system'].includes(v),
   uhr: (v) => typeof v === 'boolean',
@@ -317,17 +342,22 @@ const ERLAUBTE_EINSTELLUNGEN = {
 };
 
 function ipcEinrichten() {
-  ipcMain.handle('laden', () => ({ ...storage.load(), ordner: ordnerAnzeige(storage.pfade.ordner) }));
-  ipcMain.handle('speichern', (_e, json) => { storage.save(json); return true; });
+  handle('laden', () => {
+    const r = storage.load();
+    if (r.status === 'ok') schluesselSicherung(true);
+    return { ...r, ordner: ordnerAnzeige(storage.pfade.ordner), datei: path.basename(storage.pfade.datenDatei), verschluesselt: storage.verschluesselt };
+  });
+  handle('speichern', (_e, json) => { storage.save(json); return true; });
   ipcMain.on('speichernSofort', (e, json) => {
+    if (!vomFenster(e)) { e.returnValue = { ok: false, fehler: 'Unbekannter Absender' }; return; }
     try { storage.save(json); e.returnValue = { ok: true }; } catch (err) { e.returnValue = { ok: false, fehler: err.message }; }
   });
 
-  ipcMain.handle('einstellungen', () => {
+  handle('einstellungen', () => {
     const e = einstellungen();
     return { theme: themaWahl(), themaAktiv: themaAktiv(), uhr: !!e.uhr, ticketLink: e.ticketLink || '' };
   });
-  ipcMain.handle('einstellungSetzen', (_e, schluessel, wert) => {
+  handle('einstellungSetzen', (_e, schluessel, wert) => {
     const pruefen = ERLAUBTE_EINSTELLUNGEN[schluessel];
     if (!pruefen || !pruefen(wert)) return false;
     storage.speichereEinstellungen({ [schluessel]: wert });
@@ -335,56 +365,71 @@ function ipcEinrichten() {
     return true;
   });
 
-  ipcMain.handle('immerVorne', (_e, an) => {
+  handle('immerVorne', (_e, an) => {
     win.setAlwaysOnTop(!!an);
     storage.speichereEinstellungen({ immerVorne: !!an });
     return !!an;
   });
-  ipcMain.handle('istImmerVorne', () => !!win && win.isAlwaysOnTop());
+  handle('istImmerVorne', () => !!win && win.isAlwaysOnTop());
 
-  ipcMain.handle('autostart', (_e, an) => {
+  handle('autostart', (_e, an) => {
     if (!app.isPackaged) return { an: false, moeglich: false };
     if (typeof an === 'boolean') app.setLoginItemSettings({ openAtLogin: an });
     return { an: app.getLoginItemSettings().openAtLogin, moeglich: true };
   });
 
-  ipcMain.handle('ordnerOeffnen', () => shell.openPath(storage.pfade.ordner));
-  ipcMain.handle('linkOeffnen', (_e, url) => { if (istHttp(url) || /^mailto:[^\s<>"]+$/i.test(String(url))) shell.openExternal(url); });
-  ipcMain.handle('version', () => app.getVersion());
+  handle('ordnerOeffnen', () => shell.openPath(storage.pfade.ordner));
+  handle('linkOeffnen', (_e, url) => { if (istHttp(url) || /^mailto:[^\s<>"]+$/i.test(String(url))) shell.openExternal(url); });
+  handle('version', () => app.getVersion());
   // Kopieren über den Hauptprozess: funktioniert auch ohne Fensterfokus (W-3, W-5, H-10)
-  ipcMain.handle('kopieren', (_e, text) => { clipboard.writeText(String(text ?? '')); return true; });
-  ipcMain.handle('notizOffen', (_e, offen) => { notizOffen = !!offen; });
+  handle('kopieren', (_e, text) => { clipboard.writeText(String(text ?? '')); return true; });
+  handle('notizOffen', (_e, offen) => { notizOffen = !!offen; });
 
-  ipcMain.handle('erinnern', (_e, { titel, text, id }) => {
+  handle('erinnern', (_e, { titel, text, id }) => {
     if (win && !win.isFocused()) win.flashFrame(true);
     return benachrichtigen(titel, text, () => { zeigen(); senden('notizOeffnen', id); }, { bleiben: true });
   });
 
-  ipcMain.handle('updateSuchen', () => updater.suchen());
-  ipcMain.handle('updateStatus', () => updater.status);
-  ipcMain.handle('updateInstallieren', () => updateInstallieren());
+  handle('updateSuchen', () => updater.suchen());
+  handle('updateStatus', () => updater.status);
+  handle('updateInstallieren', () => updateInstallieren());
 
-  ipcMain.handle('statusDaten', () => statusDaten());
-  ipcMain.handle('statusPruefen', () => statusPruefen());
-  ipcMain.handle('statusEinstellungen', (_e, patch) => statusEinstellungSetzen(patch && typeof patch === 'object' ? patch : {}));
-  ipcMain.handle('statusQuelleTesten', (_e, url) => statusMonitor.erkenneArt(String(url || '').trim(), fetch));
+  handle('statusDaten', () => statusDaten());
+  handle('statusPruefen', () => statusPruefen());
+  handle('statusEinstellungen', (_e, patch) => statusEinstellungSetzen(patch && typeof patch === 'object' ? patch : {}));
+  handle('statusQuelleTesten', (_e, url) => statusMonitor.erkenneArt(String(url || '').trim(), fetch));
 }
 
 // ---------- Start ----------
 // Entwicklungs- und Screenshot-Läufe bekommen einen eigenen Benutzerordner, damit sie eine installierte
 // Noteline weder blockieren noch nach vorne holen (Single-Instance-Sperre hängt am Benutzerordner).
-if (!app.isPackaged) app.setPath('userData', path.join(app.getPath('appData'), SCREENSHOT ? 'Noteline-Screenshot' : 'Noteline-Dev'));
+if (ENTWICKLUNG) app.setPath('userData', path.join(app.getPath('appData'), SCREENSHOT ? 'Noteline-Screenshot' : 'Noteline-Dev'));
+
+/** Fremde Inhalte bekommen keine Rechte und keine eingebetteten Webviews (D-7). */
+function rechteSperren() {
+  session.defaultSession.setPermissionRequestHandler((_wc, _recht, antwort) => antwort(false));
+  session.defaultSession.setPermissionCheckHandler(() => false);
+  app.on('web-contents-created', (_e, wc) => {
+    wc.on('will-attach-webview', (ev) => ev.preventDefault());
+    wc.on('will-navigate', (ev) => ev.preventDefault());
+  });
+}
 
 if (!SCREENSHOT && !app.requestSingleInstanceLock()) {
   app.quit();
 } else {
+  // Schlüssel aus der Sicherung zurückschreiben, bevor Electron ihn lädt (D-6)
+  try { schluesselWiederherstellen(app.getPath('userData'), datenOrdner().ordner); } catch { /* ohne Sicherung legt Electron einen neuen an */ }
   app.on('second-instance', zeigen);
   app.whenReady().then(() => {
     app.setAppUserModelId(APP_ID);
-    storage = createStorage(datenOrdner());
+    rechteSperren();
+    storage = createStorage({ ...datenOrdner(), krypto: createKrypto(safeStorage) });
+    schluesselSicherung(false); // erste Sicherung, sobald Electron den Schlüssel abgelegt hat (spätestens beim 2. Start)
+    setTimeout(() => schluesselSicherung(!storage.gesperrt), 2 * 60 * 1000);
     updater = createUpdater(updateStatusMelden);
     ipcEinrichten();
-    if (SCREENSHOT && process.env.NOTELINE_SCREENSHOT_STATUS) { try { statusErgebnisse = JSON.parse(process.env.NOTELINE_SCREENSHOT_STATUS); } catch {} }
+    if (SCREENSHOT && process.env.NOTELINE_SCREENSHOT_STATUS) { try { statusErgebnisse = JSON.parse(process.env.NOTELINE_SCREENSHOT_STATUS); } catch { /* Screenshot ohne Status */ } }
     fensterErstellen();
     nativeTheme.on('updated', () => { if (themaWahl() === 'system') themaAnwenden(); });
     if (!SCREENSHOT) {
