@@ -250,6 +250,14 @@ Version erhöhen: `npm version patch|minor --no-git-tag-version`, CHANGELOG erg�
   schreibt ihn **vor** `app.whenReady()` zurück, wenn er in `Local State` fehlt. Geprüft am 10.11.2026: nach Löschen von
   `userData` und Wiederherstellen ist die Datei wieder lesbar.
 
+### Prüfwert und Neustart (1.5.2)
+- `createStorage` prüft vor allem anderen `schluessel`: `'ok' | 'neu' | 'falsch' | 'aus'` (Prüfwert `pruefung.enc`, sonst
+  vorhandene `.enc`-Dateien). Bei `'falsch'`: `gesperrt`, keine Umstellung, kein Backup, Einstellungen nur im Speicher.
+- `main.js`: bei `'falsch'` ohne `--noteline-neustart` → `app.relaunch()` mit dem Schalter, `app.exit(0)`. Mit dem Schalter
+  ruft der Start vor `whenReady` `schluesselErzwingen()` auf: weicht `Local State` von `schluessel.dpapi` ab, gilt die Sicherung.
+- Ursache der falschen Schlüssel ist nicht abschließend geklärt (beobachtet beim ersten Start nach einem Update, nicht bei
+  späteren Starts). Die Absicherung greift unabhängig davon.
+
 ### Härtung
 - **Fuses** über `build.electronFuses` in `package.json` (electron-builder setzt sie beim Paketieren).
   `grantFileProtocolExtraPrivileges` bleibt `true`, sonst lädt `loadFile()` nichts aus der `app.asar` (K-7, 1.5.1).

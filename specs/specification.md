@@ -3,7 +3,7 @@
 Beschreibt **was** Noteline kann und **warum**. Das Wie steht in `plan.md`.
 Die Kennungen (z. B. `H-3`) werden in `tasks.md`, im Code und in den Tests referenziert.
 
-Stand: Version 1.5.1 (10.11.2026). `[x]` = umgesetzt und getestet, `[ ]` = offen oder nur manuell prüfbar (T-16).
+Stand: Version 1.5.2 (10.11.2026). `[x]` = umgesetzt und getestet, `[ ]` = offen oder nur manuell prüfbar (T-16).
 
 ---
 
@@ -349,6 +349,14 @@ TeamViewer-Passwörter sollen nicht im Klartext liegen.)
       So gehen die Daten nicht verloren, wenn `AppData\Roaming\Noteline` gelöscht wird.
 - [x] Lässt sich eine Datei nicht entschlüsseln (anderes Windows-Konto, Schlüssel verloren), greift der Schutzmodus (D-3):
       nichts wird überschrieben, der Hinweis nennt die wahrscheinliche Ursache.
+- [x] **Prüfwert** (1.5.2, Rückmeldung von Pascal: nach dem Update auf 1.5.1 Schutzmodus „lässt sich nicht entschlüsseln“, obwohl
+      die Daten mit dem gespeicherten Schlüssel lesbar waren). Electron hat in einzelnen Starts einen neuen Schlüssel erzeugt,
+      statt den gespeicherten zu laden; die Einstellungen wurden dabei mit diesem Schlüssel überschrieben und gingen verloren.
+      Deshalb: `pruefung.enc` enthält einen bekannten Text. Lässt er sich beim Start nicht entschlüsseln (oder ohne Prüfwert
+      keine der vorhandenen Dateien), schreibt Noteline in dieser Sitzung **keine einzige Datei** (auch keine Einstellungen),
+      startet sich einmal neu und setzt dabei den Schlüssel aus `schluessel.dpapi` ein. Klappt es dann noch nicht: Schutzmodus.
+- [x] `schluessel.dpapi` wird nur überschrieben, wenn der Prüfwert bestätigt hat, dass der geladene Schlüssel der richtige ist.
+- [x] Unlesbare Einstellungen werden vor dem Ersetzen als `einstellungen-defekt-<Zeitstempel>.enc` aufgehoben.
 - [x] Ist die Verschlüsselung von Windows nicht verfügbar, speichert Noteline wie bisher als JSON und sagt das in den
       Einstellungen. Die Einstellungen zeigen immer, ob verschlüsselt gespeichert wird.
 - Grenzen (dokumentiert): Schützt gegen Kopieren der Dateien, andere Windows-Benutzer und weitergegebene Ordner, nicht gegen
