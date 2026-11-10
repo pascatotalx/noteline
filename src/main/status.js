@@ -4,6 +4,7 @@
 'use strict';
 
 const ZEITLIMIT_MS = 15000;
+const MAX_BYTES = 2 * 1024 * 1024; // Antworten von Statusseiten höchstens 2 MB (D-7)
 const RANG = { ok: 0, wartung: 1, stoerung: 2, ausfall: 3 };
 const rang = (z) => (z in RANG ? RANG[z] : -1);
 
@@ -85,6 +86,31 @@ function ausErreichbarkeit(httpStatus) {
 
 const mitZeitlimit = (fetchFn, url, ms = ZEITLIMIT_MS) => fetchFn(url, { method: 'GET', redirect: 'follow', signal: AbortSignal.timeout(ms),
   headers: { Accept: 'application/json, text/html;q=0.8' } });
+/** Antwort lesen, aber nie mehr als MAX_BYTES (D-7). Bricht den Abruf ab, sobald die Grenze überschritten ist. */
+async function textBegrenzt(r) {
+  const laenge = Number(r.headers && r.headers.get && r.headers.get('content-length'));
+  if (laenge > MAX_BYTES) throw new Error('Antwort zu groß');
+  if (!r.body || typeof r.body.getReader !== 'function') {
+    const t = await r.text();
+    if (Buffer.byteLength(t) > MAX_BYTES) throw new Error('Antwort zu groß');
+    return t;
+  }
+  const leser = r.body.getReader();
+  const teile = [];
+  let gelesen = 0;
+  for (;;) {
+    const { done, value } = await leser.read();
+    if (done) break;
+    gelesen += value.length;
+    if (gelesen > MAX_BYTES) { await leser.cancel(); throw new Error('Antwort zu groß'); }
+    teile.push(Buffer.from(value));
+  }
+  return Buffer.concat(teile).toString('utf8');
+}
+const jsonBegrenzt = async (r) => JSON.parse(await textBegrenzt(r));
+/** Für reine Erreichbarkeit wird der Inhalt nicht gebraucht: Abruf beenden. */
+const verwerfen = (r) => { try { if (r.body && typeof r.body.cancel === 'function') r.body.cancel().catch(() => {}); } catch { /* egal */ } };
+
 const summaryUrl = (url) => new URL('/api/v2/summary.json', /^https?:\/\//i.test(url) ? url : 'https://' + url).toString();
 
 /** Prüft eine Quelle. Liefert immer ein Ergebnis, nie eine Ausnahme. */
@@ -94,14 +120,15 @@ async function pruefeQuelle(quelle, fetchFn, jetzt = () => new Date()) {
     if (quelle.art === 'ti') {
       const r = await mitZeitlimit(fetchFn, quelle.url);
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      return { ...basis, ...ausTiLage(await r.json()) };
+      return { ...basis, ...ausTiLage(await jsonBegrenzt(r)) };
     }
     if (quelle.art === 'statuspage') {
       const r = await mitZeitlimit(fetchFn, summaryUrl(quelle.url));
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      return { ...basis, ...ausStatuspage(await r.json()) };
+      return { ...basis, ...ausStatuspage(await jsonBegrenzt(r)) };
     }
     const r = await mitZeitlimit(fetchFn, /^https?:\/\//i.test(quelle.url) ? quelle.url : 'https://' + quelle.url);
+    verwerfen(r);
     return { ...basis, ...ausErreichbarkeit(r.status) };
   } catch (e) {
     return { ...basis, zustand: 'unbekannt', meldungen: [], fehler: kurz(e), netzwerkFehler: true };
@@ -130,10 +157,12 @@ async function erkenneArt(url, fetchFn) {
   if (/\/lageapi\/v1\/tistatus\/incident/.test(u.pathname)) return { ok: true, art: 'ti', url: u.toString() };
   try {
     const r = await mitZeitlimit(fetchFn, summaryUrl(u.toString()), 10000);
-    if (r.ok) { ausStatuspage(await r.json()); return { ok: true, art: 'statuspage', url: u.origin }; }
+    if (r.ok) { ausStatuspage(await jsonBegrenzt(r)); return { ok: true, art: 'statuspage', url: u.origin }; }
+    verwerfen(r);
   } catch { /* keine Statusseite */ }
   try {
     const r = await mitZeitlimit(fetchFn, u.toString(), 10000);
+    verwerfen(r);
     return { ok: true, art: 'erreichbar', url: u.toString(), hinweis: r.status < 400 ? '' : `Antwortet derzeit mit Fehler ${r.status}` };
   } catch (e) { return { ok: true, art: 'erreichbar', url: u.toString(), hinweis: 'Antwortet derzeit nicht' }; }
 }
@@ -186,4 +215,4 @@ function kurz(e) {
   return t.length > 120 ? t.slice(0, 117) + '…' : t;
 }
 
-module.exports = { VORLAGEN, RANG, klartext, ausTiLage, ausStatuspage, ausErreichbarkeit, pruefeQuelle, pruefeAlle, erkenneArt, aenderungen, gesamt, statusEinstellungen };
+module.exports = { MAX_BYTES, textBegrenzt, VORLAGEN, RANG, klartext, ausTiLage, ausStatuspage, ausErreichbarkeit, pruefeQuelle, pruefeAlle, erkenneArt, aenderungen, gesamt, statusEinstellungen };

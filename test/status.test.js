@@ -19,8 +19,8 @@ const fakeFetch = (routen) => async (url) => {
   for (const [teil, antwort] of Object.entries(routen)) {
     if (url.includes(teil)) {
       if (antwort instanceof Error) throw antwort;
-      const { status = 200, json } = antwort;
-      return { ok: status < 400, status, json: async () => json };
+      const { status = 200, json, headers = {} } = antwort;
+      return { ok: status < 400, status, headers: { get: (k) => headers[k.toLowerCase()] ?? null }, text: async () => JSON.stringify(json) };
     }
   }
   throw new Error('getaddrinfo ENOTFOUND');
@@ -113,4 +113,18 @@ test('S-1: Einstellungen – Standard aus, Vorlagen vorhanden, nicht angehakt', 
   assert.equal(S.statusEinstellungen({ aktiv: true, intervall: 15 }).intervall, 5);                          // alter Standard → 5
   assert.equal(S.statusEinstellungen({ intervall: 30, intervallGewaehlt: true }).intervall, 30);             // selbst gewählt bleibt
   assert.equal(S.statusEinstellungen({ intervall: 15, intervallGewaehlt: true }).intervall, 15);
+});
+
+test('D-7: Antworten von Statusseiten höchstens 2 MB', async () => {
+  const quelle = [{ id: 'sp', name: 'Seite', art: 'statuspage', url: 'https://status.example.org', aktiv: true }];
+  const gross = await S.pruefeAlle(quelle, fakeFetch({ 'status.example.org': { json: statuspage('none'), headers: { 'content-length': String(S.MAX_BYTES + 1) } } }));
+  assert.deepEqual([gross[0].zustand, gross[0].fehler], ['unbekannt', 'Antwort zu groß']);
+  // ohne Längenangabe: Lesen bricht beim Überschreiten ab
+  let abgebrochen = false;
+  const block = new Uint8Array(512 * 1024);
+  const strom = { getReader: () => { let n = 0; return { read: async () => (n++ < 10 ? { done: false, value: block } : { done: true }), cancel: async () => { abgebrochen = true; } }; } };
+  await assert.rejects(S.textBegrenzt({ headers: { get: () => null }, body: strom }), /Antwort zu groß/);
+  assert.equal(abgebrochen, true);
+  const klein = { getReader: () => { let n = 0; return { read: async () => (n++ < 1 ? { done: false, value: new TextEncoder().encode('{"a":1}') } : { done: true }), cancel: async () => {} }; } };
+  assert.equal(await S.textBegrenzt({ headers: { get: () => null }, body: klein }), '{"a":1}');
 });
