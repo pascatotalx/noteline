@@ -10,9 +10,13 @@ const { execFileSync } = require('child_process');
 
 // Dateien, die nie versioniert werden dürfen – unabhängig vom Inhalt.
 const VERBOTENE_PFADE = [
+  // eslint-disable-next-line security/detect-unsafe-regex -- ein optionaler Teil ohne Verschachtelung
   { re: /(^|\/)daten(-[^/]*)?\.json$/i, grund: 'Noteline-Datendatei' },
   { re: /(^|\/)fenster\.json$/i, grund: 'Noteline-Fenstereinstellungen' },
   { re: /(^|\/)einstellungen\.json$/i, grund: 'Noteline-Einstellungen (z. B. interne Ticket-Adresse)' },
+  // eslint-disable-next-line security/detect-unsafe-regex -- ein optionaler Teil ohne Verschachtelung
+  { re: /(^|\/)(daten(-[^/]*)?|einstellungen)\.enc$/i, grund: 'Verschlüsselte Noteline-Daten' },
+  { re: /(^|\/)schluessel\.dpapi$/i, grund: 'Noteline-Schlüsselsicherung' },
   { re: /(^|\/)Backups\//i, grund: 'Noteline-Backup' },
   { re: /(^|\/)demo-data\//i, grund: 'Lokale Demodaten' },
   { re: /(^|\/)\.env(\.|$)/i, grund: 'Umgebungsdatei mit möglichen Zugangsdaten' },

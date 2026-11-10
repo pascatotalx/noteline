@@ -8,7 +8,7 @@ const { pruefe, pruefePfad, pruefeInhalt } = require('../scripts/check-sensitive
 const fake = (prefix, n) => prefix + 'A1b2C3d4E5'.repeat(Math.ceil(n / 10)).slice(0, n);
 
 test('blockiert Datendateien von Noteline', () => {
-  for (const p of ['daten.json', 'x/daten.json', 'daten-defekt-2026.json', 'Backups/daten-2026-11-06.json', 'fenster.json', 'einstellungen.json', 'demo-data/a.txt']) {
+  for (const p of ['daten.json', 'x/daten.json', 'daten-defekt-2026.json', 'Backups/daten-2026-11-06.json', 'fenster.json', 'einstellungen.json', 'demo-data/a.txt', 'daten.enc', 'Backups/daten-2026-11-10.enc', 'daten-defekt-2026.enc', 'einstellungen.enc', 'schluessel.dpapi']) {
     assert.ok(pruefePfad(p).length, p);
   }
 });

@@ -1,7 +1,10 @@
 # ── Nutzerdaten: dürfen NIE ins Repository (Spezifikation R-1) ──
 daten*.json
+daten*.enc
 fenster.json
 einstellungen.json
+einstellungen.enc
+schluessel.dpapi
 Backups/
 *.tmp
 demo-data/

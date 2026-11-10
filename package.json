@@ -1,7 +1,7 @@
 {
   "name": "noteline",
   "productName": "Noteline",
-  "version": "1.4.2",
+  "version": "1.5.0",
   "description": "Schneller Notizblock und Nachschlagewerk für den Hotline-Alltag – lokal, ohne Cloud.",
   "author": "Pascal Uffmann",
   "license": "MIT",
@@ -21,6 +21,7 @@
   "scripts": {
     "start": "electron .",
     "test": "node --test \"test/**/*.test.js\"",
+    "lint": "eslint . --max-warnings 0",
     "check:sensitive": "node scripts/check-sensitive.js --all",
     "dist": "electron-builder --win --publish never",
     "release": "node scripts/release.js",
@@ -69,14 +70,27 @@
         "repo": "noteline",
         "releaseType": "draft"
       }
-    ]
+    ],
+    "electronFuses": {
+      "runAsNode": false,
+      "enableCookieEncryption": true,
+      "enableNodeOptionsEnvironmentVariable": false,
+      "enableNodeCliInspectArguments": false,
+      "enableEmbeddedAsarIntegrityValidation": true,
+      "onlyLoadAppFromAsar": true,
+      "grantFileProtocolExtraPrivileges": false
+    }
   },
   "dependencies": {
     "electron-updater": "^6.8.11"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.5",
     "electron": "^45.2.3",
-    "electron-builder": "^26.18.0"
+    "electron-builder": "^26.18.0",
+    "eslint": "^9.39.5",
+    "eslint-plugin-security": "^4.2.1",
+    "globals": "^17.14.0"
   },
   "allowScripts": {
     "electron-winstaller": false
