@@ -3,12 +3,23 @@
 Alle nennenswerten Änderungen an Noteline. Format nach [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
+## [1.5.3] – 2026-11-10
+
+### Behoben
+- **Schlüssel-Abgleich verschärft:** Ob der geladene Schlüssel passt, entscheidet jetzt allein die Datendatei. In 1.5.2 konnten
+  lesbare Einstellungen den Abgleich bestehen lassen, obwohl die Daten selbst nicht lesbar waren.
+
+### Richtigstellung zu 1.5.1 und 1.5.2
+- Die Schlüssel-Fehler am 10.11.2026 lagen nicht an Noteline oder Electron. Ein Testlauf aus der Entwicklungsumgebung hat
+  wegen eines dort virtualisierten AppData-Ordners einen veralteten Schlüssel benutzt und damit die Daten verschlüsselt.
+  Normal installierte und gestartete Noteline-Versionen sind davon nicht betroffen. Tests laufen künftig nur mit Testdaten.
+
 ## [1.5.2] – 2026-11-10
 
 ### Behoben
-- **Schutzmodus „Datei lässt sich nicht entschlüsseln“ nach dem Update.** In einzelnen Starts hat Electron einen neuen Schlüssel
-  erzeugt, statt den gespeicherten zu laden. Die Daten waren dabei nie in Gefahr, die Einstellungen wurden aber mit dem falschen
-  Schlüssel überschrieben (Ticket-Link, Statusmonitor und Design bitte einmal neu eintragen).
+- **Schutzmodus „Datei lässt sich nicht entschlüsseln“ nach dem Update.** Die Daten waren mit einem anderen Schlüssel
+  verschlüsselt als dem, den Noteline geladen hat (Ursache siehe Richtigstellung in 1.5.3). Die Daten waren nie in Gefahr, die
+  Einstellungen wurden aber überschrieben (Ticket-Link, Statusmonitor und Design bitte einmal neu eintragen).
 - Noteline prüft jetzt beim Start mit einem Prüfwert, ob der richtige Schlüssel geladen ist. Wenn nicht, schreibt es keine einzige
   Datei, startet sich einmal neu und nimmt den gesicherten Schlüssel. Erst wenn auch das nicht hilft, bleibt der Schutzmodus.
 - Die Schlüssel-Sicherung wird nur noch erneuert, wenn der Prüfwert den Schlüssel bestätigt hat.
@@ -217,6 +228,7 @@ Erste veröffentlichte Version. Neuaufbau des Prototyps „Hotline-Notizen“ na
 - Eine ins Fenster gezogene Datei ersetzt nicht mehr die App-Oberfläche.
 - Strengere Sicherheitseinstellungen (Sandbox, Content-Security-Policy ohne Inline-Skripte).
 
+[1.5.3]: https://github.com/pascatotalx/noteline/releases/tag/v1.5.3
 [1.5.2]: https://github.com/pascatotalx/noteline/releases/tag/v1.5.2
 [1.5.1]: https://github.com/pascatotalx/noteline/releases/tag/v1.5.1
 [1.5.0]: https://github.com/pascatotalx/noteline/releases/tag/v1.5.0
