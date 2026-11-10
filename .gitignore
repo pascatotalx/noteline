@@ -3,7 +3,8 @@ daten*.json
 daten*.enc
 fenster.json
 einstellungen.json
-einstellungen.enc
+einstellungen*.enc
+pruefung.enc
 schluessel.dpapi
 Backups/
 *.tmp
