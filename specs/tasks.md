@@ -101,6 +101,7 @@ Kleine, einzeln prüfbare Schritte in Abhängigkeitsreihenfolge. Jede Aufgabe ne
 
 | # | Aufgabe | Spec | Status |
 |---|---|---|---|
+| T-83 | Datendatei entscheidet beim Schlüssel-Abgleich, Ursache K-8 dokumentiert, Kurz-PDF für die IT (1.5.3) | D-6, K-8 | [x] |
 | T-81 | Prüfwert, Schreibsperre bei falschem Schlüssel, einmaliger Neustart mit Schlüssel aus der Sicherung + Tests (1.5.2) | D-6 | [x] |
 | T-82 | Falschen Schlüssel in der echten App nachstellen: Neustart lädt die Daten, ohne Sicherung bleibt alles unverändert | D-6 | [x] |
 | T-79 | Leeres Fenster: file://-Sonderrechte wieder an, Regressionstest, Prüfung am gepackten Programm | D-7, K-7 | [x] |

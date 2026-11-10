@@ -3,7 +3,7 @@
 Beschreibt **was** Noteline kann und **warum**. Das Wie steht in `plan.md`.
 Die Kennungen (z. B. `H-3`) werden in `tasks.md`, im Code und in den Tests referenziert.
 
-Stand: Version 1.5.2 (10.11.2026). `[x]` = umgesetzt und getestet, `[ ]` = offen oder nur manuell prüfbar (T-16).
+Stand: Version 1.5.3 (10.11.2026). `[x]` = umgesetzt und getestet, `[ ]` = offen oder nur manuell prüfbar (T-16).
 
 ---
 
@@ -350,10 +350,10 @@ TeamViewer-Passwörter sollen nicht im Klartext liegen.)
 - [x] Lässt sich eine Datei nicht entschlüsseln (anderes Windows-Konto, Schlüssel verloren), greift der Schutzmodus (D-3):
       nichts wird überschrieben, der Hinweis nennt die wahrscheinliche Ursache.
 - [x] **Prüfwert** (1.5.2, Rückmeldung von Pascal: nach dem Update auf 1.5.1 Schutzmodus „lässt sich nicht entschlüsseln“, obwohl
-      die Daten mit dem gespeicherten Schlüssel lesbar waren). Electron hat in einzelnen Starts einen neuen Schlüssel erzeugt,
-      statt den gespeicherten zu laden; die Einstellungen wurden dabei mit diesem Schlüssel überschrieben und gingen verloren.
-      Deshalb: `pruefung.enc` enthält einen bekannten Text. Lässt er sich beim Start nicht entschlüsseln (oder ohne Prüfwert
-      keine der vorhandenen Dateien), schreibt Noteline in dieser Sitzung **keine einzige Datei** (auch keine Einstellungen),
+      die Daten mit einem anderen Schlüssel lesbar waren; Ursache siehe K-8). Ein Start mit einem Schlüssel, der nicht zu den
+      Daten passt, darf nichts überschreiben. Deshalb: **Die Datendatei entscheidet** (1.5.3), ohne Datendatei der Prüfwert
+      `pruefung.enc` mit einem bekannten Text. Passt der geladene Schlüssel nicht, schreibt Noteline in dieser Sitzung
+      **keine einzige Datei** (auch keine Einstellungen),
       startet sich einmal neu und setzt dabei den Schlüssel aus `schluessel.dpapi` ein. Klappt es dann noch nicht: Schutzmodus.
 - [x] `schluessel.dpapi` wird nur überschrieben, wenn der Prüfwert bestätigt hat, dass der geladene Schlüssel der richtige ist.
 - [x] Unlesbare Einstellungen werden vor dem Ersetzen als `einstellungen-defekt-<Zeitstempel>.enc` aufgehoben.
@@ -407,6 +407,12 @@ TeamViewer-Passwörter sollen nicht im Klartext liegen.)
 - **K-4 Kundenerkennung (06.11.2026):** Automatisch nur mit sicheren Merkmalen (Anrede, Branchenwort am Anfang,
   Rechtsform). Ein reines Komma reicht nicht, weil „Connector läuft nicht, bitte zurückrufen“ sonst einen falschen
   Kunden ergäbe. Für Namen ohne Merkmal gilt der Doppelpunkt. Die Live-Vorschau (H-11) zeigt vor dem Enter, was erkannt wurde.
+- **K-8 Ursache der Schlüssel-Fehler (10.11.2026):** Kein Fehler von Noteline oder Electron. Die Claude-Desktop-App, aus der
+  entwickelt wurde, ist ein Windows-App-Paket (MSIX). Daraus gestartete Programme sehen `AppData` virtualisiert (veraltete
+  Kopie mit einem alten Schlüssel), `Dokumente` aber echt. Ein Testlauf von dort hat die echten Daten deshalb mit dem alten
+  Schlüssel verschlüsselt. Normal gestartete Programme sind nicht betroffen. Regel: Noteline nie aus der Entwicklungsumgebung
+  gegen den echten Datenordner starten, nur mit Testdaten. 1.5.2 hat zusätzlich eine Lücke gezeigt (lesbare Einstellungen
+  zählten als „Schlüssel passt“), behoben in 1.5.3.
 - **K-7 file://-Sonderrechte bleiben an (10.11.2026):** In 1.5.0 war `GrantFileProtocolExtraPrivileges` abgeschaltet. Dann
   findet Electron Dateien in der `app.asar` über `file://` nicht mehr (`ERR_FILE_NOT_FOUND`), das Fenster bleibt leer.
   Der Test lief vorher aus einem Ordner statt aus der `app.asar` und hat das nicht gezeigt. Der Schalter bleibt an, bis die

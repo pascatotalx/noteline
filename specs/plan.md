@@ -255,8 +255,9 @@ Version erhöhen: `npm version patch|minor --no-git-tag-version`, CHANGELOG erg�
   vorhandene `.enc`-Dateien). Bei `'falsch'`: `gesperrt`, keine Umstellung, kein Backup, Einstellungen nur im Speicher.
 - `main.js`: bei `'falsch'` ohne `--noteline-neustart` → `app.relaunch()` mit dem Schalter, `app.exit(0)`. Mit dem Schalter
   ruft der Start vor `whenReady` `schluesselErzwingen()` auf: weicht `Local State` von `schluessel.dpapi` ab, gilt die Sicherung.
-- Ursache der falschen Schlüssel ist nicht abschließend geklärt (beobachtet beim ersten Start nach einem Update, nicht bei
-  späteren Starts). Die Absicherung greift unabhängig davon.
+- Reihenfolge der Prüfung (1.5.3): `daten.enc` vorhanden → sie entscheidet; sonst `pruefung.enc`; sonst `'neu'`. Ein Prüfwert,
+  der nicht zum geladenen Schlüssel passt, wird bei `'ok'` ersetzt.
+- Ursache der falschen Schlüssel am 10.11.2026: virtualisiertes `AppData` der Entwicklungsumgebung (K-8), nicht Electron.
 
 ### Härtung
 - **Fuses** über `build.electronFuses` in `package.json` (electron-builder setzt sie beim Paketieren).
