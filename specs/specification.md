@@ -3,7 +3,7 @@
 Beschreibt **was** Noteline kann und **warum**. Das Wie steht in `plan.md`.
 Die Kennungen (z. B. `H-3`) werden in `tasks.md`, im Code und in den Tests referenziert.
 
-Stand: Version 1.5.0 (10.11.2026). `[x]` = umgesetzt und getestet, `[ ]` = offen oder nur manuell prüfbar (T-16).
+Stand: Version 1.5.1 (10.11.2026). `[x]` = umgesetzt und getestet, `[ ]` = offen oder nur manuell prüfbar (T-16).
 
 ---
 
@@ -359,6 +359,8 @@ TeamViewer-Passwörter sollen nicht im Klartext liegen.)
 - [x] Das Programmpaket schaltet gefährliche Electron-Schalter (Fuses) ab: kein Start als Node-Laufzeit
       (`ELECTRON_RUN_AS_NODE`), keine `NODE_OPTIONS`, kein Debugger per `--inspect`. Es lädt Code nur aus der
       `app.asar` und prüft deren Integrität.
+- [x] Die Oberfläche lädt im installierten Programm sichtbar (1.5.1, Rückmeldung von Pascal: 1.5.0 zeigte ein leeres Fenster).
+      Der Schalter `GrantFileProtocolExtraPrivileges` bleibt deshalb an (siehe K-7).
 - [x] Der Hauptprozess beantwortet Anfragen nur vom eigenen Fenster mit der eigenen Seite (Absender-Prüfung).
 - [x] Alle Browser-Rechte (Kamera, Mikrofon, Standort, Bildschirm …) werden verweigert.
 - [x] Test- und Screenshot-Schalter über Umgebungsvariablen (`NOTELINE_DATA_DIR`, `NOTELINE_SCREENSHOT*`) wirken nur in der
@@ -379,6 +381,7 @@ TeamViewer-Passwörter sollen nicht im Klartext liegen.)
 ## 5. Offene Punkte / Backlog
 
 - **B-1 Import aus Notepad++**: bestehende Textdatei einlesen und in Notizen aufteilen. Trennregel klären.
+- **B-6 Eigenes Protokoll `app://`** statt `file://`, danach `GrantFileProtocolExtraPrivileges` abschalten (K-7).
 - **B-2 Export** im Format wie Skill „Ticket schreiben" (der einfache Text-Export ist H-10).
 - **B-5 Erledigte Notizen archivieren**: ältere erledigte Notizen automatisch aus der Liste nehmen, durchsuchbar halten.
 
@@ -396,6 +399,11 @@ TeamViewer-Passwörter sollen nicht im Klartext liegen.)
 - **K-4 Kundenerkennung (06.11.2026):** Automatisch nur mit sicheren Merkmalen (Anrede, Branchenwort am Anfang,
   Rechtsform). Ein reines Komma reicht nicht, weil „Connector läuft nicht, bitte zurückrufen“ sonst einen falschen
   Kunden ergäbe. Für Namen ohne Merkmal gilt der Doppelpunkt. Die Live-Vorschau (H-11) zeigt vor dem Enter, was erkannt wurde.
+- **K-7 file://-Sonderrechte bleiben an (10.11.2026):** In 1.5.0 war `GrantFileProtocolExtraPrivileges` abgeschaltet. Dann
+  findet Electron Dateien in der `app.asar` über `file://` nicht mehr (`ERR_FILE_NOT_FOUND`), das Fenster bleibt leer.
+  Der Test lief vorher aus einem Ordner statt aus der `app.asar` und hat das nicht gezeigt. Der Schalter bleibt an, bis die
+  Oberfläche über ein eigenes Protokoll (`app://`) geladen wird (Backlog B-6). Die übrigen Schutzschichten (CSP ohne fremde
+  Quellen, gesperrte Navigation, Absender-Prüfung) bleiben unverändert.
 - **K-6 Verschlüsselung ohne Passwort (10.11.2026):** Windows-Bordmittel (DPAPI über Electron `safeStorage`) statt eines
   eigenen Passworts: Pascal muss nichts eingeben, die Daten sind trotzdem an sein Windows-Konto gebunden. Ein Passwort
   würde vor Schadsoftware unter dem eigenen Konto kaum mehr schützen und bei Verlust ebenfalls alles unlesbar machen.

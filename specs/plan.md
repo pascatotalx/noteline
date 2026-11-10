@@ -252,6 +252,8 @@ Version erhöhen: `npm version patch|minor --no-git-tag-version`, CHANGELOG erg�
 
 ### Härtung
 - **Fuses** über `build.electronFuses` in `package.json` (electron-builder setzt sie beim Paketieren).
+  `grantFileProtocolExtraPrivileges` bleibt `true`, sonst lädt `loadFile()` nichts aus der `app.asar` (K-7, 1.5.1).
+  `test/build.test.js` sichert das ab. Fuses immer am gepackten Programm prüfen, nicht an einem entpackten Ordner.
 - **IPC:** `ipcEinrichten()` registriert alle Kanäle über `handle()`/`on()`, die `event.senderFrame` prüfen: Absender muss das
   Hauptfenster sein und `file://…/renderer/index.html` geladen haben, sonst wird die Anfrage verworfen.
 - **Rechte:** `session.setPermissionRequestHandler` und `setPermissionCheckHandler` lehnen alles ab.

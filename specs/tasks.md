@@ -97,6 +97,12 @@ Kleine, einzeln prüfbare Schritte in Abhängigkeitsreihenfolge. Jede Aufgabe ne
 | T-77 | ESLint mit Sicherheitsregeln, in CI und Release | D-7 | [x] |
 | T-78 | Prüfung in der echten App (Umstellung, Schlüssel-Wiederherstellung), README, SECURITY, Changelog | D-6, D-7 | [x] |
 
+## Meilenstein 1.5.1 – Korrektur
+
+| # | Aufgabe | Spec | Status |
+|---|---|---|---|
+| T-79 | Leeres Fenster: file://-Sonderrechte wieder an, Regressionstest, Prüfung am gepackten Programm | D-7, K-7 | [x] |
+
 ## Backlog
 
 | # | Aufgabe | Spec |
@@ -104,3 +110,4 @@ Kleine, einzeln prüfbare Schritte in Abhängigkeitsreihenfolge. Jede Aufgabe ne
 | T-20 | Import aus Notepad++ (Trennregel mit Pascal klären) | B-1 |
 | T-24 | Erledigte Notizen archivieren | B-5 |
 | T-21 | Notiz als Ticket-Text exportieren | B-2 |
+| T-80 | Oberfläche über eigenes Protokoll `app://` laden, dann file://-Sonderrechte abschalten | B-6 |
