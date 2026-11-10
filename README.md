@@ -125,7 +125,8 @@ Noteline ist für Notizen mit Kundendaten gemacht und behandelt sie entsprechend
   `einstellungen.enc` und im Unterordner `Backups` automatische Tagessicherungen der letzten 30 Tage.
 - **Verschlüsselt:** Alles wird mit den Bordmitteln von Windows verschlüsselt (DPAPI), ohne zusätzliches Passwort.
   Lesen kann es nur dein Windows-Konto. Ältere unverschlüsselte Dateien werden beim ersten Start umgestellt.
-  Den Schlüssel sichert Noteline (ebenfalls geschützt) als `schluessel.dpapi` im selben Ordner.
+  Den Schlüssel sichert Noteline (ebenfalls geschützt) als `schluessel.dpapi` im selben Ordner. Ein Prüfwert (`pruefung.enc`)
+  stellt bei jedem Start sicher, dass der richtige Schlüssel geladen ist, bevor etwas geschrieben wird.
 - **Keine Schnittstelle nach außen:** Noteline öffnet keinen Netzwerk-Port.
 - **Kein Upload, keine Cloud, keine Telemetrie.** Verbindungen nach außen sind nur die Update-Prüfung bei GitHub und,
   wenn eingeschaltet, die Abrufe der Statusseiten im Statusmonitor. Dabei werden nie eigene Daten gesendet.
