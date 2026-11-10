@@ -121,12 +121,16 @@ kommen. Deshalb kann Noteline öffentliche Statusseiten im Blick behalten:
 
 Noteline ist für Notizen mit Kundendaten gemacht und behandelt sie entsprechend:
 
-- Alle Daten liegen **nur lokal** in `Dokumente\Noteline\`: `daten.json` (Notizen und Wissen),
-  `einstellungen.json` und im Unterordner `Backups` automatische Tagessicherungen der letzten 30 Tage.
+- Alle Daten liegen **nur lokal** in `Dokumente\Noteline\`: `daten.enc` (Notizen und Wissen),
+  `einstellungen.enc` und im Unterordner `Backups` automatische Tagessicherungen der letzten 30 Tage.
+- **Verschlüsselt:** Alles wird mit den Bordmitteln von Windows verschlüsselt (DPAPI), ohne zusätzliches Passwort.
+  Lesen kann es nur dein Windows-Konto. Ältere unverschlüsselte Dateien werden beim ersten Start umgestellt.
+  Den Schlüssel sichert Noteline (ebenfalls geschützt) als `schluessel.dpapi` im selben Ordner.
+- **Keine Schnittstelle nach außen:** Noteline öffnet keinen Netzwerk-Port.
 - **Kein Upload, keine Cloud, keine Telemetrie.** Verbindungen nach außen sind nur die Update-Prüfung bei GitHub und,
   wenn eingeschaltet, die Abrufe der Statusseiten im Statusmonitor. Dabei werden nie eigene Daten gesendet.
 - Deinstallieren löscht keine Daten.
-- Ist `daten.json` beschädigt, geht Noteline in einen Schutzmodus und überschreibt nichts.
+- Ist die Datendatei beschädigt oder nicht zu entschlüsseln, geht Noteline in einen Schutzmodus und überschreibt nichts.
 
 ## Entwicklung
 

@@ -3,6 +3,25 @@
 Alle nennenswerten Änderungen an Noteline. Format nach [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
+## [1.5.0] – 2026-11-10
+
+### Sicherheit
+- **Daten werden verschlüsselt gespeichert.** Notizen, Wissen, Einstellungen und die Tagessicherungen liegen jetzt
+  verschlüsselt im Datenordner (`daten.enc`, `einstellungen.enc`, `Backups\*.enc`), auch TeamViewer-Passwörter.
+  Noteline nutzt dafür die Bordmittel von Windows, ein eigenes Passwort ist nicht nötig. Lesen kann die Dateien nur das
+  eigene Windows-Konto. Vorhandene Dateien werden beim ersten Start umgestellt, die unverschlüsselten danach gelöscht.
+- Den Schlüssel sichert Noteline zusätzlich im Datenordner (`schluessel.dpapi`, selbst geschützt). So bleiben die Daten
+  lesbar, auch wenn der Programmordner unter `AppData` gelöscht wird.
+- **Gehärtetes Programmpaket:** Noteline lässt sich nicht mehr als Node-Laufzeit oder mit Debugger starten und prüft beim
+  Start, dass seine Programmdatei unverändert ist.
+- Der Hauptprozess beantwortet nur noch Anfragen des eigenen Fensters. Browser-Rechte wie Kamera, Mikrofon oder Standort
+  sind gesperrt. Test-Schalter wirken nur noch in der Entwicklerversion.
+- Antworten von Statusseiten werden höchstens bis 2 MB gelesen.
+- Jede Änderung wird zusätzlich mit ESLint und Sicherheitsregeln geprüft.
+
+### Geändert
+- Die Einstellungen zeigen beim Speicherort, dass die Daten verschlüsselt sind.
+
 ## [1.4.2] – 2026-11-09
 
 ### Geändert
@@ -181,6 +200,7 @@ Erste veröffentlichte Version. Neuaufbau des Prototyps „Hotline-Notizen“ na
 - Eine ins Fenster gezogene Datei ersetzt nicht mehr die App-Oberfläche.
 - Strengere Sicherheitseinstellungen (Sandbox, Content-Security-Policy ohne Inline-Skripte).
 
+[1.5.0]: https://github.com/pascatotalx/noteline/releases/tag/v1.5.0
 [1.4.2]: https://github.com/pascatotalx/noteline/releases/tag/v1.4.2
 [1.4.1]: https://github.com/pascatotalx/noteline/releases/tag/v1.4.1
 [1.4.0]: https://github.com/pascatotalx/noteline/releases/tag/v1.4.0
