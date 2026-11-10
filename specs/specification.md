@@ -3,7 +3,7 @@
 Beschreibt **was** Noteline kann und **warum**. Das Wie steht in `plan.md`.
 Die Kennungen (z. B. `H-3`) werden in `tasks.md`, im Code und in den Tests referenziert.
 
-Stand: Version 1.4.2 (09.11.2026). `[x]` = umgesetzt und getestet, `[ ]` = offen oder nur manuell prüfbar (T-16).
+Stand: Version 1.5.0 (10.11.2026). `[x]` = umgesetzt und getestet, `[ ]` = offen oder nur manuell prüfbar (T-16).
 
 ---
 
@@ -316,25 +316,56 @@ Deinstallieren löscht **keine** Daten.
 
 ### Daten und Sicherheit
 
-**D-1 Speicherort.** Daten liegen in `Dokumente\Noteline\daten.json`, Einstellungen (Fenster,
-Erscheinungsbild, Ticket-Link) in `einstellungen.json`. Eine vorhandene `fenster.json` aus Version 1.0 wird
+**D-1 Speicherort.** Daten liegen verschlüsselt in `Dokumente\Noteline\daten.enc`, Einstellungen (Fenster,
+Erscheinungsbild, Ticket-Link, Statusmonitor) in `einstellungen.enc` (D-6). Eine vorhandene `fenster.json` aus Version 1.0 wird
 übernommen. Gibt es beim ersten Start noch `Dokumente\Hotline-Notizen\daten.json` (Prototyp),
 wird sie einmalig übernommen. Das Original bleibt liegen.
 
 **D-2 Backups.** Ohne eigenen Knopf in der Oberfläche: Mindestens einmal pro Kalendertag, an dem die App läuft, entsteht
-`Backups\daten-JJJJ-MM-TT.json`, auch wenn die App über Mitternacht offen bleibt. Es werden die letzten
+`Backups\daten-JJJJ-MM-TT.enc` (verschlüsselt wie das Original), auch wenn die App über Mitternacht offen bleibt. Es werden die letzten
 30 Backups behalten.
 
-**D-3 Schutzmodus.** Ist `daten.json` vorhanden, aber nicht lesbar oder kein gültiges Noteline-Format:
+**D-3 Schutzmodus.** Ist die Datendatei vorhanden, aber nicht lesbar, nicht zu entschlüsseln oder kein gültiges Noteline-Format:
 - [x] Die App zeigt einen roten Hinweis mit Knopf zum Datenordner (Backups liegen im Unterordner `Backups`).
 - [x] Sie speichert **nichts**, bis die Datei repariert und die App neu gestartet ist.
-- [x] Eine Kopie der defekten Datei wird als `daten-defekt-<Zeitstempel>.json` abgelegt.
+- [x] Eine Kopie der defekten Datei wird als `daten-defekt-<Zeitstempel>.enc` (bzw. `.json`) abgelegt.
 
 **D-4 Kein Datenverlust beim Beenden.** Beim Schließen des Fensters, beim Beenden und vor einem
 Update-Neustart wird der aktuelle Stand synchron geschrieben.
 
 **D-5 Fehlerhafte Einträge.** Fehlt einer Notiz ein Feld (z. B. aus älteren Dateien), ergänzt die App
 Standardwerte, statt abzustürzen.
+
+**D-6 Verschlüsselt auf der Festplatte.** (1.5.0, Wunsch von Pascal und seinem Vorgesetzten: Kundendaten und
+TeamViewer-Passwörter sollen nicht im Klartext liegen.)
+- [x] Daten, Einstellungen, Tagessicherungen und Kopien defekter Dateien werden mit den Bordmitteln von Windows
+      verschlüsselt (Electron `safeStorage`, Schlüssel per DPAPI an das Windows-Konto gebunden). Kein eigenes Passwort.
+- [x] Jede verschlüsselte Datei beginnt mit der Kennung `NOTELINE-ENC1`, damit sie eindeutig erkennbar ist.
+- [x] Vorhandene unverschlüsselte Dateien (`daten.json`, `einstellungen.json`, `fenster.json`, Backups, defekte Kopien)
+      werden beim ersten Start einmalig umgestellt. Die Klartext-Datei wird erst gelöscht, wenn die verschlüsselte Fassung
+      geschrieben und erfolgreich zurückgelesen wurde.
+- [x] Der Schlüssel von Electron liegt im Programmordner unter `AppData`. Noteline sichert ihn (selbst per DPAPI
+      geschützt) als `schluessel.dpapi` im Datenordner und stellt ihn beim Start wieder her, falls er dort fehlt.
+      So gehen die Daten nicht verloren, wenn `AppData\Roaming\Noteline` gelöscht wird.
+- [x] Lässt sich eine Datei nicht entschlüsseln (anderes Windows-Konto, Schlüssel verloren), greift der Schutzmodus (D-3):
+      nichts wird überschrieben, der Hinweis nennt die wahrscheinliche Ursache.
+- [x] Ist die Verschlüsselung von Windows nicht verfügbar, speichert Noteline wie bisher als JSON und sagt das in den
+      Einstellungen. Die Einstellungen zeigen immer, ob verschlüsselt gespeichert wird.
+- Grenzen (dokumentiert): Schützt gegen Kopieren der Dateien, andere Windows-Benutzer und weitergegebene Ordner, nicht gegen
+  Schadsoftware unter dem eigenen Konto. Setzt die IT das Windows-Passwort zurück oder wird das Profil neu angelegt,
+  sind die Daten nicht mehr lesbar.
+
+**D-7 Härtung.** (1.5.0, Ergebnis der Sicherheitsprüfung vom 10.11.2026)
+- [x] Das Programmpaket schaltet gefährliche Electron-Schalter (Fuses) ab: kein Start als Node-Laufzeit
+      (`ELECTRON_RUN_AS_NODE`), keine `NODE_OPTIONS`, kein Debugger per `--inspect`. Es lädt Code nur aus der
+      `app.asar` und prüft deren Integrität.
+- [x] Der Hauptprozess beantwortet Anfragen nur vom eigenen Fenster mit der eigenen Seite (Absender-Prüfung).
+- [x] Alle Browser-Rechte (Kamera, Mikrofon, Standort, Bildschirm …) werden verweigert.
+- [x] Test- und Screenshot-Schalter über Umgebungsvariablen (`NOTELINE_DATA_DIR`, `NOTELINE_SCREENSHOT*`) wirken nur in der
+      Entwicklerversion, nie im installierten Programm.
+- [x] Antworten von Statusseiten werden nur bis 2 MB gelesen (S-2).
+- [x] Ein Code-Prüfer (ESLint mit Sicherheitsregeln) läuft in der CI und vor jedem Release.
+- [ ] Manuell: GitHub-Konto mit Zwei-Faktor-Anmeldung (Echtheit der Updates hängt daran).
 
 ---
 
@@ -365,6 +396,9 @@ Standardwerte, statt abzustürzen.
 - **K-4 Kundenerkennung (06.11.2026):** Automatisch nur mit sicheren Merkmalen (Anrede, Branchenwort am Anfang,
   Rechtsform). Ein reines Komma reicht nicht, weil „Connector läuft nicht, bitte zurückrufen“ sonst einen falschen
   Kunden ergäbe. Für Namen ohne Merkmal gilt der Doppelpunkt. Die Live-Vorschau (H-11) zeigt vor dem Enter, was erkannt wurde.
+- **K-6 Verschlüsselung ohne Passwort (10.11.2026):** Windows-Bordmittel (DPAPI über Electron `safeStorage`) statt eines
+  eigenen Passworts: Pascal muss nichts eingeben, die Daten sind trotzdem an sein Windows-Konto gebunden. Ein Passwort
+  würde vor Schadsoftware unter dem eigenen Konto kaum mehr schützen und bei Verlust ebenfalls alles unlesbar machen.
 - **K-5 Namenslänge nach Branchenwort (09.11.2026):** Pascal will Praxisnamen nicht raten lassen: Nach einem Branchenwort
   reicht der Name bis zum Komma. Das Raten (ein Wort, Großschreibung) gilt nur noch für Namen mit Kürzel `KD` oder Rechtsform.
   Wer Kunde und Stichpunkt in einem Zug tippt, setzt ein Komma dazwischen.

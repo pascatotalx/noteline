@@ -85,6 +85,18 @@ Kleine, einzeln prüfbare Schritte in Abhängigkeitsreihenfolge. Jede Aufgabe ne
 | T-70 | Nach Branchenwort gehört alles bis zum Komma zum Kunden, Telefon/Ticket beenden den Namen + Tests (1.4.2) | H-1, K-5 | [x] |
 | T-71 | Vorschau-Hinweis „Komma beendet den Namen“, Prüfung in der echten App, README, Changelog (1.4.2) | H-1, H-11 | [x] |
 
+## Meilenstein 1.5.0 – Sicherheit
+
+| # | Aufgabe | Spec | Status |
+|---|---|---|---|
+| T-72 | Sicherheitsprüfung des ganzen Projekts (Bericht an Pascal) | D-7 | [x] |
+| T-73 | `krypto.js` + verschlüsselte Ablage in `storage.js`, Umstellung, Schlüssel-Sicherung + Tests | D-6, K-6 | [x] |
+| T-74 | Hauptprozess: Absender-Prüfung, Rechte verweigern, Test-Schalter nur in der Entwicklerversion | D-7 | [x] |
+| T-75 | Statusmonitor: Antworten höchstens 2 MB + Tests | D-7, S-2 | [x] |
+| T-76 | Electron-Fuses im Build, Prüfung am fertigen Programm | D-7 | [x] |
+| T-77 | ESLint mit Sicherheitsregeln, in CI und Release | D-7 | [x] |
+| T-78 | Prüfung in der echten App (Umstellung, Schlüssel-Wiederherstellung), README, SECURITY, Changelog | D-6, D-7 | [x] |
+
 ## Backlog
 
 | # | Aufgabe | Spec |

@@ -16,7 +16,7 @@ Bei jeder Entscheidung gilt: **Tempo beim Erfassen schlägt Funktionsumfang.**
 ## 2. Datenschutz (nicht verhandelbar)
 
 - Notizen enthalten Kundendaten (Namen, Telefonnummern, Tickets). Sie liegen **ausschließlich lokal**
-  unter `Dokumente\Noteline\`.
+  unter `Dokumente\Noteline\` und **verschlüsselt** (ab 1.5.0, Spezifikation D-6). Klartext-Kopien entstehen nicht.
 - Kein Netzwerkverkehr außer der Update-Prüfung bei GitHub und – nur wenn eingeschaltet – den **lesenden Abrufen der
   im Statusmonitor eingestellten öffentlichen Statusseiten** (ab 1.3.0). Dabei werden nie Notizen, Wissen oder andere
   eigene Daten gesendet. Keine Telemetrie, keine Cloud-Synchronisation, keine externen Schriften oder CDNs zur Laufzeit.
@@ -39,7 +39,7 @@ Bei jeder Entscheidung gilt: **Tempo beim Erfassen schlägt Funktionsumfang.**
 | Paketierung | electron-builder, NSIS-Installer pro Benutzer (keine Adminrechte) |
 | Updates | electron-updater, Provider GitHub Releases |
 | Tests | `node:test` (in Node eingebaut), keine weiteren Testframeworks |
-| Speicher | eine JSON-Datei, atomar geschrieben, tägliche Backups |
+| Speicher | eine JSON-Datei, verschlüsselt (DPAPI über `safeStorage`), atomar geschrieben, tägliche Backups |
 
 Neue Abhängigkeiten zur Laufzeit nur mit Begründung in `plan.md`.
 
@@ -55,6 +55,10 @@ Herkunft oder Lizenz übernehmen.
 - Strikte Content-Security-Policy: keine Inline-Skripte, keine fremden Quellen.
 - Jede Nutzereingabe wird vor dem Einfügen ins HTML escaped (`esc()`).
 - Externe Links öffnen nur bei `http(s)://` im Standardbrowser. Navigation im App-Fenster ist gesperrt.
+- Der Hauptprozess prüft bei jeder Anfrage den Absender. Browser-Rechte werden verweigert.
+- Electron-Fuses: kein `RunAsNode`, keine `NODE_OPTIONS`, kein `--inspect`, nur `app.asar` mit Integritätsprüfung.
+- Noteline öffnet keinen Netzwerk-Port und bietet keine Schnittstelle nach außen.
+- Test-Schalter über Umgebungsvariablen gibt es nur in der Entwicklerversion.
 
 ## 5. Bedienung und Gestaltung
 

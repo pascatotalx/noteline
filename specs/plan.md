@@ -72,7 +72,8 @@ updateGemeldet, startVersteckt }`. Gehört dem Hauptprozess, der Renderer liest 
   schreibt dann atomar (`.tmp` + `rename`). Bei `EPERM`/`EBUSY` (Virenscanner, OneDrive) bis zu
   3 Versuche mit 50 ms Abstand.
 - `dailyBackup()`: lokales Datum (nicht UTC), höchstens eine Kopie pro Tag, behält 30.
-- Ordner überschreibbar per Umgebungsvariable `NOTELINE_DATA_DIR` (Tests, Screenshot).
+- Ordner überschreibbar per Umgebungsvariable `NOTELINE_DATA_DIR` (Tests, Screenshot), nur in der Entwicklerversion.
+- Verschlüsselung siehe §15: `createStorage({ …, krypto })`. Ohne `krypto` (Tests, Windows ohne DPAPI) wie bisher JSON.
 
 ## 5. IPC-Schnittstelle (`window.api`)
 
@@ -154,6 +155,9 @@ Version erhöhen: `npm version patch|minor --no-git-tag-version`, CHANGELOG erg�
 - `test/logic.test.js`: Schnellerfassung, Rückrufstatus, Spuren, Vorlagen, Normalisierung.
 - `test/storage.test.js`: neu/ok/defekt, Schreibsperre, Migration, Backups über Datumswechsel, Aufräumen.
 - `test/check-sensitive.test.js`: erkennt Datendateien und Token, lässt saubere Dateien durch.
+- `test/krypto.test.js`: Schlüssel sichern und wiederherstellen (1.5.0). `test/storage.test.js` prüft zusätzlich, dass mit
+  Verschlüsselung kein Klartext auf der Platte landet und Klartext aus älteren Versionen umgestellt wird.
+- `npm run lint`: ESLint mit Sicherheitsregeln, ohne Warnungen (CI und Release).
 - Manuell vor jedem Release: Installer installieren, Notiz anlegen, Rückruf in 1 min, Benachrichtigung prüfen.
 
 ## 12. Erweiterungen in Version 1.1
@@ -230,3 +234,26 @@ Version erhöhen: `npm version patch|minor --no-git-tag-version`, CHANGELOG erg�
   Vorlagen TI-Lagebild und Doctolib vorbelegt, aber nicht angehakt.
 - IPC: `statusDaten()`, `statusPruefen()`, `statusEinstellungen(patch)`, `statusQuelleTesten(url)`, Event `status`
   und `statusOeffnen`.
+
+## 15. Sicherheit (Version 1.5) – D-6, D-7, K-6
+
+### Verschlüsselung (`krypto.js`, `storage.js`)
+- `krypto.js` kapselt Electron `safeStorage`: `createKrypto(safeStorage)` liefert `{ verschluesseln(text) → Buffer,
+  entschluesseln(Buffer) → text }` oder `null`, wenn `isEncryptionAvailable()` falsch ist.
+- Dateiformat: `NOTELINE-ENC1\n` + Ausgabe von `safeStorage.encryptString` (Chromium-Format `v10`, AES-GCM, Schlüssel per DPAPI).
+- `storage.js` bleibt ohne Electron testbar: `krypto` wird hineingereicht, Tests nutzen eine Attrappe.
+  Mit `krypto` heißen die Dateien `daten.enc`, `einstellungen.enc`, `Backups/daten-JJJJ-MM-TT.enc`.
+- Umstellung beim Start: Klartext lesen → verschlüsselt schreiben → zurücklesen und vergleichen → erst dann Klartext löschen.
+  Defekte Klartext-Datei: Schutzmodus, nichts wird umgestellt.
+- Schlüssel-Sicherung: Electron legt den DPAPI-geschützten AES-Schlüssel in `userData/Local State` (`os_crypt.encrypted_key`) ab.
+  `krypto.schluesselSichern()` kopiert ihn nach `Dokumente\Noteline\schluessel.dpapi`, `krypto.schluesselWiederherstellen()`
+  schreibt ihn **vor** `app.whenReady()` zurück, wenn er in `Local State` fehlt. Geprüft am 10.11.2026: nach Löschen von
+  `userData` und Wiederherstellen ist die Datei wieder lesbar.
+
+### Härtung
+- **Fuses** über `build.electronFuses` in `package.json` (electron-builder setzt sie beim Paketieren).
+- **IPC:** `ipcEinrichten()` registriert alle Kanäle über `handle()`/`on()`, die `event.senderFrame` prüfen: Absender muss das
+  Hauptfenster sein und `file://…/renderer/index.html` geladen haben, sonst wird die Anfrage verworfen.
+- **Rechte:** `session.setPermissionRequestHandler` und `setPermissionCheckHandler` lehnen alles ab.
+- **Statusmonitor:** `Content-Length` > 2 MB oder längerer Text → Fehler „Antwort zu groß“.
+- **Lint:** ESLint 9 (Flat Config) mit `@eslint/js` recommended und `eslint-plugin-security`; `npm run lint` in CI und `release.js`.
