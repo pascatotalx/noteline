@@ -259,3 +259,40 @@ test('D-6 (1.5.2): ohne Prüfwert entscheidet die Datendatei; unlesbare Einstell
   fs.unlinkSync(path.join(o2, 'pruefung.enc'));
   assert.equal(createStorage({ ordner: o2, krypto: attrappe({ falscherSchluessel: true }) }).schluessel, 'falsch');
 });
+
+// Zwei verschiedene „Schlüssel“ für die Fälle vom 10.11.2026
+function mitSchluessel(name) {
+  return {
+    verschluesseln: (text) => xor(Buffer.from(name + ':' + text, 'utf8')),
+    entschluesseln: (buf) => {
+      const t = xor(buf).toString('utf8');
+      if (!t.startsWith(name + ':')) throw new Error('falscher Schlüssel');
+      return t.slice(name.length + 1);
+    },
+  };
+}
+
+test('D-6 (1.5.3): die Datendatei entscheidet, nicht Einstellungen oder ein alter Prüfwert', () => {
+  // Fall A: Daten mit Schlüssel A, Prüfwert und Einstellungen mit Schlüssel B. Geladen ist B → falsch, nichts schreiben.
+  const ordner = tmpOrdner();
+  createStorage({ ordner, krypto: mitSchluessel('A') }).save(notiz('Praxis Sonnenschein'));
+  const b = createStorage({ ordner: tmpOrdner(), krypto: mitSchluessel('B') });
+  b.speichereEinstellungen({ theme: 'hell' });
+  fs.copyFileSync(b.pfade.einstellungenDatei, path.join(ordner, 'einstellungen.enc'));
+  fs.copyFileSync(path.join(b.pfade.ordner, 'pruefung.enc'), path.join(ordner, 'pruefung.enc'));
+  const mitB = createStorage({ ordner, krypto: mitSchluessel('B') });
+  assert.equal(mitB.schluessel, 'falsch');
+  assert.equal(mitB.load().status, 'defekt');
+  // Fall B: Geladen ist A → ok, der Prüfwert mit Schlüssel B wird ersetzt
+  const mitA = createStorage({ ordner, krypto: mitSchluessel('A') });
+  assert.equal(mitA.schluessel, 'ok');
+  assert.equal(mitA.load().daten.notizen[0].kunde, 'Praxis Sonnenschein');
+  assert.equal(createStorage({ ordner: tmpOrdnerMit(ordner, ['pruefung.enc']), krypto: mitSchluessel('A') }).schluessel, 'ok');
+});
+
+/** Kopiert einzelne Dateien in einen neuen Ordner (nur der Prüfwert zählt dann). */
+function tmpOrdnerMit(quelle, dateien) {
+  const ziel = tmpOrdner();
+  for (const f of dateien) fs.copyFileSync(path.join(quelle, f), path.join(ziel, f));
+  return ziel;
+}

@@ -88,10 +88,11 @@ function createStorage({ ordner, altOrdner, jetzt = () => new Date(), krypto = n
    */
   function schluesselPruefen() {
     if (!krypto) return 'aus';
+    // Die Datendatei entscheidet (1.5.3): Nur sie zählt, Einstellungen oder ein alter Prüfwert können mit einem
+    // anderen Schlüssel geschrieben sein.
+    if (fs.existsSync(verschluesselt.daten)) return lesbar(verschluesselt.daten) ? 'ok' : 'falsch';
     if (fs.existsSync(pruefDatei)) return lesbar(pruefDatei) && lesen(pruefDatei) === PRUEFTEXT ? 'ok' : 'falsch';
-    const vorhanden = [verschluesselt.daten, einstellungenDatei].filter(d => fs.existsSync(d));
-    if (!vorhanden.length) return 'neu';
-    return vorhanden.some(lesbar) ? 'ok' : 'falsch';
+    return 'neu';
   }
 
   /** Klartext-Datei verschlüsselt ablegen. Das Original wird erst gelöscht, wenn das Zurücklesen gelingt (D-6). */
@@ -210,7 +211,8 @@ function createStorage({ ordner, altOrdner, jetzt = () => new Date(), krypto = n
   const schluessel = schluesselPruefen();
   if (schluessel === 'falsch') gesperrt = true;
   else if (krypto) {
-    try { if (!fs.existsSync(pruefDatei)) schreiben(pruefDatei, PRUEFTEXT); } catch { /* nächster Start legt ihn an */ }
+    // Prüfwert anlegen oder einen mit anderem Schlüssel geschriebenen ersetzen
+    try { if (!lesbar(pruefDatei) || lesen(pruefDatei) !== PRUEFTEXT) schreiben(pruefDatei, PRUEFTEXT); } catch { /* nächster Start legt ihn an */ }
     klartextUmstellen();
   }
 
