@@ -472,3 +472,63 @@ test('H-12 (1.4.0): Passwort nicht in Suche und Text-Export, ID schon', () => {
   assert.equal(NL.istLeer(notiz({ tvId: '123456789' })), false);
   assert.equal(NL.normalize({ notizen: [{ id: 'alt' }] }).notizen[0].tvId, '');
 });
+
+// ---------- H-13 Nächster Schritt (1.6.0) ----------
+const JETZT_13 = new Date(2026, 10, 12, 10, 0);
+const n13 = (extra = {}) => NL.normalizeNotiz({ id: 'x' + Math.random(), kunde: 'Praxis Test', text: 'Drucker offline', status: 'offen', prio: 'normal',
+  erstellt: '2026-11-10T08:00:00.000Z', geaendert: '2026-11-10T08:00:00.000Z', ...extra });
+
+test('H-13: Schnellerfassung erkennt todo: und ->, Nummern bleiben im Schritt', () => {
+  const p = (s) => NL.parseQuickInput(s, { jetzt: JETZT_13 });
+  const a = p('PX Sonnenschein, Drucker offline, todo: Treiber prüfen');
+  assert.deepEqual([a.kunde, a.text, a.todo, a.todoFaellig], ['Praxis Sonnenschein', 'Drucker offline', 'Treiber prüfen', null]);
+  const b = p('KD Muster GmbH Router -> morgen Zeiten eintragen, Tkt 4711');
+  assert.deepEqual([b.kunde, b.todo, b.todoFaellig, b.ticket], ['Muster GmbH', 'morgen Zeiten eintragen, Tkt 4711', '2026-11-13', '']);
+  assert.equal(p('Frau Müller ruft an, To-Do: heute zurückrufen 0123 4567890').todoFaellig, '2026-11-12');
+  assert.equal(p('Frau Müller ruft an, To-Do: heute zurückrufen 0123 4567890').telefon, '');
+  assert.equal(p('übermorgen klären todo: Lizenz übermorgen verlängern').todoFaellig, null);   // „übermorgen“ ist nicht „morgen“
+  assert.equal(p('Pfeil a->b im Text').todo, undefined);                                    // -> nur mit Leerzeichen davor
+  assert.equal(p('PX Sonnenschein, Drucker offline').todo, undefined);
+  const neu = NL.neueNotiz('PX Sonnenschein, Router, todo: morgen nachfragen', JETZT_13);
+  assert.deepEqual([neu.todo, neu.todoFaellig, neu.prio], ['morgen nachfragen', '2026-11-13', 'normal']);
+});
+
+test('H-13: eigene Spur „To-do“, fällige Schritte in „Jetzt“, Prio unverändert', () => {
+  const offenMitTodo = n13({ id: 'a', todo: 'Zeiten eintragen' });
+  const wartetMitTodo = n13({ id: 'b', status: 'wartet', todo: 'Rückmeldung abwarten', todoFaellig: '2026-11-20' });
+  const faellig = n13({ id: 'c', todo: 'Lizenz verlängern', todoFaellig: '2026-11-12' });
+  const ueberfaellig = n13({ id: 'd', todo: 'Rechnung prüfen', todoFaellig: '2026-11-01' });
+  const ohne = n13({ id: 'e' });
+  const erledigt = n13({ id: 'f', status: 'erledigt', todo: 'vergessen' });
+  const ls = Object.fromEntries(NL.lanes([offenMitTodo, wartetMitTodo, faellig, ueberfaellig, ohne, erledigt], '', JETZT_13).map(l => [l.key, l.items.map(n => n.id)]));
+  assert.deepEqual(ls.jetzt.sort(), ['c', 'd']);
+  assert.deepEqual(ls.todo, ['b', 'a']);                     // mit Fälligkeit zuerst
+  assert.deepEqual(ls.offen, ['e']);
+  assert.equal(ls.wartet, undefined);
+  assert.deepEqual(ls.erledigt, ['f']);
+  assert.equal(NL.anzahlFaellig([offenMitTodo, faellig, ueberfaellig, erledigt], JETZT_13), 2);
+  assert.deepEqual(NL.faelligeTodos([offenMitTodo, faellig, ueberfaellig, erledigt], JETZT_13).map(n => n.id), ['c', 'd']);
+  assert.ok(NL.passtNotiz(offenMitTodo, 'zeiten'));
+});
+
+test('H-13: Fälligkeit anzeigen und abhaken', () => {
+  assert.deepEqual(NL.todoLabel(n13({ todo: 'x', todoFaellig: '2026-11-12' }), JETZT_13), { text: 'heute', zustand: 'today' });
+  assert.deepEqual(NL.todoLabel(n13({ todo: 'x', todoFaellig: '2026-11-13' }), JETZT_13), { text: 'morgen', zustand: 'later' });
+  assert.deepEqual(NL.todoLabel(n13({ todo: 'x', todoFaellig: '2026-11-09' }), JETZT_13), { text: 'seit 09.11.', zustand: 'over' });
+  assert.deepEqual(NL.todoLabel(n13({ todo: 'x', todoFaellig: '2026-12-01' }), JETZT_13), { text: '01.12.', zustand: 'later' });
+  assert.equal(NL.todoLabel(n13({ todo: 'x' }), JETZT_13), null);
+  assert.deepEqual(NL.todoAbhaken(n13({ todo: ' Zeiten eintragen ', todoFaellig: '2026-11-12', text: 'Kollege geholfen\n' }), JETZT_13),
+    { text: 'Kollege geholfen\n✓ 12.11. Zeiten eintragen', todo: '', todoFaellig: null });
+  assert.deepEqual(NL.todoAbhaken(n13({ todo: 'x', text: '' }), JETZT_13), { text: '✓ 12.11. x', todo: '', todoFaellig: null });
+  assert.deepEqual(NL.todoAbhaken(n13({ todo: '' }), JETZT_13), {});
+});
+
+test('H-13: Normalisieren, Text kopieren, leere Notiz', () => {
+  const n = NL.normalizeNotiz({ todo: 'zwei\nZeilen', todoFaellig: 'kaputt' });
+  assert.deepEqual([n.todo, n.todoFaellig], ['zwei Zeilen', null]);
+  assert.equal(NL.normalizeNotiz({}).todo, '');
+  assert.equal(NL.normalize({ notizen: [], ui: { todoMeldung: '2026-11-12' } }).ui.todoMeldung, '2026-11-12');
+  assert.equal(NL.normalize({ notizen: [] }).ui.todoMeldung, null);
+  assert.match(NL.notizAlsText(n13({ todo: 'Zeiten eintragen' })), /Nächster Schritt: Zeiten eintragen/);
+  assert.equal(NL.istLeer({ todo: 'nur ein Schritt' }), false);
+});

@@ -263,6 +263,45 @@
     return null;
   }
 
+  // ---------- H-13 Nächster Schritt ----------
+  const TODO_MARKE = /(?:^|[\s,;])(?:to-?do\s*:|->)\s*(\S.*)$/i;
+  /** Lokales Datum als JJJJ-MM-TT. */
+  const tagIso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const plusTage = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
+  /** „todo: …“ oder „-> …“ am Ende der Eingabe: { todo, faellig, rest } oder null. „heute“/„morgen“ setzen die Fälligkeit. */
+  function todoAusEingabe(v, now) {
+    const m = TODO_MARKE.exec(v);
+    if (!m) return null;
+    const todo = m[1].trim();
+    const wort = (w) => new RegExp(`(?<![\\wäöüÄÖÜß])${w}(?![\\wäöüÄÖÜß])`, 'i').test(todo); // eslint-disable-line security/detect-non-literal-regexp -- feste Wörter
+    const faellig = wort('heute') ? tagIso(now) : wort('morgen') ? tagIso(plusTage(now, 1)) : null;
+    return { todo, faellig, rest: v.slice(0, m.index).replace(/[\s,;]+$/, '') };
+  }
+
+  const hatTodo = (n) => !!str(n.todo).trim() && n.status !== 'erledigt';
+  /** Schritt heute fällig oder überfällig? */
+  const todoFaellig = (n, now = new Date()) => hatTodo(n) && !!n.todoFaellig && n.todoFaellig <= tagIso(now);
+  /** Offene, heute fällige oder überfällige Schritte (für die Sammel-Meldung). */
+  const faelligeTodos = (notizen, now = new Date()) => notizen.filter(n => todoFaellig(n, now));
+  /** Anzeige der Fälligkeit: '' | { text, zustand: 'over'|'today'|'later' } */
+  function todoLabel(n, now = new Date()) {
+    if (!hatTodo(n) || !n.todoFaellig) return null;
+    const heute = tagIso(now), morgen = tagIso(plusTage(now, 1));
+    if (n.todoFaellig < heute) { const [, mo, ta] = n.todoFaellig.split('-'); return { text: `seit ${ta}.${mo}.`, zustand: 'over' }; }
+    if (n.todoFaellig === heute) return { text: 'heute', zustand: 'today' };
+    if (n.todoFaellig === morgen) return { text: 'morgen', zustand: 'later' };
+    const [, mo, ta] = n.todoFaellig.split('-');
+    return { text: `${ta}.${mo}.`, zustand: 'later' };
+  }
+  /** Abhaken: Schritt mit Datum an die Stichpunkte hängen, Feld leeren. Liefert die Änderung. */
+  function todoAbhaken(n, now = new Date()) {
+    const t = str(n.todo).trim();
+    if (!t) return {};
+    const zeile = `✓ ${String(now.getDate()).padStart(2, '0')}.${String(now.getMonth() + 1).padStart(2, '0')}. ${t}`;
+    const text = str(n.text).replace(/\s+$/, '');
+    return { text: text ? `${text}\n${zeile}` : zeile, todo: '', todoFaellig: null };
+  }
+
   /** Teilt die Schnellerfassung auf: Telefon, Ticket, Kunde, Ansprechpartner, Stichpunkt (H-1, H-9). */
   function parseQuickInput(raw, optionen = {}) {
     let v = str(raw).trim();
@@ -270,9 +309,13 @@
     let geaendert = false;
     const kunden = Array.isArray(optionen.kunden) ? optionen.kunden : [];
     let offen = false;
+    // Nächster Schritt zuerst abschneiden, damit Nummern darin nicht als Telefon oder Ticket erkannt werden (H-13)
+    const td = todoAusEingabe(v, optionen.jetzt || new Date());
+    if (td) v = td.rest;
     const mitTv = (o) => {
       const sauber = { ...o, kunde: ohneTrenner(o.kunde), ansprechpartner: ohneTrenner(o.ansprechpartner), text: ohneTrenner(o.text) };
       if (offen) sauber.kundeOffen = true;                       // für den Vorschau-Hinweis „Komma beendet den Namen“
+      if (td) Object.assign(sauber, { todo: td.todo, todoFaellig: td.faellig });
       return tvId ? { ...sauber, tvId, tvPw } : sauber;
     };
 
@@ -350,10 +393,10 @@
   const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 
   function neueNotiz(raw, now = new Date(), optionen = {}) {
-    const { kunde, ansprechpartner, text, telefon, ticket, tvId = '', tvPw = '' } = parseQuickInput(raw, optionen);
+    const { kunde, ansprechpartner, text, telefon, ticket, tvId = '', tvPw = '', todo = '', todoFaellig = null } = parseQuickInput(raw, { ...optionen, jetzt: now });
     const iso = now.toISOString();
     return { id: uid(), erstellt: iso, geaendert: iso, kunde, ansprechpartner, ticket, telefon, tvId, tvPw, text,
-      status: 'offen', prio: 'normal', rueckruf: null, erinnertFuer: null };
+      status: 'offen', prio: 'normal', rueckruf: null, erinnertFuer: null, todo, todoFaellig };
   }
 
   // ---------- H-8 Ticket-Link ----------
@@ -374,7 +417,7 @@
     return v.replace(/<TICKET>/g, () => encodeURIComponent(nr));
   }
 
-  const istLeer = (n) => ![n.kunde, n.ansprechpartner, n.text, n.ticket, n.telefon, n.tvId, n.tvPw].some(x => str(x).trim());
+  const istLeer = (n) => ![n.kunde, n.ansprechpartner, n.text, n.ticket, n.telefon, n.tvId, n.tvPw, n.todo].some(x => str(x).trim());
 
   /** "Kunde · Ansprechpartner" für Listenzeile und Benachrichtigung (H-9). */
   const kundeMitAnsprechpartner = (n) => [str(n.kunde).trim(), str(n.ansprechpartner).trim()].filter(Boolean).join(' · ');
@@ -409,23 +452,26 @@
     return notizen.filter(n => n.status !== 'erledigt' && n.rueckruf && n.erinnertFuer !== n.rueckruf && new Date(n.rueckruf) <= now);
   }
 
-  const anzahlFaellig = (notizen, now = new Date()) => notizen.filter(n => ['over', 'today'].includes(rrState(n, now))).length;
+  const anzahlFaellig = (notizen, now = new Date()) => notizen.filter(n => ['over', 'today'].includes(rrState(n, now)) || todoFaellig(n, now)).length;
 
   // ---------- H-4 / H-5 Spuren und Suche ----------
   // Suche bewusst ohne TeamViewer-Passwort (H-12); die ID wird mit und ohne Leerzeichen gefunden
-  const passtNotiz = (n, q) => !q || [n.kunde, n.ansprechpartner, n.ticket, n.telefon, n.text, n.tvId, tvAnzeige(n.tvId)].join(' ').toLowerCase().includes(q);
+  const passtNotiz = (n, q) => !q || [n.kunde, n.ansprechpartner, n.ticket, n.telefon, n.text, n.todo, n.tvId, tvAnzeige(n.tvId)].join(' ').toLowerCase().includes(q);
   const passtWissen = (w, q) => !q || [w.titel, w.wert].join(' ').toLowerCase().includes(q);
 
   function lanes(notizen, suche = '', now = new Date()) {
     const q = str(suche).trim().toLowerCase();
     const list = notizen.filter(n => passtNotiz(n, q));
-    const isJetzt = (n) => n.status !== 'erledigt' && (n.prio === 'hoch' || ['over', 'today'].includes(rrState(n, now)));
+    const isJetzt = (n) => n.status !== 'erledigt' && (n.prio === 'hoch' || ['over', 'today'].includes(rrState(n, now)) || todoFaellig(n, now));
+    const isTodo = (n) => hatTodo(n) && !isJetzt(n); // H-13: eigene Spur, egal ob offen oder wartet
     const byPrio = (a, b) => PRIO_RANG[a.prio] - PRIO_RANG[b.prio] || b.geaendert.localeCompare(a.geaendert);
     const jetzt = list.filter(isJetzt).sort((a, b) => (a.rueckruf || '9').localeCompare(b.rueckruf || '9') || byPrio(a, b));
-    const rest = (st) => list.filter(n => n.status === st && !isJetzt(n)).sort(byPrio);
+    const rest = (st) => list.filter(n => n.status === st && !isJetzt(n) && !isTodo(n)).sort(byPrio);
+    const todo = list.filter(isTodo).sort((a, b) => (a.todoFaellig || '9').localeCompare(b.todoFaellig || '9') || b.geaendert.localeCompare(a.geaendert));
     const erl = list.filter(n => n.status === 'erledigt').sort((a, b) => b.geaendert.localeCompare(a.geaendert));
     return [ // leere Spuren werden ausgeblendet (H-4)
       { key: 'jetzt', name: 'Jetzt', items: jetzt },
+      { key: 'todo', name: 'To-do', items: todo },
       { key: 'offen', name: 'Offen', items: rest('offen') },
       { key: 'wartet', name: 'Wartet', items: rest('wartet') },
       { key: 'erledigt', name: 'Erledigt', items: erl },
@@ -572,6 +618,7 @@
       feld('Rückruf', `${zwei(d.getDate())}.${zwei(d.getMonth() + 1)}.${d.getFullYear()} ${zwei(d.getHours())}:${zwei(d.getMinutes())} Uhr`);
     }
     const text = str(n.text).trim();
+    feld('Nächster Schritt', n.todo);
     if (text) { if (zeilen.length) zeilen.push(''); zeilen.push(text); }
     return zeilen.join('\n');
   }
@@ -595,6 +642,8 @@
       prio: PRIOS.includes(n && n.prio) ? n.prio : 'normal',
       rueckruf: isoOderNull(n && n.rueckruf),
       erinnertFuer: isoOderNull(n && n.erinnertFuer),
+      todo: str(n && n.todo).replace(/\s*\n\s*/g, ' '),
+      todoFaellig: /^\d{4}-\d{2}-\d{2}$/.test(str(n && n.todoFaellig)) ? n.todoFaellig : null,
     };
   }
 
@@ -617,7 +666,8 @@
       if (v && typeof v === 'object') platzhalter[w.id] = Object.fromEntries(Object.entries(v).map(([k, x]) => [k, str(x)]));
       else if (typeof v === 'string') { const erster = placeholders(w.wert)[0]; if (erster) platzhalter[w.id] = { [erster]: v }; }
     }
-    return { version: DATEN_VERSION, notizen, wissen, ui: { closed, platzhalter } };
+    const todoMeldung = /^\d{4}-\d{2}-\d{2}$/.test(str(ui.todoMeldung)) ? ui.todoMeldung : null;
+    return { version: DATEN_VERSION, notizen, wissen, ui: { closed, platzhalter, todoMeldung } };
   }
 
   return {
@@ -625,7 +675,7 @@
     startOfDay, endOfDay, tageZwischen,
     parseQuickInput, neueNotiz, istLeer, ersteZeile, uid, pruefeTicketVorlage, ticketUrl,
     kundeMitAnsprechpartner, nurKuerzel, kundenVorschlag, tvAnzeige, rueckrufDatum, rueckrufZeit, rueckrufAus,
-    rrState, faelligeErinnerungen, anzahlFaellig,
+    rrState, faelligeErinnerungen, anzahlFaellig, todoAusEingabe, todoFaellig, faelligeTodos, todoLabel, todoAbhaken, tagIso,
     passtNotiz, passtWissen, lanes,
     placeholders, fillTemplate, istLink, wissenTyp, parseWissenEingabe, wissenVorschau, wissenAbschnitte, favoriten, notizAlsText,
     normalize, normalizeNotiz, normalizeWissen,
