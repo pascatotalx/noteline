@@ -3,7 +3,7 @@
 Beschreibt **was** Noteline kann und **warum**. Das Wie steht in `plan.md`.
 Die Kennungen (z. B. `H-3`) werden in `tasks.md`, im Code und in den Tests referenziert.
 
-Stand: Version 1.6.0 (12.11.2026). `[x]` = umgesetzt und getestet, `[ ]` = offen oder nur manuell prüfbar (T-16).
+Stand: Version 1.6.1 (12.11.2026). `[x]` = umgesetzt und getestet, `[ ]` = offen oder nur manuell prüfbar (T-16).
 
 ---
 
@@ -139,6 +139,9 @@ Groß-/Kleinschreibung. Während der Suche sind alle Spuren aufgeklappt. Esc lee
 **H-13 Nächster Schritt (To-do).** (1.6.0, Wunsch von Pascal: Bei vielen Notizen ist später nicht mehr erkennbar, was bei
 welcher noch zu tun ist, z. B. „Zeiten eintragen, sobald der Kollege das Ticket angelegt hat“. Prio hoch war nur eine Krücke.)
 - [x] Jede Notiz hat ein Feld **„Nächster Schritt“** (eine Zeile) und eine optionale **Fälligkeit** (Heute, Morgen oder Datum).
+- [x] **Eingeklappt** (1.6.1, Rückmeldung von Pascal: das Feld war ständig sichtbar und hat den Platz für die Stichpunkte
+      verkleinert): In der Knopfzeile neben „Rückruf“ steht „+ Nächster Schritt“ bzw. „To-do …“ mit Fälligkeit. Ein Klick klappt
+      das Feld auf und wieder zu. Beim Öffnen einer Notiz ist es immer zugeklappt.
 - [x] Steht etwas im Feld, kommt die Notiz in eine eigene Spur **„To-do“** direkt unter „Jetzt“, egal ob sie *Offen* oder
       *Wartet* ist. Die Priorität wird dabei nicht verändert.
 - [x] Ist die Fälligkeit heute oder vorbei, steht die Notiz in „Jetzt“ und zählt im Hotline-Zähler mit.
@@ -149,7 +152,7 @@ welcher noch zu tun ist, z. B. „Zeiten eintragen, sobald der Kollege das Ticke
 - [x] Wird eine Notiz mit offenem Schritt auf *Erledigt* gesetzt, wird der Schritt mit abgehakt. Der Hinweis sagt das, mit Rückgängig.
 - [x] **Schnellerfassung:** Alles nach `todo:` (auch `to-do:`) oder nach ` -> ` wird der nächste Schritt. Enthält er „heute“
       oder „morgen“, wird die Fälligkeit gesetzt. Die Vorschau zeigt ihn als eigene Anzeige.
-- [x] **Strg+T** springt in einer offenen Notiz ins Feld „Nächster Schritt“.
+- [x] **Strg+T** klappt in einer offenen Notiz das Feld „Nächster Schritt“ auf und springt hinein.
 - [x] **Sammel-Meldung:** Einmal am Tag ab 7 Uhr meldet Noteline per Windows-Benachrichtigung, wie viele Schritte heute fällig
       oder überfällig sind (nicht eine Meldung pro Notiz).
 - [x] Der Schritt wird mit durchsucht und bei „Als Text kopieren“ als „Nächster Schritt“ ausgegeben.

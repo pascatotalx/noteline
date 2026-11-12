@@ -112,6 +112,7 @@ Kleine, einzeln prüfbare Schritte in Abhängigkeitsreihenfolge. Jede Aufgabe ne
 |---|---|---|---|
 | T-84 | Datenmodell, Spur „To-do“, Abhaken, Schnellerfassung `todo:`/`->`, Fälligkeit + Tests | H-13 | [x] |
 | T-85 | Oberfläche: Feld, Fälligkeit, Haken in der Zeile, Strg+T, Vorschau | H-13 | [x] |
+| T-87 | „Nächster Schritt“ einklappbar, Knopf neben Rückruf, Strg+T klappt auf (1.6.1) | H-13 | [x] |
 | T-86 | Sammel-Meldung am Morgen, Prüfung mit Testdaten in der echten App, README, Changelog | H-13 | [x] |
 
 ## Backlog
