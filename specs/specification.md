@@ -3,7 +3,7 @@
 Beschreibt **was** Noteline kann und **warum**. Das Wie steht in `plan.md`.
 Die Kennungen (z. B. `H-3`) werden in `tasks.md`, im Code und in den Tests referenziert.
 
-Stand: Version 1.5.3 (10.11.2026). `[x]` = umgesetzt und getestet, `[ ]` = offen oder nur manuell prüfbar (T-16).
+Stand: Version 1.6.0 (12.11.2026). `[x]` = umgesetzt und getestet, `[ ]` = offen oder nur manuell prüfbar (T-16).
 
 ---
 
@@ -135,6 +135,25 @@ Groß-/Kleinschreibung. Während der Suche sind alle Spuren aufgeklappt. Esc lee
       `PW`, `Passwort`, `Kennwort` vor einem Wort → Passwort, **nur wenn in derselben Eingabe eine ID steht**.
 - [x] Das Passwort erscheint nicht in der Liste, nicht in der Suche und nicht bei *Als Text kopieren* (kein Passwort im
       Ticket). Die ID ist durchsuchbar und wird mit kopiert.
+
+**H-13 Nächster Schritt (To-do).** (1.6.0, Wunsch von Pascal: Bei vielen Notizen ist später nicht mehr erkennbar, was bei
+welcher noch zu tun ist, z. B. „Zeiten eintragen, sobald der Kollege das Ticket angelegt hat“. Prio hoch war nur eine Krücke.)
+- [x] Jede Notiz hat ein Feld **„Nächster Schritt“** (eine Zeile) und eine optionale **Fälligkeit** (Heute, Morgen oder Datum).
+- [x] Steht etwas im Feld, kommt die Notiz in eine eigene Spur **„To-do“** direkt unter „Jetzt“, egal ob sie *Offen* oder
+      *Wartet* ist. Die Priorität wird dabei nicht verändert.
+- [x] Ist die Fälligkeit heute oder vorbei, steht die Notiz in „Jetzt“ und zählt im Hotline-Zähler mit.
+- [x] Die Listenzeile zeigt statt des ersten Stichpunkts den nächsten Schritt („→ …“) und rechts die Fälligkeit
+      (überfällig hervorgehoben). Ein Rückruf hat rechts Vorrang.
+- [x] **Abhaken** per Knopf in der Zeile oder in der Notiz: Der Schritt wird mit Datum an die Stichpunkte angehängt
+      („✓ 12.11. …“), Feld und Fälligkeit werden geleert. Mit Rückgängig.
+- [x] Wird eine Notiz mit offenem Schritt auf *Erledigt* gesetzt, wird der Schritt mit abgehakt. Der Hinweis sagt das, mit Rückgängig.
+- [x] **Schnellerfassung:** Alles nach `todo:` (auch `to-do:`) oder nach ` -> ` wird der nächste Schritt. Enthält er „heute“
+      oder „morgen“, wird die Fälligkeit gesetzt. Die Vorschau zeigt ihn als eigene Anzeige.
+- [x] **Strg+T** springt in einer offenen Notiz ins Feld „Nächster Schritt“.
+- [x] **Sammel-Meldung:** Einmal am Tag ab 7 Uhr meldet Noteline per Windows-Benachrichtigung, wie viele Schritte heute fällig
+      oder überfällig sind (nicht eine Meldung pro Notiz).
+- [x] Der Schritt wird mit durchsucht und bei „Als Text kopieren“ als „Nächster Schritt“ ausgegeben.
+- Bewusst nicht: keine Nachfrage beim Schließen einer Notiz (A-4: Bestätigungen werden aus Gewohnheit weggeklickt).
 
 **H-10 Notiz als Text kopieren.** Damit die Notiz ohne Abtippen ins Ticketsystem kommt.
 - [x] Ein Knopf *Als Text kopieren* in der Notiz kopiert Kunde, Ansprechpartner, Telefon, Ticket, Status,

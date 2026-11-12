@@ -268,3 +268,12 @@ Version erhöhen: `npm version patch|minor --no-git-tag-version`, CHANGELOG erg�
 - **Rechte:** `session.setPermissionRequestHandler` und `setPermissionCheckHandler` lehnen alles ab.
 - **Statusmonitor:** `Content-Length` > 2 MB oder längerer Text → Fehler „Antwort zu groß“.
 - **Lint:** ESLint 9 (Flat Config) mit `@eslint/js` recommended und `eslint-plugin-security`; `npm run lint` in CI und `release.js`.
+
+## 16. Nächster Schritt (Version 1.6) – H-13
+- Datenmodell: Notiz bekommt `todo` (Text, leer = keiner) und `todoFaellig` (`JJJJ-MM-TT` oder `null`, lokales Datum).
+  `ui.todoMeldung` merkt sich den Tag der letzten Sammel-Meldung. `normalize` ergänzt beides, ältere Dateien bleiben gültig.
+- `logic.js`: `lanes()` mit Spur `todo` zwischen `jetzt` und `offen`; `todoFaellig` ≤ heute zählt zu `jetzt` und zu
+  `anzahlFaellig`. `todoAbhaken(n, now)` liefert die Änderung (Text + `✓ TT.MM. …`, Feld leer). `faelligeTodos()`, `todoLabel()`.
+  `parseQuickInput` schneidet `todo:` / ` -> ` vor allen anderen Erkennungen ab (Nummern im Schritt bleiben im Schritt).
+- `app.js`: Feld und Fälligkeits-Knöpfe in der Notiz, Abhaken-Knopf in der Zeile, Strg+T, Vorschau-Anzeige,
+  Sammel-Meldung in `checkReminders()` über die vorhandene `erinnern`-Brücke (ohne Notiz-Kennung bei mehreren).
