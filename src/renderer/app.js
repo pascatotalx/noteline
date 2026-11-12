@@ -85,11 +85,12 @@ function rrLabel(iso) {
 const ticketUrl = (ticket) => NL.ticketUrl(S.einst.ticketLink, ticket);
 
 const PRIO = { hoch: { c: 'var(--pink)', l: 'Hoch' }, normal: { c: 'rgba(var(--fg),.5)', l: 'Normal' }, niedrig: { c: 'rgba(var(--fg),.16)', l: 'Niedrig' } };
-const LANE_FARBE = { jetzt: 'var(--pink)', offen: 'var(--cyan)', wartet: 'var(--amber)', erledigt: 'var(--lime)' };
+const LANE_FARBE = { jetzt: 'var(--pink)', todo: 'var(--violet)', offen: 'var(--cyan)', wartet: 'var(--amber)', erledigt: 'var(--lime)' };
 const svg = (w, sw, inner, stroke = 'currentColor') => `<svg width="${w}" height="${w}" viewBox="0 0 24 24" fill="none" stroke="${stroke}" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${inner}</svg>`;
 // Symbole: Lucide (https://lucide.dev), ISC-Lizenz – siehe THIRD_PARTY_NOTICES.md
 const ICON = {
   check: svg(15, 2.25, '<path d="M20 6 9 17l-5-5"/>'),
+  todo: svg(15, 2, '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="m9 12 2 2 4-4"/>'), // Lucide „square-check“
   undo: svg(15, 2, '<path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>'),
   chev: svg(14, 2, '<path d="m9 18 6-6-6-6"/>').replace('<svg', '<svg class="chev"'),
   edit: svg(14, 1.75, '<path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>'),
@@ -127,18 +128,21 @@ async function copyText(text, key) {
 // ---------- Hotline (H-1 – H-8) ----------
 function rowHtml(n) {
   const st = NL.rrState(n);
-  const right = st ? 'Rückruf ' + rrLabel(n.rueckruf) : relDate(n.erstellt);
   const done = n.status === 'erledigt';
+  const todo = !done && n.todo.trim();
+  const tl = NL.todoLabel(n);                                    // H-13: Rückruf hat rechts Vorrang
+  const right = st ? 'Rückruf ' + rrLabel(n.rueckruf) : tl ? 'To-do ' + tl.text : relDate(n.erstellt);
+  const rechtsKlasse = st || (tl ? tl.zustand : '');
   const aktiv = S.breit && n.id === S.openId;
   const url = ticketUrl(n.ticket);
   return `<li class="row${done ? ' done' : ''}${aktiv ? ' active' : ''}">
     <span class="bar" style="background:${PRIO[n.prio].c}" title="Priorität ${PRIO[n.prio].l}"></span>
     <button class="row-main" type="button" data-open="${esc(n.id)}"${aktiv ? ' aria-current="true"' : ''}>
       <span class="row-title"><span class="kunde">${esc(n.kunde || (n.ansprechpartner ? '' : 'Ohne Kunde'))}${n.ansprechpartner ? `<span class="ap">${n.kunde ? ' · ' : ''}${esc(n.ansprechpartner)}</span>` : ''}</span>${n.ticket ? `<span class="ticket" translate="no">${esc(n.ticket)}</span>` : ''}</span>
-      <span class="snippet">${esc(NL.ersteZeile(n.text) || n.telefon || 'Keine Stichpunkte')}</span>
+      ${todo ? `<span class="snippet todo">→ ${esc(n.todo)}</span>` : `<span class="snippet">${esc(NL.ersteZeile(n.text) || n.telefon || 'Keine Stichpunkte')}</span>`}
     </button>
-    <span class="right num${st ? ' ' + st : ''}">${esc(right)}</span>
-    <span class="quick">${url ? `<button class="q-btn press" type="button" data-ticket="${esc(n.id)}" title="Ticket öffnen"><span class="sr">Ticket öffnen</span>${ICON.ext}</button>` : ''}<button class="q-btn press${done ? '' : ' ok'}" type="button" data-done="${esc(n.id)}" title="${done ? 'Wieder öffnen' : 'Erledigt'}"><span class="sr">${done ? 'Wieder öffnen' : 'Als erledigt markieren'}</span>${done ? ICON.undo : ICON.check}</button></span>
+    <span class="right num${rechtsKlasse ? ' ' + rechtsKlasse : ''}">${esc(right)}</span>
+    <span class="quick">${todo ? `<button class="q-btn press todo" type="button" data-todoab="${esc(n.id)}" title="To-do abhaken"><span class="sr">To-do abhaken</span>${ICON.todo}</button>` : ''}${url ? `<button class="q-btn press" type="button" data-ticket="${esc(n.id)}" title="Ticket öffnen"><span class="sr">Ticket öffnen</span>${ICON.ext}</button>` : ''}<button class="q-btn press${done ? '' : ' ok'}" type="button" data-done="${esc(n.id)}" title="${done ? 'Wieder öffnen' : 'Erledigt'}"><span class="sr">${done ? 'Wieder öffnen' : 'Als erledigt markieren'}</span>${done ? ICON.undo : ICON.check}</button></span>
   </li>`;
 }
 function renderHotline(anim) {
@@ -362,6 +366,11 @@ function notizHtml(n, imBlatt) {
     <div class="s-body">
       <div class="chips" id="sChips"></div>
       <div id="sRR"></div>
+      <div class="s-todo">
+        <label class="s-todo-label" for="sTodo">Nächster Schritt</label>
+        <span class="field-row"><input class="field" id="sTodo" type="text" autocomplete="off" placeholder="Was ist noch zu tun? (Strg+T)" value="${esc(n.todo)}"><button class="q-btn press todo" type="button" data-act="td:ab" id="sTodoAb" title="To-do abhaken"><span class="sr">To-do abhaken</span>${ICON.todo}</button></span>
+        <div class="s-todo-f" id="sTodoF"></div>
+      </div>
       <div class="s-fields">
         <label>Ticket<span class="field-row"><input class="field" id="sTicket" type="text" autocomplete="off" spellcheck="false" placeholder="z. B. #12345 …" value="${esc(n.ticket)}"><button class="q-btn press" type="button" id="sTicketLink" title="Ticket öffnen" hidden><span class="sr">Ticket öffnen</span>${ICON.ext}</button></span></label>
         <label>Telefon<input class="field" id="sTel" type="tel" inputmode="tel" autocomplete="off" placeholder="Rückrufnummer …" value="${esc(n.telefon)}" style="font-family:var(--body)"></label>
@@ -399,6 +408,11 @@ function openSheet(id, instant, focusKunde) {
   });
   bind('#sKunde', 'kunde'); bind('#sAp', 'ansprechpartner'); bind('#sTicket', 'ticket'); bind('#sTel', 'telefon'); bind('#sText', 'text');
   bind('#sTvId', 'tvId'); bind('#sTvPw', 'tvPw');
+  $('#sTodo').addEventListener('input', (e) => { // H-13: ohne Schritt keine Fälligkeit
+    const x = findN(S.openId); if (!x) return;
+    x.todo = e.target.value; if (!x.todo.trim()) x.todoFaellig = null;
+    x.geaendert = nowIso(); save(); renderSheetMeta(); renderTodo(x); scheduleListRefresh();
+  });
   bridge.notizOffen(true);
   render();
   (focusKunde ? $('#sKunde') : $('#sText')).focus({ preventScroll: true });
@@ -439,6 +453,38 @@ function renderSheetBits() {
   renderSheetMeta();
   renderChips(n);
   renderRR(n);
+  renderTodo(n);
+}
+const morgenIso = () => { const x = new Date(); x.setDate(x.getDate() + 1); return NL.tagIso(x); };
+/** Fälligkeit des nächsten Schritts: Heute, Morgen, Datum (H-13). Nur sichtbar, wenn ein Schritt eingetragen ist. */
+function renderTodo(n) {
+  const box = $('#sTodoF'), ab = $('#sTodoAb'); if (!box) return;
+  const hat = !!n.todo.trim();
+  if (ab) ab.hidden = !hat;
+  const heute = NL.tagIso(new Date()), morgen = morgenIso();
+  const knopf = (label, act, an) => `<button class="chip press" type="button" aria-pressed="${an}" data-act="${act}" style="--c:var(--violet)">${label}</button>`;
+  const tl = NL.todoLabel(n);
+  box.innerHTML = hat ? `${knopf('Heute', 'td:heute', n.todoFaellig === heute)}${knopf('Morgen', 'td:morgen', n.todoFaellig === morgen)}
+    <input class="field rr-zeit" type="date" id="sTodoDatum" value="${esc(n.todoFaellig || '')}" aria-label="Fällig am">
+    ${n.todoFaellig ? `<span class="s-todo-status ${tl ? tl.zustand : ''}">${esc(tl ? 'fällig ' + tl.text : '')}</span><button class="btn-ghost press" type="button" data-act="td:weg">Ohne Datum</button>` : '<span class="s-todo-status">ohne Fälligkeit</span>'}` : '';
+  const d = $('#sTodoDatum');
+  if (d) d.addEventListener('change', () => { const x = findN(S.openId); if (x) { upd(x.id, { todoFaellig: d.value || null }); renderTodo(x); } });
+}
+/** Felder einer offenen Notiz nach einer Änderung von außen auffrischen (Abhaken, Rückgängig). */
+function notizFelderAuffrischen() {
+  const n = findN(S.openId); if (!n) return;
+  const t = $('#sText'); if (t) t.value = n.text;
+  const td = $('#sTodo'); if (td) td.value = n.todo;
+  renderSheetBits();
+}
+/** Schritt abhaken: an die Stichpunkte hängen, Feld leeren, mit Rückgängig (H-13). `zusatz` z. B. { status: 'erledigt' }. */
+function todoErledigen(id, zusatz = {}, meldung = 'To-do abgehakt') {
+  const n = findN(id); if (!n || !n.todo.trim()) return false;
+  const vorher = { text: n.text, todo: n.todo, todoFaellig: n.todoFaellig, status: n.status };
+  upd(id, { ...NL.todoAbhaken(n), ...zusatz });
+  if (S.openId === id) notizFelderAuffrischen();
+  rueckgaengig(meldung, () => { upd(id, vorher); if (S.openId === id) notizFelderAuffrischen(); });
+  return true;
 }
 function renderChips(n) {
   const chip =(label, pressed, act, c) => `<button class="chip press" type="button" aria-pressed="${pressed}" data-act="${act}"${c ? ` style="--c:${c}"` : ''}>${label}</button>`;
@@ -550,6 +596,7 @@ function renderSettings() {
       <div class="keys">
         <span class="kbd">Strg K</span><span>Suchen / notieren</span>
         <span class="kbd">Strg N</span><span>Neue Notiz</span>
+        <span class="kbd">Strg T</span><span>In der Notiz zum Feld „Nächster Schritt“</span>
         <span class="kbd">Strg Enter</span><span>Besten Wissens-Treffer der Suche kopieren</span>
         <span class="kbd">Alt 1–9</span><span>Favoriten kopieren</span>
         <span class="kbd">Strg 1 / 2</span><span>Hotline / Wissen (schmales Fenster)</span>
@@ -697,6 +744,17 @@ function checkReminders() {
     n.erinnertFuer = n.rueckruf;
   }
   if (faellig.length) { save(); render(); }
+  // H-13: einmal am Tag ab 7 Uhr eine Sammel-Meldung für heute fällige oder überfällige Schritte
+  const jetzt = new Date(), heute = NL.tagIso(jetzt);
+  if (!S.schutz && jetzt.getHours() >= 7 && D.ui.todoMeldung !== heute) {
+    const f = NL.faelligeTodos(D.notizen, jetzt);
+    if (f.length) {
+      const zeilen = f.slice(0, 3).map(n => `${NL.kundeMitAnsprechpartner(n) || 'Ohne Kunde'}: ${n.todo.trim()}`);
+      if (f.length > 3) zeilen.push(`… und ${f.length - 3} weitere`);
+      bridge.erinnern({ titel: f.length === 1 ? 'Ein To-do für heute' : `${f.length} To-dos für heute`, text: zeilen.join('\n'), id: f.length === 1 ? f[0].id : null });
+    }
+    D.ui.todoMeldung = heute; save();
+  }
 }
 
 // ---------- Ereignisse ----------
@@ -708,8 +766,10 @@ document.addEventListener('click', (e) => {
   if (d.thema) { S.einst.theme = d.thema; bridge.einstellungSetzen('theme', d.thema); return renderSettings(); }
   if (d.ticket) { const n = findN(d.ticket); const url = n && ticketUrl(n.ticket); return url && bridge.linkOeffnen(url); }
   if (t.id === 'sTicketLink') { const n = findN(S.openId); const url = n && ticketUrl(n.ticket); return url && bridge.linkOeffnen(url); }
+  if (d.todoab) return todoErledigen(d.todoab);
   if (d.done) {
     const n = findN(d.done); if (!n) return;
+    if (n.status !== 'erledigt' && todoErledigen(n.id, { status: 'erledigt' }, 'Erledigt – To-do mit abgehakt')) return;
     upd(d.done, { status: n.status === 'erledigt' ? 'offen' : 'erledigt' });
     if (S.openId === n.id) renderSheetBits();
     return toast(n.status === 'erledigt' ? 'Erledigt' : 'Wieder offen');
@@ -720,6 +780,13 @@ document.addEventListener('click', (e) => {
   if (d.act) {
     const n = findN(S.openId); if (!n) return;
     const [k, v] = d.act.split(':');
+    if (k === 'st' && v === 'erledigt' && n.status !== 'erledigt' && todoErledigen(n.id, { status: 'erledigt' }, 'Erledigt – To-do mit abgehakt')) return;
+    if (k === 'td') { // H-13: Fälligkeit und Abhaken
+      if (v === 'ab') { todoErledigen(n.id); return $('#q').focus({ preventScroll: true }); }
+      const ziel = v === 'heute' ? NL.tagIso(new Date()) : v === 'morgen' ? morgenIso() : null;
+      upd(n.id, { todoFaellig: n.todoFaellig === ziel ? null : ziel });
+      return renderTodo(n);
+    }
     if (k === 'st') upd(n.id, { status: v });
     else if (k === 'pr') upd(n.id, { prio: n.prio === v ? 'normal' : v });
     else if (k === 'rr' && !v) { S.rrOpen = !S.rrOpen; }
@@ -814,7 +881,7 @@ function notizVorschau() {
   else if (!bekannt && !/[,:;]/.test(S.q) && /^[A-ZÄÖÜ]/.test(p.text)) tipp = `Name länger als „${esc(p.kunde)}“? Komma nach dem Namen setzen, z. B. „PX Sonnenschein am Park, …“. Danach kennt Noteline den Kunden.`;
   else tipp = bekannt ? 'Bekannter Kunde erkannt.' : '';
   const tv = p.tvId ? chip('TeamViewer', NL.tvAnzeige(p.tvId) + (p.tvPw ? ' · Passwort ✓' : '')) : '';
-  box.innerHTML = `<div class="vs-chips">${chip('Kunde', p.kunde)}${chip('Ansprechpartner', p.ansprechpartner)}${chip('Telefon', p.telefon)}${chip('Ticket', p.ticket)}${tv}${chip('Stichpunkt', p.text)}</div>
+  box.innerHTML = `<div class="vs-chips">${chip('Kunde', p.kunde)}${chip('Ansprechpartner', p.ansprechpartner)}${chip('Telefon', p.telefon)}${chip('Ticket', p.ticket)}${tv}${chip('Stichpunkt', p.text)}${p.todo ? chip('To-do', p.todo + (p.todoFaellig ? ' · fällig ' + NL.todoLabel({ todo: p.todo, todoFaellig: p.todoFaellig, status: 'offen' }).text : '')) : ''}</div>
     <div class="vs-hinweis"><span>Enter legt die Notiz an, alles bleibt danach änderbar.</span>${tipp ? `<span>${tipp}</span>` : ''}</div>`;
 }
 $('#q').addEventListener('input', (e) => { S.q = e.target.value; render(); notizVorschau(); });
@@ -844,6 +911,7 @@ document.addEventListener('keydown', (e) => {
   }
   if (e.ctrlKey && !e.altKey && k === 'k') { e.preventDefault(); closeSheet(); $('#q').focus({ preventScroll: true }); $('#q').select(); }
   else if (e.ctrlKey && !e.altKey && k === 'n') { e.preventDefault(); closeSheet(); createNote('', true); }
+  else if (e.ctrlKey && !e.altKey && k === 't' && S.openId) { e.preventDefault(); const f = $('#sTodo'); if (f) { f.focus({ preventScroll: true }); f.select(); } } // H-13
   else if (e.ctrlKey && !e.altKey && k === '1') { e.preventDefault(); setTab('hotline'); }
   else if (e.ctrlKey && !e.altKey && k === '2') { e.preventDefault(); setTab('wissen'); }
   else if (e.key === 'Escape' && (S.openId || S.settingsOpen || S.statusOpen)) { e.preventDefault(); closeSheet(); }

@@ -9,7 +9,7 @@
   --bg:#1b1d22; --surface:#24272d; --raised:#2d3037; --hover:#2a2d34; --hover2:#31343c;
   --fg:255,255,255; --text:#fff;
   --inv-bg:#fff; --inv-fg:#1b1d22; --on-accent:#14161b;
-  --lime:#bee600; --cyan:#00e7ff; --pink:#ff00ac; --amber:#ffc400;
+  --lime:#bee600; --cyan:#00e7ff; --pink:#ff00ac; --amber:#ffc400; --violet:#b18cff; --violet-text:#c4a6ff;
   --lime-text:#bee600; --pink-text:#ff4dc4; --amber-text:#ffc400;
   --shadow:rgba(0,0,0,.35); --backdrop:rgba(10,11,14,.55);
   --display:'Space Grotesk',Arial,sans-serif; --body:Arial,sans-serif; --mono:ui-monospace,Consolas,'Cascadia Mono',monospace;
@@ -21,7 +21,7 @@
   --bg:#f3f4f6; --surface:#fff; --raised:#e6e8ec; --hover:#eaecef; --hover2:#e1e4e8;
   --fg:20,22,27; --text:#14161b;
   --inv-bg:#14161b; --inv-fg:#fff;
-  --cyan:#00b8cc; --amber:#f0b400;
+  --cyan:#00b8cc; --amber:#f0b400; --violet:#7c4dff; --violet-text:#5b2fd6;
   --lime-text:#5a7000; --pink-text:#c4007f; --amber-text:#9a6200;
   --shadow:rgba(20,22,27,.14); --backdrop:rgba(20,22,27,.28);
 }
@@ -323,3 +323,11 @@ nav button[aria-current="page"]{color:var(--inv-fg)}
 .vs-vorschlag-kunde{color:var(--lime-text)}
 .vs-vorschlag-kunde .kbd{font-size:10px;padding:1px 5px;margin:0 2px}
 .s-fields .field.mono{font-family:var(--mono)}
+
+/* 1.6.0: Nächster Schritt (H-13) */
+.snippet.todo{opacity:1;color:var(--violet-text);font-weight:600}
+.q-btn.todo{color:var(--violet-text)}
+.s-todo{display:flex;flex-direction:column;gap:6px;padding:10px;border:1px solid var(--violet);border-radius:8px;background:color-mix(in srgb,var(--violet) 7%,transparent)}
+.s-todo-label{font-family:var(--display);font-weight:500;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--violet-text)}
+.s-todo-f{display:flex;gap:6px;flex-wrap:wrap;align-items:center}.s-todo-f:empty{display:none}
+.s-todo-status{font-size:12px;opacity:.75}.s-todo-status.over{color:var(--pink-text);opacity:1;font-weight:600}.s-todo-status.today{color:var(--amber-text);opacity:1;font-weight:600}
