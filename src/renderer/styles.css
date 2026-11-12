@@ -327,7 +327,6 @@ nav button[aria-current="page"]{color:var(--inv-fg)}
 /* 1.6.0: Nächster Schritt (H-13) */
 .snippet.todo{opacity:1;color:var(--violet-text);font-weight:600}
 .q-btn.todo{color:var(--violet-text)}
-.s-todo{display:flex;flex-direction:column;gap:6px;padding:10px;border:1px solid var(--violet);border-radius:8px;background:color-mix(in srgb,var(--violet) 7%,transparent)}
-.s-todo-label{font-family:var(--display);font-weight:500;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--violet-text)}
+.s-todo{display:flex;flex-direction:column;gap:6px;padding:8px 10px;background:var(--bg);border-left:3px solid var(--violet);border-radius:8px;animation:fade 160ms ease both}
 .s-todo-f{display:flex;gap:6px;flex-wrap:wrap;align-items:center}.s-todo-f:empty{display:none}
 .s-todo-status{font-size:12px;opacity:.75}.s-todo-status.over{color:var(--pink-text);opacity:1;font-weight:600}.s-todo-status.today{color:var(--amber-text);opacity:1;font-weight:600}

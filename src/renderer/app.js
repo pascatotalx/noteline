@@ -33,7 +33,7 @@ const BREIT = window.matchMedia('(min-width: 760px)'); // L-1
 const S = {
   tab: 'hotline', q: '', openId: null, settingsOpen: false, rrOpen: false, breit: BREIT.matches,
   copied: null, editW: null, wDraft: null, focusForm: false, wNeu: '', firstRender: true,
-  schutz: null, ordner: '', datei: 'daten.json', verschluesselt: false, version: '', update: { zustand: 'idle' }, autostart: { an: false, moeglich: false }, immerVorne: false,
+  todoOpen: false, schutz: null, ordner: '', datei: 'daten.json', verschluesselt: false, version: '', update: { zustand: 'idle' }, autostart: { an: false, moeglich: false }, immerVorne: false,
   einst: { theme: 'dunkel', uhr: false, ticketLink: '' }, ticketEntwurf: null, ticketFehler: '',
   status: { aktiv: false, intervall: 15, quellen: [], ergebnisse: [], gesamt: { zustand: 'aus' }, vorlagen: [] },
   statusOpen: false, statusNeu: { name: '', url: '' }, statusFehler: '', statusTestet: false,
@@ -366,11 +366,7 @@ function notizHtml(n, imBlatt) {
     <div class="s-body">
       <div class="chips" id="sChips"></div>
       <div id="sRR"></div>
-      <div class="s-todo">
-        <label class="s-todo-label" for="sTodo">Nächster Schritt</label>
-        <span class="field-row"><input class="field" id="sTodo" type="text" autocomplete="off" placeholder="Was ist noch zu tun? (Strg+T)" value="${esc(n.todo)}"><button class="q-btn press todo" type="button" data-act="td:ab" id="sTodoAb" title="To-do abhaken"><span class="sr">To-do abhaken</span>${ICON.todo}</button></span>
-        <div class="s-todo-f" id="sTodoF"></div>
-      </div>
+      <div id="sTodoBox"></div>
       <div class="s-fields">
         <label>Ticket<span class="field-row"><input class="field" id="sTicket" type="text" autocomplete="off" spellcheck="false" placeholder="z. B. #12345 …" value="${esc(n.ticket)}"><button class="q-btn press" type="button" id="sTicketLink" title="Ticket öffnen" hidden><span class="sr">Ticket öffnen</span>${ICON.ext}</button></span></label>
         <label>Telefon<input class="field" id="sTel" type="tel" inputmode="tel" autocomplete="off" placeholder="Rückrufnummer …" value="${esc(n.telefon)}" style="font-family:var(--body)"></label>
@@ -387,7 +383,7 @@ function openSheet(id, instant, focusKunde) {
   const n = findN(id); if (!n) return;
   if (S.settingsOpen) closeSheet();
   if (S.openId && S.openId !== id) notizSchliessen();
-  S.openId = id; S.rrOpen = false;
+  S.openId = id; S.rrOpen = false; S.todoOpen = false; // H-13: „Nächster Schritt“ beim Öffnen immer zugeklappt
   if (S.breit) {
     $('#sheetHost').innerHTML = '';
     const side = $('#colSide');
@@ -408,11 +404,6 @@ function openSheet(id, instant, focusKunde) {
   });
   bind('#sKunde', 'kunde'); bind('#sAp', 'ansprechpartner'); bind('#sTicket', 'ticket'); bind('#sTel', 'telefon'); bind('#sText', 'text');
   bind('#sTvId', 'tvId'); bind('#sTvPw', 'tvPw');
-  $('#sTodo').addEventListener('input', (e) => { // H-13: ohne Schritt keine Fälligkeit
-    const x = findN(S.openId); if (!x) return;
-    x.todo = e.target.value; if (!x.todo.trim()) x.todoFaellig = null;
-    x.geaendert = nowIso(); save(); renderSheetMeta(); renderTodo(x); scheduleListRefresh();
-  });
   bridge.notizOffen(true);
   render();
   (focusKunde ? $('#sKunde') : $('#sText')).focus({ preventScroll: true });
@@ -453,7 +444,28 @@ function renderSheetBits() {
   renderSheetMeta();
   renderChips(n);
   renderRR(n);
+  renderTodoBox(n);
+}
+/** Feld „Nächster Schritt“: nur aufgeklappt sichtbar, auf- und zuklappen über den Knopf neben „Rückruf“ (H-13, 1.6.1). */
+function renderTodoBox(n) {
+  const box = $('#sTodoBox'); if (!box) return;
+  if (!S.todoOpen) { box.innerHTML = ''; return; }
+  box.innerHTML = `<div class="s-todo">
+      <span class="field-row"><input class="field" id="sTodo" type="text" autocomplete="off" placeholder="Nächster Schritt: Was ist noch zu tun?" aria-label="Nächster Schritt" value="${esc(n.todo)}"><button class="q-btn press todo" type="button" data-act="td:ab" id="sTodoAb" title="To-do abhaken"><span class="sr">To-do abhaken</span>${ICON.todo}</button></span>
+      <div class="s-todo-f" id="sTodoF"></div>
+    </div>`;
+  $('#sTodo').addEventListener('input', (e) => { // ohne Schritt keine Fälligkeit
+    const x = findN(S.openId); if (!x) return;
+    x.todo = e.target.value; if (!x.todo.trim()) x.todoFaellig = null;
+    x.geaendert = nowIso(); save(); renderSheetMeta(); renderChips(x); renderTodo(x); scheduleListRefresh();
+  });
   renderTodo(n);
+}
+/** Klappt das Feld auf und setzt den Cursor hinein. */
+function todoFeldOeffnen() {
+  const n = findN(S.openId); if (!n) return;
+  S.todoOpen = true; renderChips(n); renderTodoBox(n);
+  const f = $('#sTodo'); if (f) { f.focus({ preventScroll: true }); f.setSelectionRange(f.value.length, f.value.length); }
 }
 const morgenIso = () => { const x = new Date(); x.setDate(x.getDate() + 1); return NL.tagIso(x); };
 /** Fälligkeit des nächsten Schritts: Heute, Morgen, Datum (H-13). Nur sichtbar, wenn ein Schritt eingetragen ist. */
@@ -468,7 +480,7 @@ function renderTodo(n) {
     <input class="field rr-zeit" type="date" id="sTodoDatum" value="${esc(n.todoFaellig || '')}" aria-label="Fällig am">
     ${n.todoFaellig ? `<span class="s-todo-status ${tl ? tl.zustand : ''}">${esc(tl ? 'fällig ' + tl.text : '')}</span><button class="btn-ghost press" type="button" data-act="td:weg">Ohne Datum</button>` : '<span class="s-todo-status">ohne Fälligkeit</span>'}` : '';
   const d = $('#sTodoDatum');
-  if (d) d.addEventListener('change', () => { const x = findN(S.openId); if (x) { upd(x.id, { todoFaellig: d.value || null }); renderTodo(x); } });
+  if (d) d.addEventListener('change', () => { const x = findN(S.openId); if (x) { upd(x.id, { todoFaellig: d.value || null }); renderChips(x); renderTodo(x); } });
 }
 /** Felder einer offenen Notiz nach einer Änderung von außen auffrischen (Abhaken, Rückgängig). */
 function notizFelderAuffrischen() {
@@ -498,7 +510,15 @@ function renderChips(n) {
     chip('Niedrig', n.prio === 'niedrig', 'pr:niedrig', '#c9ccd3'),
     '<span class="chip-sep" aria-hidden="true"></span>',
     chip(n.rueckruf ? 'Rückruf ' + esc(rrLabel(n.rueckruf)) : '+ Rückruf', !!n.rueckruf || S.rrOpen, 'rr', st === 'over' ? 'var(--pink)' : 'var(--amber)'),
+    todoChip(n),
   ].join('');
+}
+/** Knopf „Nächster Schritt“ in der Knopfzeile: zeigt, ob ein Schritt da ist und wann er fällig ist (H-13). */
+function todoChip(n) {
+  const hat = !!n.todo.trim(), tl = NL.todoLabel(n);
+  const label = hat ? 'To-do' + (tl ? ' ' + tl.text : '') : '+ Nächster Schritt';
+  const farbe = tl && tl.zustand === 'over' ? 'var(--pink)' : 'var(--violet)';
+  return `<button class="chip press" type="button" aria-pressed="${hat || !!S.todoOpen}" aria-expanded="${!!S.todoOpen}" data-act="td" style="--c:${farbe}" title="Nächster Schritt (Strg+T)">${esc(label)}</button>`;
 }
 /** Rückruf-Eingabe: Datum steht schon auf heute, nur die Uhrzeit fehlt (H-6). */
 function renderRR(n) {
@@ -781,10 +801,12 @@ document.addEventListener('click', (e) => {
     const n = findN(S.openId); if (!n) return;
     const [k, v] = d.act.split(':');
     if (k === 'st' && v === 'erledigt' && n.status !== 'erledigt' && todoErledigen(n.id, { status: 'erledigt' }, 'Erledigt – To-do mit abgehakt')) return;
-    if (k === 'td') { // H-13: Fälligkeit und Abhaken
-      if (v === 'ab') { todoErledigen(n.id); return $('#q').focus({ preventScroll: true }); }
+    if (k === 'td') { // H-13: auf-/zuklappen, Fälligkeit und Abhaken
+      if (!v) { if (S.todoOpen) { S.todoOpen = false; return renderSheetBits(); } return todoFeldOeffnen(); }
+      if (v === 'ab') { todoErledigen(n.id); S.todoOpen = false; renderSheetBits(); return $('#q').focus({ preventScroll: true }); }
       const ziel = v === 'heute' ? NL.tagIso(new Date()) : v === 'morgen' ? morgenIso() : null;
       upd(n.id, { todoFaellig: n.todoFaellig === ziel ? null : ziel });
+      renderChips(n);
       return renderTodo(n);
     }
     if (k === 'st') upd(n.id, { status: v });
@@ -911,7 +933,7 @@ document.addEventListener('keydown', (e) => {
   }
   if (e.ctrlKey && !e.altKey && k === 'k') { e.preventDefault(); closeSheet(); $('#q').focus({ preventScroll: true }); $('#q').select(); }
   else if (e.ctrlKey && !e.altKey && k === 'n') { e.preventDefault(); closeSheet(); createNote('', true); }
-  else if (e.ctrlKey && !e.altKey && k === 't' && S.openId) { e.preventDefault(); const f = $('#sTodo'); if (f) { f.focus({ preventScroll: true }); f.select(); } } // H-13
+  else if (e.ctrlKey && !e.altKey && k === 't' && S.openId) { e.preventDefault(); todoFeldOeffnen(); } // H-13
   else if (e.ctrlKey && !e.altKey && k === '1') { e.preventDefault(); setTab('hotline'); }
   else if (e.ctrlKey && !e.altKey && k === '2') { e.preventDefault(); setTab('wissen'); }
   else if (e.key === 'Escape' && (S.openId || S.settingsOpen || S.statusOpen)) { e.preventDefault(); closeSheet(); }
