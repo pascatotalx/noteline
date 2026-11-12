@@ -49,7 +49,11 @@ Was sich geändert hat, steht im [Changelog](CHANGELOG.md) und bei jedem [Releas
   Komma zum Kundennamen, danach folgt der Stichpunkt.
 - **Ticket mit einem Klick öffnen:** Einmal die Ticket-Adresse eures Systems hinterlegen, dann wird jede
   Ticketnummer zum Link.
-- **Spuren statt Textwüste:** *Jetzt*, *Offen*, *Wartet*, *Erledigt*, mit Priorität und Ticketnummer.
+- **Spuren statt Textwüste:** *Jetzt*, *To-do*, *Offen*, *Wartet*, *Erledigt*, mit Priorität und Ticketnummer.
+- **Nächster Schritt:** Jede Notiz hat ein Feld für das, was noch zu tun ist, mit Fälligkeit (Heute, Morgen, Datum). Solche
+  Notizen landen in der Spur *To-do* und zeigen den Schritt direkt in der Liste. Ein Haken trägt ihn erledigt in die Stichpunkte
+  ein. Beim Tippen reicht `todo: …` am Ende, `Strg+T` springt in einer offenen Notiz ins Feld. Morgens meldet Noteline einmal,
+  was heute fällig ist.
 - **Kunden werden gemerkt:** Bekannte Kunden erkennt Noteline in voller Länge, beim Tippen schlägt es sie vor (**Tab** übernimmt).
 - **TeamViewer-ID und Passwort** je Notiz mit Kopier-Knopf (`TV 123 456 789 PW …` wird erkannt). Das Passwort bleibt aus
   Suche und Text-Export heraus.

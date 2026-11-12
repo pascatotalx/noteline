@@ -3,6 +3,19 @@
 Alle nennenswerten Änderungen an Noteline. Format nach [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
+## [1.6.0] – 2026-11-12
+
+### Neu
+- **Nächster Schritt (To-do) in jeder Notiz:** Ein eigenes Feld für das, was bei einer Notiz noch zu tun ist, z. B. „Zeiten
+  eintragen, sobald das Ticket angelegt ist“, mit Fälligkeit *Heute*, *Morgen* oder Datum.
+- **Neue Spur „To-do“** direkt unter „Jetzt“: Notizen mit offenem Schritt landen dort, egal ob *Offen* oder *Wartet*. Die
+  Priorität bleibt unverändert. Ist der Schritt heute fällig oder überfällig, steht die Notiz in „Jetzt“.
+- Die Listenzeile zeigt den Schritt („→ …“) und rechts die Fälligkeit. **Abhaken** per Knopf in der Zeile oder in der Notiz:
+  Der Schritt wird mit Datum an die Stichpunkte angehängt („✓ 12.11. …“), mit Rückgängig. Auf *Erledigt* setzen hakt ihn mit ab.
+- **Schnellerfassung:** `todo: …` oder ` -> …` am Ende der Eingabe wird der nächste Schritt, „heute“ oder „morgen“ darin
+  setzen die Fälligkeit. **Strg+T** springt in einer offenen Notiz ins Feld.
+- **Morgens eine Sammel-Meldung** (ab 7 Uhr, einmal am Tag), wie viele Schritte heute fällig sind.
+
 ## [1.5.3] – 2026-11-10
 
 ### Behoben
@@ -228,6 +241,7 @@ Erste veröffentlichte Version. Neuaufbau des Prototyps „Hotline-Notizen“ na
 - Eine ins Fenster gezogene Datei ersetzt nicht mehr die App-Oberfläche.
 - Strengere Sicherheitseinstellungen (Sandbox, Content-Security-Policy ohne Inline-Skripte).
 
+[1.6.0]: https://github.com/pascatotalx/noteline/releases/tag/v1.6.0
 [1.5.3]: https://github.com/pascatotalx/noteline/releases/tag/v1.5.3
 [1.5.2]: https://github.com/pascatotalx/noteline/releases/tag/v1.5.2
 [1.5.1]: https://github.com/pascatotalx/noteline/releases/tag/v1.5.1
