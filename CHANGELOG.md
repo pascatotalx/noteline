@@ -3,6 +3,12 @@
 Alle nennenswerten Änderungen an Noteline. Format nach [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
+## [1.6.1] – 2026-11-12
+
+### Geändert
+- **„Nächster Schritt“ ist eingeklappt** und nimmt den Stichpunkten keinen Platz mehr weg. Ein Knopf neben „Rückruf“
+  („+ Nächster Schritt“ bzw. „To-do heute“) klappt das Feld auf und wieder zu. Strg+T klappt es ebenfalls auf.
+
 ## [1.6.0] – 2026-11-12
 
 ### Neu
@@ -241,6 +247,7 @@ Erste veröffentlichte Version. Neuaufbau des Prototyps „Hotline-Notizen“ na
 - Eine ins Fenster gezogene Datei ersetzt nicht mehr die App-Oberfläche.
 - Strengere Sicherheitseinstellungen (Sandbox, Content-Security-Policy ohne Inline-Skripte).
 
+[1.6.1]: https://github.com/pascatotalx/noteline/releases/tag/v1.6.1
 [1.6.0]: https://github.com/pascatotalx/noteline/releases/tag/v1.6.0
 [1.5.3]: https://github.com/pascatotalx/noteline/releases/tag/v1.5.3
 [1.5.2]: https://github.com/pascatotalx/noteline/releases/tag/v1.5.2

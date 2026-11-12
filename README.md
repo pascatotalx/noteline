@@ -52,7 +52,8 @@ Was sich geändert hat, steht im [Changelog](CHANGELOG.md) und bei jedem [Releas
 - **Spuren statt Textwüste:** *Jetzt*, *To-do*, *Offen*, *Wartet*, *Erledigt*, mit Priorität und Ticketnummer.
 - **Nächster Schritt:** Jede Notiz hat ein Feld für das, was noch zu tun ist, mit Fälligkeit (Heute, Morgen, Datum). Solche
   Notizen landen in der Spur *To-do* und zeigen den Schritt direkt in der Liste. Ein Haken trägt ihn erledigt in die Stichpunkte
-  ein. Beim Tippen reicht `todo: …` am Ende, `Strg+T` springt in einer offenen Notiz ins Feld. Morgens meldet Noteline einmal,
+  ein. Das Feld ist eingeklappt und öffnet sich über den Knopf neben „Rückruf“ oder mit `Strg+T`. Beim Tippen reicht
+  `todo: …` am Ende. Morgens meldet Noteline einmal,
   was heute fällig ist.
 - **Kunden werden gemerkt:** Bekannte Kunden erkennt Noteline in voller Länge, beim Tippen schlägt es sie vor (**Tab** übernimmt).
 - **TeamViewer-ID und Passwort** je Notiz mit Kopier-Knopf (`TV 123 456 789 PW …` wird erkannt). Das Passwort bleibt aus
